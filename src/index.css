@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+  [dir="rtl"] {
+    font-family: 'Vazirmatn', 'Plus Jakarta Sans', Tahoma, sans-serif;
+  }
+}
+
+/* Custom High-Fidelity Animations for Luxury Motion & Logo */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-aura {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes shimmer-light {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.animate-orbit {
+  animation: orbit-spin 20s linear infinite;
+}
+
+.animate-aura {
+  animation: pulse-aura 3.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer-light 4s linear infinite;
+}
+
+.font-vazir {
+  font-family: 'Vazirmatn', 'Plus Jakarta Sans', Tahoma, sans-serif !important;
+}
+
+/* =========================================================================
+   COMPREHENSIVE MORPHISM THEMES & DISTINCT COLOR ENGINE
+   1. Glassmorphism (Modern Frosted Crystal Glass)
+   2. Neumorphism (Soft UI - Convex/Concave Tactile Shadowing)
+   3. Skeuomorphism (Physical Realism, Bevels, Mahogany & Craftsmanship)
+   4. Squirclemorphism (Super-ellipse Curvature & Vibrant Gradient Glow)
+   5. Metalmorphism (Brushed Titanium, Polished Steel & Chrome Specular Rims)
+   6. AR-morphism (Augmented Reality Holographic HUD & Cyber Grid)
+   ========================================================================= */
+
+/* 1. GLASSMORPHISM */
+.theme-glassmorphism .theme-sidebar, html.theme-glassmorphism .theme-sidebar {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-inline-end: 1px solid rgba(226, 232, 240, 0.85) !important;
+  color: #1e293b !important;
+  box-shadow: 6px 0 24px 0 rgba(31, 38, 135, 0.06) !important;
+}
+.theme-glassmorphism .theme-navbar, html.theme-glassmorphism .theme-navbar {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
+  box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.05) !important;
+}
+.theme-glassmorphism .morphism-card, .theme-glassmorphism .bg-white, html.theme-glassmorphism .morphism-card, html.theme-glassmorphism .bg-white {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(16px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
+  border-color: rgba(226, 232, 240, 0.85) !important;
+  box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.95) !important;
+}
+.theme-glassmorphism .theme-project-card, html.theme-glassmorphism .theme-project-card {
+  background: rgba(245, 158, 11, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #0f172a !important;
+}
+.theme-glassmorphism .theme-mode-btn, html.theme-glassmorphism .theme-mode-btn {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  color: #334155 !important;
+}
+
+/* Glassmorphism Dark Mode */
+.dark.theme-glassmorphism, .dark .theme-glassmorphism, html.dark.theme-glassmorphism, html.dark .theme-glassmorphism {
+  background-color: #090e1a !important;
+}
+.dark.theme-glassmorphism .theme-sidebar, .dark .theme-glassmorphism .theme-sidebar, html.dark.theme-glassmorphism .theme-sidebar {
+  background: rgba(15, 23, 42, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #e2e8f0 !important;
+  box-shadow: 6px 0 24px 0 rgba(0, 0, 0, 0.55) !important;
+}
+.dark.theme-glassmorphism .theme-navbar, .dark .theme-glassmorphism .theme-navbar, html.dark.theme-glassmorphism .theme-navbar {
+  background: rgba(15, 23, 42, 0.86) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.45) !important;
+}
+.dark.theme-glassmorphism .morphism-card, .dark .theme-glassmorphism .morphism-card, .dark.theme-glassmorphism .bg-white, .dark .theme-glassmorphism .bg-white, .dark.theme-glassmorphism .bg-slate-900, .dark .theme-glassmorphism .bg-slate-900, html.dark.theme-glassmorphism .morphism-card, html.dark.theme-glassmorphism .bg-white {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(18px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 14px 38px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+}
+.dark.theme-glassmorphism .theme-project-card, .dark .theme-glassmorphism .theme-project-card, html.dark.theme-glassmorphism .theme-project-card {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #f8fafc !important;
+}
+.dark.theme-glassmorphism .theme-mode-btn, .dark .theme-glassmorphism .theme-mode-btn, html.dark.theme-glassmorphism .theme-mode-btn {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #f1f5f9 !important;
+}
+
+/* 2. NEUMORPHISM */
+.theme-neumorphism, html.theme-neumorphism {
+  background-color: #e6edf8 !important;
+}
+.theme-neumorphism .theme-sidebar, html.theme-neumorphism .theme-sidebar {
+  background-color: #e6edf8 !important;
+  border-inline-end: 1px solid #d2deed !important;
+  color: #334155 !important;
+  box-shadow: 6px 0 20px #c2cee0 !important;
+}
+.theme-neumorphism .theme-navbar, html.theme-neumorphism .theme-navbar {
+  background-color: #e6edf8 !important;
+  border-bottom: 1px solid #d2deed !important;
+  box-shadow: 0 6px 18px #c2cee0 !important;
+}
+.theme-neumorphism .morphism-card, .theme-neumorphism .bg-white, html.theme-neumorphism .morphism-card, html.theme-neumorphism .bg-white {
+  background-color: #e6edf8 !important;
+  border-radius: 1.35rem !important;
+  border-color: transparent !important;
+  box-shadow: 9px 9px 20px #c2cee0, -9px -9px 20px #ffffff !important;
+}
+.theme-neumorphism .theme-project-card, html.theme-neumorphism .theme-project-card {
+  background-color: #e6edf8 !important;
+  border: none !important;
+  box-shadow: inset 4px 4px 9px #c2cee0, inset -4px -4px 9px #ffffff !important;
+}
+.theme-neumorphism .theme-mode-btn, html.theme-neumorphism .theme-mode-btn {
+  background-color: #e6edf8 !important;
+  border: none !important;
+  box-shadow: 4px 4px 9px #c2cee0, -4px -4px 9px #ffffff !important;
+}
+
+.dark.theme-neumorphism, .dark .theme-neumorphism, html.dark.theme-neumorphism, html.dark .theme-neumorphism {
+  background-color: #121824 !important;
+}
+.dark.theme-neumorphism .theme-sidebar, .dark .theme-neumorphism .theme-sidebar, html.dark.theme-neumorphism .theme-sidebar {
+  background-color: #121824 !important;
+  border-inline-end: 1px solid #1a2333 !important;
+  color: #cbd5e1 !important;
+  box-shadow: 6px 0 20px #080c14 !important;
+}
+.dark.theme-neumorphism .theme-navbar, .dark .theme-neumorphism .theme-navbar, html.dark.theme-neumorphism .theme-navbar {
+  background-color: #121824 !important;
+  border-bottom: 1px solid #1a2333 !important;
+  box-shadow: 0 6px 18px #080c14 !important;
+}
+.dark.theme-neumorphism .morphism-card, .dark .theme-neumorphism .morphism-card, .dark.theme-neumorphism .bg-white, .dark .theme-neumorphism .bg-white, .dark.theme-neumorphism .bg-slate-900, .dark .theme-neumorphism .bg-slate-900, html.dark.theme-neumorphism .morphism-card, html.dark.theme-neumorphism .bg-white {
+  background-color: #151e2d !important;
+  border-radius: 1.35rem !important;
+  border-color: transparent !important;
+  box-shadow: 8px 8px 20px #080c14, -8px -8px 20px #1e2a3e !important;
+}
+.dark.theme-neumorphism .theme-project-card, .dark .theme-neumorphism .theme-project-card, html.dark.theme-neumorphism .theme-project-card {
+  background-color: #121824 !important;
+  border: none !important;
+  box-shadow: inset 4px 4px 9px #080c14, inset -4px -4px 9px #1e2a3e !important;
+}
+.dark.theme-neumorphism .theme-mode-btn, .dark .theme-neumorphism .theme-mode-btn, html.dark.theme-neumorphism .theme-mode-btn {
+  background-color: #151e2d !important;
+  border: none !important;
+  box-shadow: 4px 4px 9px #080c14, -4px -4px 9px #1e2a3e !important;
+  color: #f1f5f9 !important;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-container {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  @page {
+    margin: 1.2cm;
+    size: A4;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid #d97706 !important;
+  outline-offset: 2px !important;
+}

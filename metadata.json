@@ -1,0 +1,6 @@
+{
+  "name": "NIK SMART COUNT",
+  "description": "Building Project Management & Construction Accounting System for high-rise and building owners with Google Drive integration",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
