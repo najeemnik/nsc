@@ -93,7 +93,7 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
       aria-labelledby="guide-title"
     >
       <div 
-        className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className="bg-surface w-full max-w-4xl rounded-3xl shadow-2xl border border-line overflow-hidden my-auto max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         dir={isRtl ? 'rtl' : 'ltr'}
       >
@@ -133,7 +133,7 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
         {/* Body Container: Sidebar Topics + Content */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Navigation Topics */}
-          <div className="w-full md:w-72 bg-slate-50 dark:bg-slate-900/60 p-3 sm:p-4 border-b md:border-b-0 md:border-e border-slate-200 dark:border-slate-800 overflow-y-auto shrink-0 space-y-1.5">
+          <div className="w-full md:w-72 bg-slate-50 dark:bg-slate-900/60 p-3 sm:p-4 border-b md:border-b-0 md:border-e border-line overflow-y-auto shrink-0 space-y-1.5">
             <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 mb-2">
               {language === 'ps' ? 'د سیستم موضوعات' : language === 'en' ? 'System Topics' : 'سرفصل‌های آموزشی'}
             </div>
@@ -181,23 +181,23 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
           <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-5 text-slate-800 dark:text-slate-200 leading-relaxed text-sm">
             {activeTopic === 'project' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-amber-600" />
                     <span>نحوه ثبت و سوئیچ بین پروژه‌های ساختمانی</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">مدیریت همزمان چندین برج و ساختمان با دفاتر حسابداری تفکیک‌شده</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-1.5">
+                  <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-line">
+                    <div className="font-bold text-ink flex items-center gap-1.5 mb-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>ثبت مشخصات عمرانی</span>
                     </div>
                     <p className="text-slate-600 dark:text-slate-400">تعداد منازل، تعداد واحدها، زیربنا، آدرس و مشخصات سند زمین را با دقت وارد فرمایید تا تمام شاخص‌ها اتوماتیک محاسبه شود.</p>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-1.5">
+                  <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-line">
+                    <div className="font-bold text-ink flex items-center gap-1.5 mb-1.5">
                       <ArrowRightLeft className="w-4 h-4 text-amber-600" />
                       <span>نرخ برابری اسعار (دالر / افغانی)</span>
                     </div>
@@ -209,18 +209,18 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'expense' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <Receipt className="w-5 h-5 text-blue-600" />
                     <span>ثبت خریدها، مصارف روزمره و تسویه‌حساب</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">اصل حسابداری ساختمانی: هر خرید ثبت تعهد مالی (بدهی) است، مگر آنکه نقداً پرداخت شود.</p>
                 </div>
                 <div className="space-y-3 text-xs">
-                  <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-start gap-3 p-3 rounded-2xl bg-surface-2/60 border border-line">
                     <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black flex items-center justify-center shrink-0">۱</span>
                     <div>
-                      <strong className="block font-bold text-slate-900 dark:text-slate-100 mb-0.5">ثبت جنس و مقدار (سیخ، سمنت، چوب):</strong>
+                      <strong className="block font-bold text-ink mb-0.5">ثبت جنس و مقدار (سیخ، سمنت، چوب):</strong>
                       <span className="text-slate-600 dark:text-slate-400">مقدار و قیمت فی واحد را بنویسید؛ سیستم مبلغ کل را ضرب نموده و تبدیل واحدهای استاندارد (مانند تن به کیلوگرام) را محاسبه می‌کند.</span>
                     </div>
                   </div>
@@ -237,16 +237,16 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'payment' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-emerald-600" />
                     <span>پرداخت‌ها، کسر از قرضداری و چاپ سند A4</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">صدور سند رسمی رسید و پرداخت جهت ارائه به شرکا یا بایگانی</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-1.5">
+                  <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-line">
+                    <div className="font-bold text-ink flex items-center gap-1.5 mb-1.5">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
                       <span>کسر اتوماتیک از قرضداری</span>
                     </div>
@@ -265,20 +265,20 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'contractor' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <HardHat className="w-5 h-5 text-purple-600" />
                     <span>قراردادی‌ها، ضمانت حسن نیت و شرکای پروژه</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">مدیریت مبالغ قرارداد، پیشرفت کار و ثبت سرمایه‌گذاری شرکا</p>
                 </div>
                 <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">ضمانت حسن نیت (Retention):</strong>
+                  <div className="p-3 bg-surface-2/60 rounded-2xl border border-line">
+                    <strong className="text-ink block font-bold mb-1">ضمانت حسن نیت (Retention):</strong>
                     می‌توانید برای هر قراردادی درصد مشخصی (مثلاً ۵٪ یا ۱۰٪) جهت ضمانت پایان کار نگهداری کنید.
                   </div>
-                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">دفتر روزنامچه حساب (Ledger):</strong>
+                  <div className="p-3 bg-surface-2/60 rounded-2xl border border-line">
+                    <strong className="text-ink block font-bold mb-1">دفتر روزنامچه حساب (Ledger):</strong>
                     کل مبالغ قرارداد به علاوه پرداختی‌های انجام شده به تفکیک تاریخ و سند نمایش داده می‌شود.
                   </div>
                 </div>
@@ -287,8 +287,8 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'report' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-rose-600" />
                     <span>گزارشات چاپی و خروجی اکسل</span>
                   </h3>
@@ -300,12 +300,12 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
                     تمامی گزارشات دارای تفکیک دقیق مبالغ به هر دو اسعار دالر و افغانی به همراه تراز نهایی می‌باشند.
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                      <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">خروجی اکسل (CSV):</strong>
+                    <div className="p-3 rounded-2xl bg-surface-2/60 border border-line">
+                      <strong className="text-ink block font-bold mb-1">خروجی اکسل (CSV):</strong>
                       با یک کلیک تمام ردیف‌ها همراه با سربرگ استاندارد برای اکسل آماده دانلود است.
                     </div>
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                      <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">امضای هیئت مدیره:</strong>
+                    <div className="p-3 rounded-2xl bg-surface-2/60 border border-line">
+                      <strong className="text-ink block font-bold mb-1">امضای هیئت مدیره:</strong>
                       پایین هر برگه شامل سه محل امضا برای محاسب، مهندس ناظر و رئیس شرکت است.
                     </div>
                   </div>
@@ -315,16 +315,16 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'bills' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <Camera className="w-5 h-5 text-amber-600" />
                     <span>عکس‌برداری با کمره و آرشیف بل‌ها</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">حذف کاغذبازی با مستندسازی تصویری از قبض باسکول و فاکتورها</p>
                 </div>
                 <div className="space-y-3 text-xs">
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                    <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">کمره مستقیم موبایل:</strong>
+                  <div className="p-3.5 bg-surface-2/60 border border-line rounded-2xl">
+                    <strong className="text-ink block font-bold mb-1">کمره مستقیم موبایل:</strong>
                     در هر زمان با زدن آیکون کمره می‌توانید فاکتور خرید آهن یا کانکریت را در همان محل پروژه عکس گرفته و پیوست کنید.
                   </div>
                 </div>
@@ -333,8 +333,8 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
 
             {activeTopic === 'gdrive' && (
               <div className="space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <div className="border-b border-line pb-3">
+                  <h3 className="text-base font-black text-ink flex items-center gap-2">
                     <ExternalLink className="w-5 h-5 text-sky-600" />
                     <span>همگام‌سازی و پشتیبان‌گیری در Google Drive</span>
                   </h3>
@@ -345,8 +345,8 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
                     <strong className="text-sky-900 dark:text-sky-200 block font-bold mb-1">پشتیبان‌گیری ابری خودکار:</strong>
                     دیتابیس کامل سیستم شامل پروژه‌ها، خریدهای سیخ، کانکریت و اسناد در پوشه "NIK SMART COUNT" در گوگل درایو شخصی شما ذخیره می‌شود.
                   </div>
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                    <strong className="text-slate-900 dark:text-slate-100 block font-bold mb-1">دسترسی از همه جا:</strong>
+                  <div className="p-3.5 bg-surface-2/60 border border-line rounded-2xl">
+                    <strong className="text-ink block font-bold mb-1">دسترسی از همه جا:</strong>
                     با اتصال گوگل درایو، تمام فاکتورها و تصاویر بل‌ها در هر دستگاه با لینک مستقیم قابل مشاهده خواهند بود.
                   </div>
                 </div>
@@ -356,7 +356,7 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-100 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div className="p-4 bg-surface-2/80 border-t border-line flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-500 font-medium hidden sm:block">
             سامانه هوشمند محاسبات ساختمانی نیک (NIK SMART COUNT)
           </div>

@@ -91,9 +91,7 @@ function MainApp() {
 
   return (
     <div 
-      className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col ${
-        isDarkMode ? 'dark' : ''
-      }`}
+      className="min-h-screen bg-canvas text-ink flex flex-col"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="flex flex-1 h-screen overflow-hidden">

@@ -44,7 +44,7 @@ export const CurrencyAmountInput: React.FC<CurrencyAmountInputProps> = ({
   const equivalentInUSD = currency === 'AFN' ? (rate > 0 ? parseFloat((numAmount / rate).toFixed(2)) : 0) : numAmount;
 
   return (
-    <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+    <div className="space-y-2 p-3 bg-surface-2/60 rounded-xl border border-line">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
           {label} {required && <span className="text-rose-500">*</span>}
@@ -87,7 +87,7 @@ export const CurrencyAmountInput: React.FC<CurrencyAmountInputProps> = ({
             className={`flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded-lg border transition-all ${
               showRateInput
                 ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/30 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-600'
-                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-amber-400 hover:text-amber-800 shadow-2xs'
+                : 'bg-surface text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-amber-400 hover:text-amber-800 shadow-2xs'
             }`}
           >
             <ArrowRightLeft className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -112,7 +112,7 @@ export const CurrencyAmountInput: React.FC<CurrencyAmountInputProps> = ({
               value={rate}
               onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
               placeholder="مثلا ۷۰"
-              className="w-full px-2.5 py-1 text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-amber-400 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white text-center"
+              className="w-full px-2.5 py-1 text-xs font-mono font-bold bg-surface border border-amber-400 rounded-lg focus:ring-2 focus:ring-amber-500 text-ink text-center"
             />
           </div>
           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">افغانی</span>
@@ -140,15 +140,15 @@ export const CurrencyAmountInput: React.FC<CurrencyAmountInputProps> = ({
           value={amount}
           onChange={(e) => onChangeAmount(e.target.value)}
           placeholder={placeholder}
-          className="w-full ps-8 pe-3 py-2 text-sm font-mono font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-900 dark:text-white transition-all"
+          className="w-full ps-8 pe-3 py-2 text-sm font-mono font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-surface focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-ink transition-all"
         />
       </div>
 
       {/* Real-time Thousand Separator Live Formatted Display */}
       {numAmount > 0 && (
-        <div className="flex items-center justify-between px-2.5 py-1.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
-          <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium">مبلغ خوانا:</span>
-          <span className="font-mono font-black text-slate-900 dark:text-white text-xs">
+        <div className="flex items-center justify-between px-2.5 py-1.5 bg-surface rounded-lg border border-line text-xs">
+          <span className="text-ink-muted text-[11px] font-medium">مبلغ خوانا:</span>
+          <span className="font-mono font-black text-ink text-xs">
             {currency === 'USD' ? `$${numAmount.toLocaleString()}` : `${numAmount.toLocaleString()} افغانی`}
           </span>
         </div>

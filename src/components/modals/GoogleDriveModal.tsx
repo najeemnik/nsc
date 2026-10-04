@@ -138,7 +138,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-surface rounded-3xl shadow-2xl border border-line overflow-hidden flex flex-col max-h-[90vh]"
         dir={language === 'en' ? 'ltr' : 'rtl'}
       >
         {/* Header */}
@@ -182,7 +182,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
           )}
 
           {/* Connection Status Box */}
-          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+          <div className="p-5 rounded-2xl bg-surface-2/60 border border-line/60">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className={`w-3.5 h-3.5 rounded-full ${isGoogleDriveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
@@ -193,7 +193,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
                       : (t('notConnected') || 'Not connected to Google Drive')}
                   </h3>
                   {isGoogleDriveConnected && googleUser && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                    <p className="text-xs text-ink-muted mt-0.5 font-mono">
                       {googleUser.displayName} ({googleUser.email})
                     </p>
                   )}
@@ -205,7 +205,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
                   <button
                     onClick={handleConnect}
                     disabled={loading}
-                    className="flex items-center gap-2.5 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-xs shadow-sm hover:shadow hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                    className="flex items-center gap-2.5 px-4 py-2.5 bg-surface text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-xl font-medium text-xs shadow-sm hover:shadow hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -260,7 +260,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
                     {t('cloudSafetyDesc') || 'Your data is saved in your own private Google Drive folder ("NIK_SMART_COUNT_BACKUPS") and can be restored at any time.'}
                   </p>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="text-[11px] text-ink-muted flex items-center gap-1.5">
                   <HardDrive className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Folder: <strong>NIK_SMART_COUNT_BACKUPS</strong></span>
                 </div>
@@ -288,7 +288,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
               </div>
 
               {driveFiles.length === 0 ? (
-                <div className="text-center py-8 px-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl text-xs text-slate-500 dark:text-slate-400">
+                <div className="text-center py-8 px-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl text-xs text-ink-muted">
                   {fetchingFiles ? 'Searching Google Drive...' : (t('noFilesYet') || 'No backup files found yet in Google Drive. Click "Create Backup in Drive" above!')}
                 </div>
               ) : (
@@ -296,7 +296,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
                   {driveFiles.map(file => (
                     <div 
                       key={file.id} 
-                      className="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 text-xs hover:border-blue-400 transition shadow-sm"
+                      className="p-3 bg-surface/80 rounded-xl border border-line/80 flex items-center justify-between gap-3 text-xs hover:border-blue-400 transition shadow-sm"
                     >
                       <div className="flex items-center gap-2.5 overflow-hidden">
                         <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
@@ -351,7 +351,7 @@ export const GoogleDriveModal: React.FC<GoogleDriveModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        <div className="px-6 py-4 bg-surface-2/80 border-t border-line flex justify-end">
           <button
             onClick={onClose}
             className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs transition"

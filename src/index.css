@@ -1,65 +1,574 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  }
-  [dir="rtl"] {
-    font-family: 'Vazirmatn', 'Plus Jakarta Sans', Tahoma, sans-serif;
-  }
+/* =========================================================================
+   NIK SMART COUNT — Standard Theming Architecture
+   -------------------------------------------------------------------------
+   1. Class-based dark mode for Tailwind v4 (single source of truth:
+      the `.dark` class on <html>, applied by AppContext + anti-FOUC script).
+   2. Design tokens (CSS variables) for surfaces, borders and text.
+      Every theme (light & dark) only redefines variables — no !important
+      wars, no per-utility overrides.
+   3. Six morphism themes, each implemented as:
+        .theme-X        → light values
+        .theme-X.dark   → dark values
+   ========================================================================= */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
 }
 
-/* Custom High-Fidelity Animations for Luxury Motion & Logo */
+/* ------------------------------------------------------------------------
+   BASE TOKENS — neutral slate fallback (before any theme class is applied)
+   ------------------------------------------------------------------------ */
+:root {
+  font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* opaque page base painted on <html> */
+  --canvas-base: #f1f5f9;
+  /* translucent tint painted on the app root (lets body::before decor show) */
+  --canvas: rgba(241, 245, 249, 0.6);
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --line: #e2e8f0;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --accent: #f59e0b;
+
+  /* chrome (sidebar / navbar) */
+  --chrome-bg: #ffffff;
+  --chrome-blur: none;
+  --chrome-border: #e2e8f0;
+  --chrome-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  /* cards */
+  --card-blur: none;
+  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --card-inset: none;
+  --card-radius: none; /* when set, overrides radius of large cards only */
+  --card-image: none;
+
+  /* decorative background layers (body::before) */
+  --deco-a: transparent;
+  --deco-b: transparent;
+  --deco-pattern: none;
+
+  color-scheme: light;
+}
+
+.dark {
+  --canvas-base: #020617;
+  --canvas: rgba(2, 6, 23, 0.6);
+  --surface: #0f172a;
+  --surface-2: #1e293b;
+  --line: #2b3a52;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+
+  --chrome-bg: #0b1220;
+  --chrome-border: #223049;
+  --chrome-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------------
+   THEME 1 — GLASSMORPHISM (frosted crystal glass over ambient gradients)
+   ------------------------------------------------------------------------ */
+.theme-glassmorphism {
+  --canvas-base: #e9eef7;
+  --canvas: rgba(233, 238, 247, 0.35);
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-2: rgba(241, 245, 249, 0.82);
+  --line: rgba(148, 163, 184, 0.3);
+  --ink: #0f172a;
+  --ink-muted: #5b6b81;
+
+  --chrome-bg: rgba(255, 255, 255, 0.66);
+  --chrome-blur: blur(20px) saturate(180%);
+  --chrome-border: rgba(226, 232, 240, 0.85);
+  --chrome-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+
+  --card-blur: blur(14px) saturate(165%);
+  --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --deco-a: rgba(245, 158, 11, 0.16);
+  --deco-b: rgba(59, 130, 246, 0.15);
+}
+
+.theme-glassmorphism.dark {
+  --canvas-base: #070b14;
+  --canvas: rgba(7, 11, 20, 0.45);
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-2: rgba(30, 41, 59, 0.66);
+  --line: rgba(148, 163, 184, 0.18);
+  --ink: #e8eef7;
+  --ink-muted: #94a3b8;
+
+  --chrome-bg: rgba(12, 18, 33, 0.72);
+  --chrome-blur: blur(22px) saturate(180%);
+  --chrome-border: rgba(148, 163, 184, 0.14);
+  --chrome-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+
+  --card-blur: blur(16px) saturate(170%);
+  --card-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --deco-a: rgba(245, 158, 11, 0.1);
+  --deco-b: rgba(99, 102, 241, 0.14);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 2 — NEUMORPHISM (soft embossed mono-surface UI)
+   ------------------------------------------------------------------------ */
+.theme-neumorphism {
+  --canvas-base: #e6edf8;
+  --canvas: rgba(230, 237, 248, 0.9);
+  --surface: #e6edf8;
+  --surface-2: #e6edf8;
+  --line: rgba(203, 216, 237, 0.55);
+  --ink: #26364d;
+  --ink-muted: #64748b;
+
+  --chrome-bg: #e6edf8;
+  --chrome-blur: none;
+  --chrome-border: rgba(203, 216, 237, 0.6);
+  --chrome-shadow: 6px 0 18px #c5d1e3, 0 6px 18px #c5d1e3;
+
+  --card-blur: none;
+  --card-shadow: 9px 9px 20px #c5d1e3, -9px -9px 20px #ffffff;
+  --card-inset: none;
+  --card-radius: 1.35rem;
+
+  --deco-a: transparent;
+  --deco-b: transparent;
+}
+
+.theme-neumorphism.dark {
+  --canvas-base: #131a27;
+  --canvas: rgba(19, 26, 39, 0.9);
+  --surface: #151d2c;
+  --surface-2: #151d2c;
+  --line: rgba(38, 51, 74, 0.7);
+  --ink: #dbe4f0;
+  --ink-muted: #8fa0b8;
+
+  --chrome-bg: #131a27;
+  --chrome-border: rgba(38, 51, 74, 0.8);
+  --chrome-shadow: 6px 0 18px #0a0f18, 0 6px 18px #0a0f18;
+
+  --card-shadow: 8px 8px 18px #0a0f18, -8px -8px 18px #212d42;
+  --card-radius: 1.35rem;
+}
+
+/* Concave (pressed) treatment for the active-project card & buttons */
+.theme-neumorphism .theme-project-card {
+  box-shadow: inset 4px 4px 9px #c5d1e3, inset -4px -4px 9px #ffffff;
+  border-color: transparent;
+}
+.theme-neumorphism.dark .theme-project-card {
+  box-shadow: inset 4px 4px 9px #0a0f18, inset -4px -4px 9px #212d42;
+}
+.theme-neumorphism .theme-mode-btn {
+  box-shadow: 4px 4px 9px #c5d1e3, -4px -4px 9px #ffffff;
+  border-color: transparent;
+}
+.theme-neumorphism.dark .theme-mode-btn {
+  box-shadow: 4px 4px 9px #0a0f18, -4px -4px 9px #212d42;
+}
+
+/* ------------------------------------------------------------------------
+   THEME 3 — SKEUOMORPHISM (physical materials: parchment, oak & brass)
+   ------------------------------------------------------------------------ */
+.theme-skeuomorphism {
+  --canvas-base: #e7dcc6;
+  --canvas: rgba(231, 220, 198, 0.55);
+  --surface: #f6efdd;
+  --surface-2: #efe5cd;
+  --line: #d6c49d;
+  --ink: #33261a;
+  --ink-muted: #7a6a52;
+
+  --chrome-bg: linear-gradient(180deg, #c9a878 0%, #b8955f 55%, #a8834f 100%);
+  --chrome-blur: none;
+  --chrome-border: #8a6a3e;
+  --chrome-shadow: inset -1px 0 0 rgba(255, 244, 214, 0.45), 4px 0 18px rgba(80, 55, 20, 0.3);
+
+  --card-blur: none;
+  --card-shadow: 0 6px 16px rgba(90, 64, 24, 0.18);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -2px 0 rgba(140, 105, 55, 0.14);
+  --card-radius: 0.9rem;
+  --card-image: linear-gradient(160deg, rgba(255, 252, 242, 0.9), rgba(240, 228, 200, 0.55));
+
+  --deco-a: rgba(120, 85, 35, 0.12);
+  --deco-b: rgba(90, 60, 20, 0.1);
+  --deco-pattern: repeating-linear-gradient(45deg, rgba(120, 90, 40, 0.035) 0 2px, transparent 2px 6px);
+}
+
+.theme-skeuomorphism.dark {
+  --canvas-base: #1d150e;
+  --canvas: rgba(29, 21, 14, 0.55);
+  --surface: #2b2016;
+  --surface-2: #332719;
+  --line: #4d3a24;
+  --ink: #ecdfc8;
+  --ink-muted: #b3a083;
+
+  --chrome-bg: linear-gradient(180deg, #3a2a19 0%, #2c1f11 60%, #241909 100%);
+  --chrome-border: #160f06;
+  --chrome-shadow: inset -1px 0 0 rgba(214, 178, 106, 0.22), 4px 0 18px rgba(0, 0, 0, 0.55);
+
+  --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(236, 214, 160, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  --card-radius: 0.9rem;
+  --card-image: linear-gradient(160deg, rgba(58, 44, 28, 0.9), rgba(35, 26, 16, 0.6));
+
+  --deco-a: rgba(217, 119, 6, 0.07);
+  --deco-b: rgba(120, 53, 15, 0.1);
+  --deco-pattern: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 6px);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 4 — SQUIRCLEMORPHISM (super-ellipse curvature & vibrant glow)
+   ------------------------------------------------------------------------ */
+.theme-squirclemorphism {
+  --canvas-base: #f2f5fc;
+  --canvas: rgba(242, 245, 252, 0.6);
+  --surface: #ffffff;
+  --surface-2: #f1f4fb;
+  --line: rgba(129, 140, 248, 0.22);
+  --ink: #171c2e;
+  --ink-muted: #5f6a85;
+
+  --chrome-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(243, 246, 253, 0.92));
+  --chrome-blur: blur(8px);
+  --chrome-border: rgba(129, 140, 248, 0.18);
+  --chrome-shadow: 0 8px 26px rgba(99, 102, 241, 0.1);
+
+  --card-blur: none;
+  --card-shadow: 0 14px 32px rgba(99, 102, 241, 0.13), 0 4px 10px rgba(245, 158, 11, 0.09);
+  --card-inset: inset 0 1px 0 #ffffff;
+  --card-radius: 1.9rem;
+  --card-image: linear-gradient(170deg, #ffffff, #f6f8ff);
+
+  --deco-a: rgba(99, 102, 241, 0.16);
+  --deco-b: rgba(245, 158, 11, 0.13);
+}
+
+.theme-squirclemorphism.dark {
+  --canvas-base: #0b0f1e;
+  --canvas: rgba(11, 15, 30, 0.6);
+  --surface: #151b30;
+  --surface-2: #1b2340;
+  --line: rgba(129, 140, 248, 0.24);
+  --ink: #e9ecf9;
+  --ink-muted: #98a2c3;
+
+  --chrome-bg: linear-gradient(180deg, rgba(21, 27, 48, 0.96), rgba(14, 19, 38, 0.94));
+  --chrome-blur: blur(8px);
+  --chrome-border: rgba(129, 140, 248, 0.2);
+  --chrome-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+
+  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(99, 102, 241, 0.14);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --card-radius: 1.9rem;
+  --card-image: linear-gradient(170deg, #1a2138, #121830);
+
+  --deco-a: rgba(99, 102, 241, 0.18);
+  --deco-b: rgba(245, 158, 11, 0.1);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 5 — METALMORPHISM (brushed titanium & chrome specular rims)
+   ------------------------------------------------------------------------ */
+.theme-metalmorphism {
+  --canvas-base: #dde2e9;
+  --canvas: rgba(221, 226, 233, 0.6);
+  --surface: #edf0f4;
+  --surface-2: #e0e5ec;
+  --line: #c2cbd6;
+  --ink: #1c2430;
+  --ink-muted: #5b6775;
+
+  --chrome-bg: linear-gradient(90deg, #e8ebef 0%, #d4dae2 45%, #c7ced8 55%, #dfe4ea 100%);
+  --chrome-blur: none;
+  --chrome-border: #aab4c0;
+  --chrome-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.14), 4px 0 14px rgba(30, 41, 59, 0.18);
+
+  --card-blur: none;
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(0, 0, 0, 0.1), 0 8px 20px rgba(30, 41, 59, 0.18);
+  --card-inset: none;
+  --card-radius: 0.85rem;
+  --card-image: linear-gradient(145deg, #f7f9fb 0%, #e6eaf0 50%, #dbe1e9 100%);
+
+  --deco-a: rgba(100, 116, 139, 0.14);
+  --deco-b: rgba(71, 85, 105, 0.1);
+  --deco-pattern: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0.02) 1px 3px);
+}
+
+.theme-metalmorphism.dark {
+  --canvas-base: #0c0e12;
+  --canvas: rgba(12, 14, 18, 0.6);
+  --surface: #191d24;
+  --surface-2: #21262f;
+  --line: #343c48;
+  --ink: #e5e9ef;
+  --ink-muted: #9aa4b2;
+
+  --chrome-bg: linear-gradient(90deg, #1b2028 0%, #14181f 45%, #10141a 55%, #1d222b 100%);
+  --chrome-border: #05070a;
+  --chrome-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 4px 0 14px rgba(0, 0, 0, 0.55);
+
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.45), 0 10px 24px rgba(0, 0, 0, 0.55);
+  --card-radius: 0.85rem;
+  --card-image: linear-gradient(145deg, #232935 0%, #1a1f28 50%, #141820 100%);
+
+  --deco-a: rgba(148, 163, 184, 0.06);
+  --deco-b: rgba(71, 85, 105, 0.08);
+  --deco-pattern: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, rgba(0, 0, 0, 0.04) 1px 3px);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 6 — AR-MORPHISM (holographic HUD, cyber grid & neon rims)
+   ------------------------------------------------------------------------ */
+.theme-ar-morphism {
+  --canvas-base: #eef5fa;
+  --canvas: rgba(238, 245, 250, 0.45);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(236, 245, 252, 0.8);
+  --line: rgba(8, 145, 178, 0.3);
+  --ink: #0c2233;
+  --ink-muted: #4d7086;
+
+  --chrome-bg: rgba(255, 255, 255, 0.62);
+  --chrome-blur: blur(18px) saturate(160%);
+  --chrome-border: rgba(8, 145, 178, 0.28);
+  --chrome-shadow: 0 0 22px rgba(6, 182, 212, 0.12), 0 4px 18px rgba(12, 34, 51, 0.08);
+
+  --card-blur: blur(12px);
+  --card-shadow: 0 0 0 1px rgba(6, 182, 212, 0.12), 0 10px 26px rgba(12, 34, 51, 0.08);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --card-radius: 1rem;
+
+  --deco-a: rgba(6, 182, 212, 0.14);
+  --deco-b: rgba(59, 130, 246, 0.1);
+  --deco-pattern:
+    linear-gradient(rgba(8, 145, 178, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.06) 1px, transparent 1px);
+}
+
+.theme-ar-morphism.dark {
+  --canvas-base: #030712;
+  --canvas: rgba(3, 7, 18, 0.5);
+  --surface: rgba(8, 20, 32, 0.74);
+  --surface-2: rgba(13, 30, 46, 0.7);
+  --line: rgba(34, 211, 238, 0.26);
+  --ink: #dff3fb;
+  --ink-muted: #7fa8bd;
+
+  --chrome-bg: rgba(5, 14, 25, 0.76);
+  --chrome-blur: blur(20px) saturate(160%);
+  --chrome-border: rgba(34, 211, 238, 0.22);
+  --chrome-shadow: 0 0 26px rgba(34, 211, 238, 0.12), 0 4px 20px rgba(0, 0, 0, 0.55);
+
+  --card-blur: blur(14px);
+  --card-shadow: 0 0 0 1px rgba(34, 211, 238, 0.14), 0 0 28px rgba(34, 211, 238, 0.08), 0 12px 30px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(165, 243, 252, 0.1);
+  --card-radius: 1rem;
+
+  --deco-a: rgba(34, 211, 238, 0.12);
+  --deco-b: rgba(99, 102, 241, 0.12);
+  --deco-pattern:
+    linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+}
+
+/* HUD corner ticks on large cards (AR theme signature) */
+.theme-ar-morphism .bg-surface.rounded-3xl {
+  position: relative;
+}
+.theme-ar-morphism .bg-surface.rounded-3xl::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--line), var(--line)) top left / 18px 1.5px no-repeat,
+    linear-gradient(var(--line), var(--line)) top left / 1.5px 18px no-repeat,
+    linear-gradient(var(--line), var(--line)) top right / 18px 1.5px no-repeat,
+    linear-gradient(var(--line), var(--line)) top right / 1.5px 18px no-repeat,
+    linear-gradient(var(--line), var(--line)) bottom left / 18px 1.5px no-repeat,
+    linear-gradient(var(--line), var(--line)) bottom left / 1.5px 18px no-repeat,
+    linear-gradient(var(--line), var(--line)) bottom right / 18px 1.5px no-repeat,
+    linear-gradient(var(--line), var(--line)) bottom right / 1.5px 18px no-repeat;
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------------
+   GLOBAL PAINT — html base, decorative layer, themed surfaces
+   (unlayered on purpose: these rules define the theme look and must win
+   over generic utilities like shadow-sm / rounded-3xl on the same element)
+   ------------------------------------------------------------------------ */
+html {
+  background-color: var(--canvas-base);
+}
+
+[dir="rtl"] {
+  font-family: 'Vazirmatn', 'Plus Jakarta Sans', Tahoma, sans-serif;
+}
+
+body {
+  color: var(--ink);
+  background: transparent;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    var(--deco-pattern),
+    radial-gradient(55rem 38rem at 88% -12%, var(--deco-a), transparent 62%),
+    radial-gradient(48rem 34rem at -12% 112%, var(--deco-b), transparent 58%);
+  background-size: 34px 34px, auto, auto;
+}
+
+/* Chrome: sidebar & navbar */
+.theme-sidebar {
+  background: var(--chrome-bg);
+  backdrop-filter: var(--chrome-blur);
+  -webkit-backdrop-filter: var(--chrome-blur);
+  border-inline-end: 1px solid var(--chrome-border);
+  box-shadow: var(--chrome-shadow);
+  color: var(--ink);
+}
+
+.theme-navbar {
+  background: var(--chrome-bg);
+  backdrop-filter: var(--chrome-blur);
+  -webkit-backdrop-filter: var(--chrome-blur);
+  border-bottom: 1px solid var(--chrome-border);
+  box-shadow: var(--chrome-shadow);
+}
+
+/* Cards: any element using the semantic bg-surface token gets the
+   theme's material treatment (blur / shadow / texture).
+   Note: border color is NOT forced here — elements carry `border-line`
+   (token) or their own accent border utilities. */
+.bg-surface {
+  backdrop-filter: var(--card-blur);
+  -webkit-backdrop-filter: var(--card-blur);
+  box-shadow: var(--card-shadow), var(--card-inset);
+  background-image: var(--card-image);
+}
+
+/* Large display cards may adopt the theme's signature curvature */
+.bg-surface.rounded-3xl {
+  border-radius: var(--card-radius, 1.5rem);
+}
+.bg-surface.rounded-2xl {
+  border-radius: var(--card-radius, 1rem);
+}
+
+/* Active project card in sidebar — amber-tinted in every theme */
+.theme-project-card {
+  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+  background-image: var(--card-image);
+  border: 1px solid color-mix(in oklab, var(--accent) 32%, var(--line));
+  color: var(--ink);
+  box-shadow: var(--card-shadow);
+}
+
+/* Sidebar footer mode button */
+.theme-mode-btn {
+  background: var(--surface-2);
+  background-image: var(--card-image);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: var(--card-shadow);
+}
+
+/* ------------------------------------------------------------------------
+   SMOOTH THEME TRANSITION (disabled automatically under reduce-motion)
+   ------------------------------------------------------------------------ */
+.theme-sidebar,
+.theme-navbar,
+.theme-project-card,
+.theme-mode-btn,
+.bg-surface,
+.bg-canvas {
+  transition:
+    background-color 0.3s ease,
+    background-image 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ------------------------------------------------------------------------
+   SCROLLBARS
+   ------------------------------------------------------------------------ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--ink-muted) 45%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--ink-muted) 40%, transparent);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--ink-muted) 65%, transparent);
+}
+
+::selection {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+/* ------------------------------------------------------------------------
+   CUSTOM ANIMATIONS (Luxury Motion & Logo)
+   ------------------------------------------------------------------------ */
 @keyframes float-gentle {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(1deg);
-  }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
 }
 
 @keyframes orbit-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes pulse-aura {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.75;
-    transform: scale(1.08);
-  }
+  0%, 100% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 0.75; transform: scale(1.08); }
 }
 
 @keyframes shimmer-light {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.animate-float {
-  animation: float-gentle 4s ease-in-out infinite;
-}
-
-.animate-orbit {
-  animation: orbit-spin 20s linear infinite;
-}
-
-.animate-aura {
-  animation: pulse-aura 3.5s ease-in-out infinite;
-}
-
+.animate-float { animation: float-gentle 4s ease-in-out infinite; }
+.animate-orbit { animation: orbit-spin 20s linear infinite; }
+.animate-aura { animation: pulse-aura 3.5s ease-in-out infinite; }
 .animate-shimmer {
   background-size: 200% auto;
   animation: shimmer-light 4s linear infinite;
@@ -69,157 +578,16 @@
   font-family: 'Vazirmatn', 'Plus Jakarta Sans', Tahoma, sans-serif !important;
 }
 
-/* =========================================================================
-   COMPREHENSIVE MORPHISM THEMES & DISTINCT COLOR ENGINE
-   1. Glassmorphism (Modern Frosted Crystal Glass)
-   2. Neumorphism (Soft UI - Convex/Concave Tactile Shadowing)
-   3. Skeuomorphism (Physical Realism, Bevels, Mahogany & Craftsmanship)
-   4. Squirclemorphism (Super-ellipse Curvature & Vibrant Gradient Glow)
-   5. Metalmorphism (Brushed Titanium, Polished Steel & Chrome Specular Rims)
-   6. AR-morphism (Augmented Reality Holographic HUD & Cyber Grid)
-   ========================================================================= */
-
-/* 1. GLASSMORPHISM */
-.theme-glassmorphism .theme-sidebar, html.theme-glassmorphism .theme-sidebar {
-  background: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border-inline-end: 1px solid rgba(226, 232, 240, 0.85) !important;
-  color: #1e293b !important;
-  box-shadow: 6px 0 24px 0 rgba(31, 38, 135, 0.06) !important;
-}
-.theme-glassmorphism .theme-navbar, html.theme-glassmorphism .theme-navbar {
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
-  box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.05) !important;
-}
-.theme-glassmorphism .morphism-card, .theme-glassmorphism .bg-white, html.theme-glassmorphism .morphism-card, html.theme-glassmorphism .bg-white {
-  background-color: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(16px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
-  border-color: rgba(226, 232, 240, 0.85) !important;
-  box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.95) !important;
-}
-.theme-glassmorphism .theme-project-card, html.theme-glassmorphism .theme-project-card {
-  background: rgba(245, 158, 11, 0.08) !important;
-  backdrop-filter: blur(12px) !important;
-  border-color: rgba(245, 158, 11, 0.25) !important;
-  color: #0f172a !important;
-}
-.theme-glassmorphism .theme-mode-btn, html.theme-glassmorphism .theme-mode-btn {
-  background: rgba(255, 255, 255, 0.8) !important;
-  border-color: rgba(226, 232, 240, 0.9) !important;
-  color: #334155 !important;
-}
-
-/* Glassmorphism Dark Mode */
-.dark.theme-glassmorphism, .dark .theme-glassmorphism, html.dark.theme-glassmorphism, html.dark .theme-glassmorphism {
-  background-color: #090e1a !important;
-}
-.dark.theme-glassmorphism .theme-sidebar, .dark .theme-glassmorphism .theme-sidebar, html.dark.theme-glassmorphism .theme-sidebar {
-  background: rgba(15, 23, 42, 0.82) !important;
-  backdrop-filter: blur(24px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
-  border-inline-end: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #e2e8f0 !important;
-  box-shadow: 6px 0 24px 0 rgba(0, 0, 0, 0.55) !important;
-}
-.dark.theme-glassmorphism .theme-navbar, .dark .theme-glassmorphism .theme-navbar, html.dark.theme-glassmorphism .theme-navbar {
-  background: rgba(15, 23, 42, 0.86) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.45) !important;
-}
-.dark.theme-glassmorphism .morphism-card, .dark .theme-glassmorphism .morphism-card, .dark.theme-glassmorphism .bg-white, .dark .theme-glassmorphism .bg-white, .dark.theme-glassmorphism .bg-slate-900, .dark .theme-glassmorphism .bg-slate-900, html.dark.theme-glassmorphism .morphism-card, html.dark.theme-glassmorphism .bg-white {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  backdrop-filter: blur(18px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 14px 38px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
-}
-.dark.theme-glassmorphism .theme-project-card, .dark .theme-glassmorphism .theme-project-card, html.dark.theme-glassmorphism .theme-project-card {
-  background: rgba(245, 158, 11, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-  color: #f8fafc !important;
-}
-.dark.theme-glassmorphism .theme-mode-btn, .dark .theme-glassmorphism .theme-mode-btn, html.dark.theme-glassmorphism .theme-mode-btn {
-  background: rgba(30, 41, 59, 0.85) !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  color: #f1f5f9 !important;
-}
-
-/* 2. NEUMORPHISM */
-.theme-neumorphism, html.theme-neumorphism {
-  background-color: #e6edf8 !important;
-}
-.theme-neumorphism .theme-sidebar, html.theme-neumorphism .theme-sidebar {
-  background-color: #e6edf8 !important;
-  border-inline-end: 1px solid #d2deed !important;
-  color: #334155 !important;
-  box-shadow: 6px 0 20px #c2cee0 !important;
-}
-.theme-neumorphism .theme-navbar, html.theme-neumorphism .theme-navbar {
-  background-color: #e6edf8 !important;
-  border-bottom: 1px solid #d2deed !important;
-  box-shadow: 0 6px 18px #c2cee0 !important;
-}
-.theme-neumorphism .morphism-card, .theme-neumorphism .bg-white, html.theme-neumorphism .morphism-card, html.theme-neumorphism .bg-white {
-  background-color: #e6edf8 !important;
-  border-radius: 1.35rem !important;
-  border-color: transparent !important;
-  box-shadow: 9px 9px 20px #c2cee0, -9px -9px 20px #ffffff !important;
-}
-.theme-neumorphism .theme-project-card, html.theme-neumorphism .theme-project-card {
-  background-color: #e6edf8 !important;
-  border: none !important;
-  box-shadow: inset 4px 4px 9px #c2cee0, inset -4px -4px 9px #ffffff !important;
-}
-.theme-neumorphism .theme-mode-btn, html.theme-neumorphism .theme-mode-btn {
-  background-color: #e6edf8 !important;
-  border: none !important;
-  box-shadow: 4px 4px 9px #c2cee0, -4px -4px 9px #ffffff !important;
-}
-
-.dark.theme-neumorphism, .dark .theme-neumorphism, html.dark.theme-neumorphism, html.dark .theme-neumorphism {
-  background-color: #121824 !important;
-}
-.dark.theme-neumorphism .theme-sidebar, .dark .theme-neumorphism .theme-sidebar, html.dark.theme-neumorphism .theme-sidebar {
-  background-color: #121824 !important;
-  border-inline-end: 1px solid #1a2333 !important;
-  color: #cbd5e1 !important;
-  box-shadow: 6px 0 20px #080c14 !important;
-}
-.dark.theme-neumorphism .theme-navbar, .dark .theme-neumorphism .theme-navbar, html.dark.theme-neumorphism .theme-navbar {
-  background-color: #121824 !important;
-  border-bottom: 1px solid #1a2333 !important;
-  box-shadow: 0 6px 18px #080c14 !important;
-}
-.dark.theme-neumorphism .morphism-card, .dark .theme-neumorphism .morphism-card, .dark.theme-neumorphism .bg-white, .dark .theme-neumorphism .bg-white, .dark.theme-neumorphism .bg-slate-900, .dark .theme-neumorphism .bg-slate-900, html.dark.theme-neumorphism .morphism-card, html.dark.theme-neumorphism .bg-white {
-  background-color: #151e2d !important;
-  border-radius: 1.35rem !important;
-  border-color: transparent !important;
-  box-shadow: 8px 8px 20px #080c14, -8px -8px 20px #1e2a3e !important;
-}
-.dark.theme-neumorphism .theme-project-card, .dark .theme-neumorphism .theme-project-card, html.dark.theme-neumorphism .theme-project-card {
-  background-color: #121824 !important;
-  border: none !important;
-  box-shadow: inset 4px 4px 9px #080c14, inset -4px -4px 9px #1e2a3e !important;
-}
-.dark.theme-neumorphism .theme-mode-btn, .dark .theme-neumorphism .theme-mode-btn, html.dark.theme-neumorphism .theme-mode-btn {
-  background-color: #151e2d !important;
-  border: none !important;
-  box-shadow: 4px 4px 9px #080c14, -4px -4px 9px #1e2a3e !important;
-  color: #f1f5f9 !important;
-}
-
-/* Print Styles */
+/* ------------------------------------------------------------------------
+   PRINT
+   ------------------------------------------------------------------------ */
 @media print {
   body {
     background: white !important;
     color: black !important;
+  }
+  body::before {
+    display: none !important;
   }
   .no-print {
     display: none !important;
@@ -239,7 +607,9 @@
   }
 }
 
-/* Accessibility */
+/* ------------------------------------------------------------------------
+   ACCESSIBILITY
+   ------------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -256,6 +626,9 @@
 }
 
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
-  outline: 2px solid #d97706 !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+.dark button:focus-visible, .dark input:focus-visible, .dark select:focus-visible, .dark textarea:focus-visible, .dark a:focus-visible {
+  outline-color: #fbbf24;
 }

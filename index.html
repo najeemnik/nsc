@@ -14,8 +14,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      // Anti-FOUC: apply saved theme + day/night mode before first paint.
+      (function () {
+        try {
+          var raw = localStorage.getItem('nik_smart_count_appSettings');
+          var s = raw ? JSON.parse(raw) : {};
+          var schedule = s.themeSchedule || 'auto';
+          var hour = new Date().getHours();
+          var isDark = schedule === 'auto' ? !(hour >= 7 && hour < 19) : schedule === 'dark';
+          var themeMap = {
+            glassmorphism: 'theme-glassmorphism',
+            neumorphism: 'theme-neumorphism',
+            skeuomorphism: 'theme-skeuomorphism',
+            squirclemorphism: 'theme-squirclemorphism',
+            metalmorphism: 'theme-metalmorphism',
+            ar_morphism: 'theme-ar-morphism'
+          };
+          var cls = document.documentElement.classList;
+          if (isDark) cls.add('dark');
+          cls.add(themeMap[s.theme] || 'theme-glassmorphism');
+        } catch (e) { /* first visit or corrupted storage */ }
+      })();
+    </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-500/20 selection:text-amber-900 min-h-screen">
+  <body class="antialiased min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

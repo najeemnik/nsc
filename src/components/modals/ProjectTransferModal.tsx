@@ -168,7 +168,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-3xl bg-surface rounded-3xl shadow-2xl border border-line overflow-hidden flex flex-col max-h-[92vh]"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Header */}
@@ -205,13 +205,13 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
           <div className="flex items-center gap-2 text-indigo-950 dark:text-indigo-200">
             <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
             <span className="font-semibold">{isRtl ? 'مالک / مسئول فعلی پروژه:' : 'Current Responsible Owner:'}</span>
-            <span className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800">
+            <span className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 bg-surface px-2.5 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800">
               {project.currentOwner || project.clientOwner || (isRtl ? 'مالک اولیه' : 'Initial Owner')}
             </span>
           </div>
 
           {project.initialOwner && project.initialOwner !== (project.currentOwner || project.clientOwner) && (
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-[11px] text-ink-muted">
               <span>{isRtl ? 'مالک نخستین:' : 'Initial Founder:'} <strong>{project.initialOwner}</strong></span>
             </div>
           )}
@@ -223,7 +223,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-6 pt-4 border-b border-slate-200 dark:border-slate-800 flex gap-2">
+        <div className="px-6 pt-4 border-b border-line flex gap-2">
           <button
             onClick={() => setActiveTab('new_transfer')}
             className={`pb-3 px-3 text-xs font-bold transition flex items-center gap-2 border-b-2 ${
@@ -287,7 +287,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       value={previousOwner}
                       onChange={e => setPreviousOwner(e.target.value)}
                       placeholder={isRtl ? 'نام مالک یا مسئول قبلی' : 'Previous owner name'}
-                      className="w-full pr-9 pl-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full pr-9 pl-3 py-2.5 bg-surface-2 border border-line rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
                 </div>
@@ -304,7 +304,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       value={newOwner}
                       onChange={e => setNewOwner(e.target.value)}
                       placeholder={isRtl ? 'نام شخص، شرکت یا سرمایه‌گذار جدید' : 'New owner or entity name'}
-                      className="w-full pr-9 pl-3 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                      className="w-full pr-9 pl-3 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-ink focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
                 </div>
@@ -323,7 +323,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       required
                       value={transferDate}
                       onChange={e => setTransferDate(e.target.value)}
-                      className="w-full pr-9 pl-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full pr-9 pl-3 py-2.5 bg-surface-2 border border-line rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   <select
                     value={projectStage}
                     onChange={e => setProjectStage(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full px-3 py-2.5 bg-surface-2 border border-line rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   >
                     <option value="شروع کار و خاک‌برداری (Excavation & Foundation)">{isRtl ? 'شروع کار، خاک‌برداری و تهداب' : 'Excavation & Foundation'}</option>
                     <option value="اسکلت و سیخ‌بندی (Structure & Rebar)">{isRtl ? 'اسکلت، قالب‌بندی و سیخ‌بندی' : 'Structure, Framing & Concrete'}</option>
@@ -354,14 +354,14 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       placeholder={isRtl ? 'شرح مرحله کار را بنویسید' : 'Specify construction stage'}
                       value={customStage}
                       onChange={e => setCustomStage(e.target.value)}
-                      className="mt-2 w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                      className="mt-2 w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
                     />
                   )}
                 </div>
               </div>
 
               {/* Financial Breakdown: Value, Paid, Remaining */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 space-y-3">
+              <div className="p-4 rounded-2xl bg-surface-2/50 border border-line/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-emerald-600" />
@@ -397,7 +397,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       value={transferValue}
                       onChange={e => handleValueChange(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      className="w-full px-3 py-2 bg-surface border border-line rounded-xl text-xs font-bold font-mono focus:outline-none"
                     />
                   </div>
 
@@ -412,7 +412,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       value={amountPaid}
                       onChange={e => handlePaidChange(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:outline-none"
+                      className="w-full px-3 py-2 bg-surface border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:outline-none"
                     />
                   </div>
 
@@ -427,7 +427,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       value={remainingAmount}
                       onChange={e => setRemainingAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold font-mono text-amber-600 dark:text-amber-400 focus:outline-none"
+                      className="w-full px-3 py-2 bg-surface border border-amber-300 dark:border-amber-800 rounded-xl text-xs font-bold font-mono text-amber-600 dark:text-amber-400 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -490,12 +490,12 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder={isRtl ? 'شروط تحویل، مهلت پرداخت باقیمانده، تعهدات ساختمانی و نظارت...' : 'Handover conditions, construction guarantees, payment deadlines...'}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
 
               {/* Submit */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={onClose}
@@ -518,14 +518,14 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
           {activeTab === 'history' && (
             <div className="space-y-6">
               {/* Ownership Chain Summary Diagram */}
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-slate-800/60 dark:to-indigo-950/40 border border-slate-200 dark:border-slate-800">
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-slate-800/60 dark:to-indigo-950/40 border border-line">
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-indigo-600" />
                   <span>{isRtl ? 'زنجیره تسلسل مالکین پروژه (Ownership Chain)' : 'Project Ownership Chain'}</span>
                 </h4>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="px-3 py-1.5 rounded-xl bg-surface border border-line shadow-xs flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
                     <User className="w-3.5 h-3.5 text-slate-400" />
                     <span>{project.initialOwner || (historyList.length > 0 ? historyList[historyList.length - 1].previousOwner : currentOwnerName)}</span>
                     <span className="text-[10px] text-slate-400 font-normal">({isRtl ? 'مالک اول' : 'Founder'})</span>
@@ -539,7 +539,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       <div className={`px-3 py-1.5 rounded-xl border shadow-xs flex items-center gap-1.5 font-bold ${
                         idx === historyList.length - 1
                           ? 'bg-indigo-600 text-white border-indigo-700 shadow-indigo-500/20'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                          : 'bg-surface border-line text-slate-800 dark:text-slate-200'
                       }`}>
                         <UserCheck className="w-3.5 h-3.5" />
                         <span>{ev.newOwner}</span>
@@ -556,7 +556,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
               {/* Detailed Event Cards */}
               {historyList.length === 0 ? (
-                <div className="text-center py-12 px-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-xs text-slate-500 dark:text-slate-400">
+                <div className="text-center py-12 px-4 border border-dashed border-line rounded-3xl text-xs text-ink-muted">
                   <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                   <p className="font-semibold text-slate-700 dark:text-slate-300">
                     {isRtl ? 'تاکنون انتقالی برای این پروژه ثبت نشده است' : 'No transfers recorded for this project yet'}
@@ -578,11 +578,11 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   {historyList.map((item, index) => (
                     <div 
                       key={item.id}
-                      className="p-5 rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-3"
+                      className="p-5 rounded-3xl bg-surface/80 border border-line/80 shadow-sm space-y-3"
                     >
                       {/* Top Row: Owners and Date */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <div className="flex items-center gap-2 text-sm font-bold text-ink">
                           <span className="text-slate-600 dark:text-slate-400">{item.previousOwner}</span>
                           <span className="text-indigo-600">➔</span>
                           <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
@@ -613,7 +613,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
                         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50">
                           <span className="text-[11px] text-slate-400 block">{isRtl ? 'ارزش کل واگذاری' : 'Total Transfer Value'}</span>
-                          <span className="font-extrabold text-slate-900 dark:text-white mt-0.5 block font-mono">
+                          <span className="font-extrabold text-ink mt-0.5 block font-mono">
                             {formatCurrency(item.transferValue, item.currency)}
                           </span>
                         </div>
@@ -674,7 +674,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        <div className="px-6 py-4 bg-surface-2/80 border-t border-line flex justify-end">
           <button
             onClick={onClose}
             className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs transition"

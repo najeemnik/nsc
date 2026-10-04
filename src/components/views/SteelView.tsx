@@ -65,11 +65,11 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <Layers className="w-6 h-6 text-amber-500" />
             <span>{t('steelRebar') || 'Steel & Rebar Accounting'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {currentProject?.name} • {t('totalSteel')}: <strong>{formatNumber(totalTons, 2)} {t('ton')}</strong>
           </p>
         </div>
@@ -95,22 +95,22 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('totalWeightTon') || 'Total Weight (Tons)'}</span>
           <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">{formatNumber(totalTons, 2)} {t('ton')}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('totalWeightKg') || 'Total Weight (KG)'}</span>
-          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{formatNumber(totalKG, 0)} KG</p>
+          <p className="text-xl font-black text-ink mt-1">{formatNumber(totalKG, 0)} KG</p>
         </div>
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('totalSteelCost') || 'Total Investment (USD)'}</span>
-          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{formatCurrency(totalCostUSD, 'USD')}</p>
+          <p className="text-xl font-black text-ink mt-1">{formatCurrency(totalCostUSD, 'USD')}</p>
         </div>
       </div>
 
       {/* Filter and Search */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-surface border border-line flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -118,14 +118,14 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
             placeholder={t('searchSteel') || 'Search steel size, supplier, brand...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
           />
         </div>
 
         <select
           value={sizeFilter}
           onChange={(e) => setSizeFilter(e.target.value)}
-          className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none"
+          className="px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none"
         >
           <option value="all">{t('allSizes') || 'All Mill Sizes'}</option>
           {sizes.map(sz => (
@@ -135,10 +135,10 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-3xl border border-line shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+            <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
                 <th className="py-3.5 px-4">{t('date') || 'Date'}</th>
                 <th className="py-3.5 px-4">{t('size') || 'Mill Size'}</th>
@@ -154,14 +154,14 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredSteel.map(s => (
                 <tr key={s.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                  <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">{s.date}</td>
+                  <td className="py-3.5 px-4 text-ink-muted whitespace-nowrap">{s.date}</td>
                   <td className="py-3.5 px-4 font-bold text-amber-600 dark:text-amber-400">{s.size}</td>
                   <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">{s.brand || '—'}</td>
                   <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">{s.supplierName || '—'}</td>
-                  <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">{s.bundles || s.branches || '—'}</td>
+                  <td className="py-3.5 px-4 text-ink-muted">{s.bundles || s.branches || '—'}</td>
                   <td className="py-3.5 px-4 font-mono">{formatNumber(s.totalKg, 0)}</td>
                   <td className="py-3.5 px-4 font-mono font-bold">{formatNumber((s.totalKg || 0) / 1000, 2)}</td>
-                  <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-right font-black text-ink whitespace-nowrap">
                     {formatCurrency(s.totalCostUSD, 'USD')}
                   </td>
                   <td className="py-3.5 px-4 text-center">

@@ -64,11 +64,11 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <HardHat className="w-6 h-6 text-orange-500" />
             <span>{t('contractors') || 'Contractors & Subcontractors'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {t('manageContractorsDesc') || 'Track trade contractors, master masons, plumbers, electricians, agreements, and payments'}
           </p>
         </div>
@@ -83,7 +83,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
       </div>
 
       {/* Search */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+      <div className="p-4 rounded-2xl bg-surface border border-line">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -91,7 +91,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
             placeholder={t('searchContractor') || 'Search contractor name, specialty, phone...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+            className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20"
           />
         </div>
       </div>
@@ -103,7 +103,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
           return (
             <div 
               key={c.id}
-              className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+              className="p-6 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -112,7 +112,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                       <HardHat className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-slate-900 dark:text-white">{c.name}</h3>
+                      <h3 className="font-bold text-base text-ink">{c.name}</h3>
                       <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold">{c.trade}</p>
                     </div>
                   </div>
@@ -126,14 +126,14 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                 </div>
 
                 {c.phone && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  <div className="flex items-center gap-2 text-xs text-ink-muted mb-4">
                     <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <a href={`tel:${c.phone}`} className="hover:underline font-mono">{c.phone}</a>
                   </div>
                 )}
 
                 {/* Financial Summary */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2 text-xs mb-4">
+                <div className="p-3.5 rounded-2xl bg-surface-2/50 border border-line space-y-2 text-xs mb-4">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t('totalWork') || 'Total Work / Bills'}:</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{formatCurrency(stats.totalWorkUSD, 'USD')}</span>
@@ -142,7 +142,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                     <span className="text-slate-400">{t('totalPaid') || 'Paid'}:</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(stats.totalPaidUSD, 'USD')}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700/60 font-bold">
+                  <div className="flex justify-between items-center pt-2 border-t border-line/60 font-bold">
                     <span className="text-amber-600 dark:text-amber-400">{t('remainingBalance') || 'Remaining Balance'}:</span>
                     <span className="text-amber-600 dark:text-amber-400">{formatCurrency(stats.debtUSD, 'USD')}</span>
                   </div>

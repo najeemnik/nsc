@@ -102,10 +102,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 my-auto animate-in fade-in zoom-in-95">
+      <div className="bg-surface rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <Building2 className="w-5 h-5" />
@@ -144,7 +144,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
@@ -155,7 +155,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
@@ -180,7 +180,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
               >
                 <option value="planning">{t.statusPlanning || 'پلان‌گذاری'}</option>
                 <option value="in_construction">{t.statusInConstruction || 'در حال اعمار'}</option>
@@ -199,7 +199,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               required
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -212,7 +212,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 required
                 value={floors}
                 onChange={(e) => setFloors(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
               />
             </div>
             <div>
@@ -223,7 +223,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 required
                 value={units}
                 onChange={(e) => setUnits(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
               />
             </div>
             <div>
@@ -233,13 +233,13 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 step="any"
                 value={buildingArea}
                 onChange={(e) => setBuildingArea(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
               />
             </div>
           </div>
 
           {/* Currency and exchange rate */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2">
+          <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-line rounded-2xl space-y-2">
             <span className="font-bold text-slate-800 dark:text-slate-200 block">واحد اسعار و نرخ صرافی:</span>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -272,7 +272,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                   step="any"
                   value={exchangeRate}
                   onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 70)}
-                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 font-mono font-bold text-xs text-slate-900 dark:text-white"
+                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface font-mono font-bold text-xs text-ink"
                 />
               </div>
             </div>
@@ -284,7 +284,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               type="text"
               value={landInfo}
               onChange={(e) => setLandInfo(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
             />
           </div>
 
@@ -294,12 +294,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs text-ink"
             />
           </div>
 
           {/* Action buttons */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="pt-3 border-t border-line flex items-center justify-between">
             {currentUser?.role === 'admin' ? (
               <button
                 type="button"

@@ -132,11 +132,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
-                  <span className="font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-sm">
+                  <span className="font-extrabold tracking-tight text-ink text-sm">
                     {currentUser?.companyName || appSettings.companyName || t.appName}
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 leading-tight">
+                <p className="text-[10px] text-ink-muted line-clamp-1 leading-tight">
                   {appSettings.companySubtitle || t.appSubtitle}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-                className="flex items-center space-x-2 rtl:space-x-reverse bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/70 text-slate-800 dark:text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="flex items-center space-x-2 rtl:space-x-reverse bg-surface-2 hover:bg-slate-200/70 text-slate-800 dark:text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-line transition-colors"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></div>
                 <span className="max-w-[110px] sm:max-w-[170px] truncate font-bold">
@@ -157,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {projectDropdownOpen && (
-                <div className="absolute top-full mt-1.5 start-0 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-full mt-1.5 start-0 w-72 bg-surface rounded-2xl shadow-2xl border border-line py-1.5 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-3 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                     {t.myBuildings}
                   </div>
@@ -181,7 +181,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
                     </button>
                   ))}
-                  <div className="border-t border-slate-100 dark:border-slate-800 mt-1 pt-1">
+                  <div className="border-t border-line mt-1 pt-1">
                     <button
                       onClick={() => {
                         setProjectDropdownOpen(false);
@@ -208,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onFocus={() => setSearchFocused(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.searchPlaceholder}
-                className="w-full ps-8 pe-7 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 focus:bg-white dark:focus:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-slate-900 dark:text-white transition-all placeholder:text-slate-400"
+                className="w-full ps-8 pe-7 py-1.5 text-xs bg-surface-2 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 focus:bg-white dark:focus:bg-slate-900 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-ink transition-all placeholder:text-slate-400"
               />
               {searchQuery && (
                 <button 
@@ -221,8 +221,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {searchFocused && searchQuery.trim().length > 0 && (
-              <div className="absolute top-full mt-1.5 start-0 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-50 max-h-96 overflow-y-auto animate-in fade-in zoom-in-95">
-                <div className="px-3 py-1 text-[11px] font-bold text-slate-400 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-1">
+              <div className="absolute top-full mt-1.5 start-0 w-full bg-surface rounded-2xl shadow-2xl border border-line py-2 z-50 max-h-96 overflow-y-auto animate-in fade-in zoom-in-95">
+                <div className="px-3 py-1 text-[11px] font-bold text-slate-400 flex items-center justify-between border-b border-line pb-1.5 mb-1">
                   <span>یافت شده ({totalResultsCount})</span>
                 </div>
                 {totalResultsCount === 0 ? (
@@ -265,7 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className={`flex items-center space-x-1.5 rtl:space-x-reverse px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 isGoogleDriveConnected
                   ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 shadow-2xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                  : 'bg-surface-2 text-slate-700 dark:text-slate-300 border-line hover:bg-slate-200'
               }`}
               title={isGoogleDriveConnected ? 'Google Drive متصل است' : 'اتصال به Google Drive'}
             >
@@ -287,7 +287,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {quickAddOpen && (
-                <div className="absolute top-full mt-1.5 end-0 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-full mt-1.5 end-0 w-56 bg-surface rounded-2xl shadow-2xl border border-line py-1.5 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     {t.quickActions}
                   </div>
@@ -358,7 +358,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={() => openCameraForCapture()}
               title={t.captureWithCamera}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-line transition-colors"
             >
               <Camera className="w-4 h-4 text-amber-700 dark:text-amber-400" />
             </button>
@@ -368,7 +368,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                className="flex items-center space-x-1.5 rtl:space-x-reverse px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/70 border border-slate-200 dark:border-slate-700 transition-colors"
+                className="flex items-center space-x-1.5 rtl:space-x-reverse px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-surface-2 hover:bg-slate-200/70 border border-line transition-colors"
               >
                 <Globe className="w-3.5 h-3.5 text-slate-500" />
                 <span>
@@ -377,7 +377,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
               {langDropdownOpen && (
-                <div className="absolute top-full mt-1.5 end-0 w-36 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-full mt-1.5 end-0 w-36 bg-surface rounded-2xl shadow-2xl border border-line py-1 z-50 animate-in fade-in zoom-in-95">
                   <button
                     onClick={() => { setLanguage('en'); setLangDropdownOpen(false); }}
                     className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${language === 'en' ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
@@ -425,7 +425,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors border shadow-2xs ${
                   isGoogleDriveConnected
                     ? 'text-blue-800 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800'
-                    : 'text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                    : 'text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 border-line'
                 }`}
               >
                 <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -438,7 +438,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={cycleThemeSchedule}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-ink dark:hover:text-white bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors border border-line"
             >
               {appSettings.darkMode ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
             </button>
@@ -448,7 +448,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center space-x-1.5 rtl:space-x-reverse px-2 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/70 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 transition-colors"
+                className="flex items-center space-x-1.5 rtl:space-x-reverse px-2 py-1.5 rounded-xl text-xs font-semibold bg-surface-2 hover:bg-slate-200/70 border border-line text-slate-800 dark:text-slate-200 transition-colors"
               >
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${
                   currentUser?.role === 'admin' ? 'bg-rose-600' : currentUser?.role === 'accountant' ? 'bg-amber-600' : 'bg-slate-600'
@@ -465,14 +465,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute top-full mt-1.5 end-0 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-50 animate-in fade-in zoom-in-95">
-                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="absolute top-full mt-1.5 end-0 w-64 bg-surface rounded-2xl shadow-2xl border border-line py-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="px-4 py-2 border-b border-line">
                     <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{currentUser?.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{currentUser?.email}</p>
                   </div>
 
                   {(currentUser?.role === 'admin' || currentUser?.isMasterSuperAdmin) && !currentUser?.ownerAdminId && (
-                    <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <div className="px-4 py-2.5 border-b border-line">
                       <div className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 flex items-center space-x-1 rtl:space-x-reverse">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>{t.role}</span>
@@ -480,19 +480,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="grid grid-cols-3 gap-1">
                         <button
                           onClick={() => { switchUserRole('admin'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'admin' ? 'bg-rose-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'admin' ? 'bg-rose-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
                         >
                           Admin
                         </button>
                         <button
                           onClick={() => { switchUserRole('accountant'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'accountant' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'accountant' ? 'bg-amber-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
                         >
                           Accountant
                         </button>
                         <button
                           onClick={() => { switchUserRole('viewer'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'viewer' ? 'bg-slate-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'viewer' ? 'bg-slate-700 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
                         >
                           Viewer
                         </button>
@@ -507,7 +507,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setUserDropdownOpen(false);
                           setActiveTab('users');
                         }}
-                        className="w-full text-start px-4 py-2.5 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center space-x-2 rtl:space-x-reverse font-bold transition-colors border-b border-slate-100 dark:border-slate-800"
+                        className="w-full text-start px-4 py-2.5 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center space-x-2 rtl:space-x-reverse font-bold transition-colors border-b border-line"
                       >
                         <Users className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>مدیریت کارمندان</span>
@@ -517,7 +517,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           setUserDropdownOpen(false);
                           setActiveTab('settings');
                         }}
-                        className="w-full text-start px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center space-x-2 rtl:space-x-reverse font-bold transition-colors border-b border-slate-100 dark:border-slate-800"
+                        className="w-full text-start px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center space-x-2 rtl:space-x-reverse font-bold transition-colors border-b border-line"
                       >
                         <Sliders className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>{t.companySettings}</span>
@@ -543,7 +543,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenMobileMenu}
-                className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-200 bg-surface-2 border border-line"
               >
                 <Menu className="w-5 h-5" />
               </button>

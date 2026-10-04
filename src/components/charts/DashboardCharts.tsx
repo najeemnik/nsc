@@ -68,12 +68,12 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 animate-pulse">
+      <div className="bg-surface rounded-3xl p-5 sm:p-6 border border-line shadow-xs space-y-4 animate-pulse">
         <div className="flex justify-between items-center">
           <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl" />
           <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl" />
         </div>
-        <div className="h-64 bg-slate-100 dark:bg-slate-800/60 rounded-2xl" />
+        <div className="h-64 bg-surface-2/60 rounded-2xl" />
       </div>
     );
   }
@@ -136,20 +136,20 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
     apartments.length === 0;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+    <div className="bg-surface rounded-3xl p-4 sm:p-6 border border-line shadow-xs transition-colors">
       
       {/* Header with Title and Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-4 border-b border-line">
         <div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <BarChart3 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              <h2 className="text-sm sm:text-base font-black text-ink tracking-tight">
                 نمودارها و تحلیل زنده هوشمند
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-ink-muted">
                 گراف‌های آماری پیشرفت مالی، مصارف، بدهی‌ها و فروشات {projectName}
               </p>
             </div>
@@ -164,7 +164,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
               activeTab === 'overview'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-surface-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             تراز کل
@@ -175,7 +175,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
               activeTab === 'expenses_payments'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-surface-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             تفکیک مصارف
@@ -186,7 +186,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
               activeTab === 'debts'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-surface-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             طلبکاران
@@ -197,7 +197,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
               activeTab === 'sales'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-surface-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             فروش آپارتمان
@@ -208,7 +208,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
               activeTab === 'materials'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-surface-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             سیخ و کانکریت
@@ -225,7 +225,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
             داده‌ای برای رسم نمودار موجود نیست
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-4">
+          <p className="text-xs text-ink-muted max-w-md mx-auto mb-4">
             با ثبت اولین مصارف، فاکتورهای سیخ، کانکریت یا فروش آپارتمان، گراف‌های تحلیلی فوراً فعال می‌شوند.
           </p>
         </div>
@@ -235,13 +235,13 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
           {/* TAB 1: OVERVIEW & CASHFLOW */}
           {activeTab === 'overview' && (
             <div className="space-y-5">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                   <div className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Scale className="w-4 h-4 text-amber-500" />
                     <span>تراز درآمدی، مصارف و وضعیت پرداختی‌ها</span>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-3 text-[11px] text-ink-muted">
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
                       <span>وصول فروشات</span>
@@ -326,7 +326,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-ink-muted">
                     تراز نقدی پروژه (عواید وصول شده منفی کل پرداختی‌ها):
                   </span>
                   <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
           {/* TAB 2: EXPENSES & PAYMENTS */}
           {activeTab === 'expenses_payments' && (
             <div className="space-y-5">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 text-amber-500" />
@@ -430,8 +430,8 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                               <span>{cat.name}</span>
                             </span>
                             <div className="flex items-center gap-2 font-mono">
-                              <span className="text-slate-500 dark:text-slate-400 text-[11px]">{share}%</span>
-                              <span className="font-bold text-slate-900 dark:text-slate-100">${cat.amount.toLocaleString()}</span>
+                              <span className="text-ink-muted text-[11px]">{share}%</span>
+                              <span className="font-bold text-ink">${cat.amount.toLocaleString()}</span>
                             </div>
                           </div>
                           <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
@@ -452,7 +452,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
           {/* TAB 3: DEBTS */}
           {activeTab === 'debts' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4 text-rose-500" />
@@ -463,7 +463,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                   </span>
                 </div>
                 <div className="space-y-3">
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-surface border border-line/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                         <Layers className="w-4 h-4" />
@@ -479,7 +479,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-surface border border-line/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                         <CircleDot className="w-4 h-4" />
@@ -495,7 +495,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-surface border border-line/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                         <HardHat className="w-4 h-4" />
@@ -511,7 +511,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-surface border border-line/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                         <Truck className="w-4 h-4" />
@@ -534,7 +534,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
           {/* TAB 4: APARTMENT SALES */}
           {activeTab === 'sales' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Home className="w-4 h-4 text-emerald-500" />

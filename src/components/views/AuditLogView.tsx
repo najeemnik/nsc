@@ -29,11 +29,11 @@ export const AuditLogView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <History className="w-6 h-6 text-teal-600 dark:text-teal-400" />
             <span>{t('systemAuditLogs') || 'System Audit Trail & History'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {t('auditLogsDesc') || 'Immutable record of all accounting transactions, data edits, deletions and cloud backups'}
           </p>
         </div>
@@ -60,7 +60,7 @@ export const AuditLogView: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+      <div className="p-4 rounded-2xl bg-surface border border-line">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -68,16 +68,16 @@ export const AuditLogView: React.FC = () => {
             placeholder={t('searchLogs') || 'Search action, user, or entity...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-3xl border border-line shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+            <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
                 <th className="py-3.5 px-4">{t('timestamp') || 'Timestamp'}</th>
                 <th className="py-3.5 px-4">{t('user') || 'Operator'}</th>

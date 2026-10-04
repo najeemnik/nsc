@@ -192,10 +192,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 dark:border-slate-800 my-auto animate-in fade-in zoom-in-95">
+      <div className="bg-surface rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <Building2 className="w-5 h-5" />
@@ -215,13 +215,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Step tabs */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs">
+        <div className="flex border-b border-line bg-slate-50 dark:bg-slate-800 text-xs">
           <button
             type="button"
             onClick={() => setActiveStep('info')}
             className={`flex-1 py-3 px-4 text-center font-bold border-b-2 transition-all ${
               activeStep === 'info'
-                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-white dark:bg-slate-900'
+                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-surface'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -232,7 +232,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
             onClick={() => setActiveStep('expenses')}
             className={`flex-1 py-3 px-4 text-center font-bold border-b-2 transition-all flex items-center justify-center gap-1.5 ${
               activeStep === 'expenses'
-                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-white dark:bg-slate-900'
+                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-surface'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -244,7 +244,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
             onClick={() => setActiveStep('partners')}
             className={`flex-1 py-3 px-4 text-center font-bold border-b-2 transition-all flex items-center justify-center gap-1.5 ${
               activeStep === 'partners'
-                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-white dark:bg-slate-900'
+                ? 'border-amber-500 text-amber-800 dark:text-amber-300 bg-surface'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -278,7 +278,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     placeholder="مثال: کابل پلازا"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
                 <div>
@@ -290,7 +290,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     placeholder="مثال: KP-18"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
                   />
                 </div>
               </div>
@@ -306,7 +306,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     placeholder="کابل / هرات / مزار"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
                 <div>
@@ -319,7 +319,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     placeholder="مثال: شهر نو، چهارراهی انصاری"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
               </div>
@@ -335,7 +335,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     required
                     value={floors}
                     onChange={(e) => setFloors(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
                 <div>
@@ -348,7 +348,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     required
                     value={units}
                     onChange={(e) => setUnits(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
                 <div>
@@ -360,13 +360,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     step="any"
                     value={buildingArea}
                     onChange={(e) => setBuildingArea(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
               </div>
 
               {/* Currency & Exchange Rate Default */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-line rounded-2xl space-y-2">
                 <span className="font-bold text-slate-800 dark:text-slate-200 block">واحد اسعار پیش‌فرض پروژه:</span>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -399,7 +399,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                       step="any"
                       value={exchangeRate}
                       onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 70)}
-                      className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold text-xs"
+                      className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink font-mono font-bold text-xs"
                     />
                   </div>
                 </div>
@@ -412,7 +412,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                   placeholder="سند شرعی قباله، متراژ زمین..."
                   value={landInfo}
                   onChange={(e) => setLandInfo(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
 
@@ -441,7 +441,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
               <div className="space-y-3">
                 {generalExpenses.map((expense, idx) => (
-                  <div key={expense.id} className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div key={expense.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-line space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                         <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px]">
@@ -465,7 +465,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                       placeholder="عنوان مصرف (مثلاً کرایه موتر خاکبرداری...)"
                       value={expense.title}
                       onChange={(e) => handleUpdateExpenseRow(expense.id, 'title', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink text-xs"
                     />
 
                     <div className="grid grid-cols-2 gap-2.5">
@@ -478,12 +478,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                             placeholder="0"
                             value={expense.amount || ''}
                             onChange={(e) => handleUpdateExpenseRow(expense.id, 'amount', parseFloat(e.target.value) || 0)}
-                            className="w-full ps-3 pe-12 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-xs text-slate-900 dark:text-white"
+                            className="w-full ps-3 pe-12 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-xs text-ink"
                           />
                           <button
                             type="button"
                             onClick={() => handleUpdateExpenseRow(expense.id, 'currency', expense.currency === 'USD' ? 'AFN' : 'USD')}
-                            className="absolute end-1.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-black bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 border"
+                            className="absolute end-1.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-black bg-surface-2 hover:bg-slate-200 text-slate-800 dark:text-slate-200 border"
                           >
                             {expense.currency === 'USD' ? 'دالر ($)' : 'افغانی'}
                           </button>
@@ -496,7 +496,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           placeholder="توضیح اختیاری..."
                           value={expense.notes || ''}
                           onChange={(e) => handleUpdateExpenseRow(expense.id, 'notes', e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white"
+                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs text-ink"
                         />
                       </div>
                     </div>
@@ -513,7 +513,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 <span>+ افزودن ردیف مصرف دیگر</span>
               </button>
 
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-3 border-t border-line flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setActiveStep('info')}
@@ -559,7 +559,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
               <div className="space-y-3">
                 {initialPartners.map((partner, index) => (
-                  <div key={partner.id} className="p-3 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2.5 shadow-xs">
+                  <div key={partner.id} className="p-3 bg-white dark:bg-slate-800 border border-line rounded-2xl space-y-2.5 shadow-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-amber-600" />
@@ -584,7 +584,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           placeholder="مثلاً: حاجی ظاهر"
                           value={partner.name}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'name', e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-bold text-ink"
                         />
                       </div>
                       <div>
@@ -594,7 +594,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           placeholder="مثال: 0799123456"
                           value={partner.phone}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'phone', e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-mono text-slate-900 dark:text-white"
+                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono text-ink"
                         />
                       </div>
                     </div>
@@ -610,12 +610,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                             placeholder="مثال: 100000"
                             value={partner.initialInvestment}
                             onChange={(e) => handleUpdatePartnerRow(partner.id, 'initialInvestment', e.target.value === '' ? '' : parseFloat(e.target.value))}
-                            className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                            className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono font-bold text-ink"
                           />
                           <select
                             value={partner.currency}
                             onChange={(e) => handleUpdatePartnerRow(partner.id, 'currency', e.target.value)}
-                            className="border border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-[10px] font-bold px-1.5 text-slate-900 dark:text-white"
+                            className="border border-slate-300 dark:border-slate-700 rounded-xl bg-surface-2 text-[10px] font-bold px-1.5 text-ink"
                           >
                             <option value="AFN">AFN</option>
                             <option value="USD">USD</option>
@@ -632,7 +632,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           placeholder="مثلاً: 50"
                           value={partner.sharePercentage}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'sharePercentage', e.target.value === '' ? '' : parseFloat(e.target.value))}
-                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                          className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono font-bold text-ink"
                         />
                       </div>
                     </div>
@@ -649,7 +649,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 <span>+ افزودن شریک دیگر</span>
               </button>
 
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-3 border-t border-line flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setActiveStep('expenses')}

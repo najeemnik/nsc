@@ -186,10 +186,10 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <Home className="w-5 h-5" />
@@ -218,8 +218,8 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
             </div>
           )}
           
-          <div className="bg-slate-50 dark:bg-slate-850 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-            <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b border-slate-200/80 dark:border-slate-700 pb-2">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-line space-y-3">
+            <div className="font-bold text-ink text-xs flex items-center gap-1.5 border-b border-slate-200/80 dark:border-slate-700 pb-2">
               <Building className="w-4 h-4 text-amber-600" />
               <span>مشخصات ساختمانی واحد</span>
             </div>
@@ -235,7 +235,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                   placeholder="مثال: 301 یا A-4"
                   value={unitNumber}
                   onChange={(e) => setUnitNumber(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 text-xs"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20 text-xs"
                 />
               </div>
               <div>
@@ -249,7 +249,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                   required
                   value={floor}
                   onChange={(e) => setFloor(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 text-xs"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20 text-xs"
                 />
               </div>
               <div>
@@ -263,7 +263,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                   placeholder="120"
                   value={areaM2}
                   onChange={(e) => setAreaM2(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 text-xs"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20 text-xs"
                 />
               </div>
             </div>
@@ -276,7 +276,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                 <select
                   value={buildingSection}
                   onChange={(e) => setBuildingSection(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-semibold text-ink"
                 >
                   {SECTION_OPTIONS.map(opt => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -300,7 +300,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                 <select
                   value={unitType}
                   onChange={(e) => setUnitType(e.target.value as UnitType)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-semibold text-ink"
                 >
                   <option value="apartment">آپارتمان رهایشی</option>
                   <option value="penthouse">پنت‌هاوس (طبقه آخر)</option>
@@ -312,9 +312,9 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-850 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-line space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 pb-2">
-              <span className="font-bold text-slate-900 dark:text-white text-xs">وضعیت فروش و قیمت‌گذاری</span>
+              <span className="font-bold text-ink text-xs">وضعیت فروش و قیمت‌گذاری</span>
               <div className="flex items-center gap-1">
                 {(['sold', 'available', 'reserved'] as ApartmentStatus[]).map((st) => (
                   <button
@@ -351,7 +351,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
             <div className="flex justify-between items-center text-[11px] px-2 text-slate-600 dark:text-slate-400">
               <span>قیمت فی متر مربع:</span>
-              <span className="font-mono font-bold text-slate-900 dark:text-white">
+              <span className="font-mono font-bold text-ink">
                 ${finalPricePerM2USD.toLocaleString()} / m²
               </span>
             </div>
@@ -359,7 +359,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
           {(status === 'sold' || status === 'reserved') && (
             <div className="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/90 dark:border-amber-800 space-y-3 animate-in fade-in">
-              <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b border-amber-200 dark:border-amber-800 pb-2">
+              <div className="font-bold text-ink text-xs flex items-center gap-1.5 border-b border-amber-200 dark:border-amber-800 pb-2">
                 <User className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                 <span>مشخصات خریدار و پیش‌پرداخت</span>
               </div>
@@ -375,7 +375,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                     placeholder="مثال: حاجی عبدالهادی"
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink text-xs"
                   />
                 </div>
                 <div>
@@ -387,7 +387,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                     placeholder="0799123456"
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-mono text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono text-ink"
                   />
                 </div>
               </div>
@@ -402,7 +402,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                     placeholder="جلد و صفحه یا الکترونیکی"
                     value={buyerTazkira}
                     onChange={(e) => setBuyerTazkira(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs text-ink"
                   />
                 </div>
                 <div>
@@ -413,13 +413,13 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                     type="date"
                     value={contractDate}
                     onChange={(e) => setContractDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-mono text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono text-ink"
                   />
                 </div>
               </div>
 
-              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-amber-300 dark:border-amber-700 space-y-1.5">
-                <label className="block font-bold text-slate-900 dark:text-white">
+              <div className="p-2.5 bg-surface rounded-xl border border-amber-300 dark:border-amber-700 space-y-1.5">
+                <label className="block font-bold text-ink">
                   پیش‌پرداخت دریافت شده ({currency === 'USD' ? 'دالر $' : 'افغانی'})
                 </label>
                 <input
@@ -428,7 +428,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                   placeholder="20000"
                   value={downPayment}
                   onChange={(e) => setDownPayment(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-900"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-emerald-800 dark:text-emerald-400 bg-surface"
                 />
               </div>
             </div>
@@ -441,11 +441,11 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               placeholder="توضیحات قرارداد یا نحوه اقساط..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs bg-surface text-ink"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-slate-200 dark:border-slate-800">
+          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-line">
             <button
               type="button"
               onClick={onClose}

@@ -252,10 +252,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-full sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-full sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <Receipt className="w-5 h-5" />
@@ -285,8 +285,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
           )}
 
           {/* Section 1: Item & Materials & Units */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/90 dark:border-slate-700 space-y-3">
-            <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center justify-between">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 space-y-3">
+            <div className="font-bold text-ink text-xs flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-amber-600" />
                 <span>مشخصات جنس و واحد (Item & Unit)</span>
@@ -305,7 +305,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 placeholder="مثلاً: ۱۰ تن سیخ ۱۶، ۵۰۰ بوجی سمنت، ۱۰۰ موتر خاک..."
                 value={item}
                 onChange={(e) => setItem(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
               />
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {QUICK_ITEM_SUGGESTIONS.slice(0, 5).map((sugg) => (
@@ -318,7 +318,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                       if (sugg.includes('Cement') || sugg.includes('سمنت')) setUnit('bag');
                       if (sugg.includes('Concrete') || sugg.includes('کانکریت')) setUnit('m3');
                     }}
-                    className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-400 text-slate-600 dark:text-slate-300 text-[10px] transition-colors"
+                    className="px-2 py-0.5 rounded-lg bg-surface border border-line hover:border-amber-400 text-slate-600 dark:text-slate-300 text-[10px] transition-colors"
                   >
                     + {sugg.split(' ')[0]}
                   </button>
@@ -338,7 +338,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   placeholder="مثال: 10 یا 500"
                   value={quantity}
                   onChange={(e) => handleQuantityChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
               <div>
@@ -348,7 +348,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 <select
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
                 >
                   {AVAILABLE_UNITS.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -362,7 +362,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     placeholder="واحد دلخواه..."
                     value={customUnit}
                     onChange={(e) => setCustomUnit(e.target.value)}
-                    className="mt-1.5 w-full px-3 py-1.5 border border-amber-300 dark:border-amber-600 rounded-xl text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold"
+                    className="mt-1.5 w-full px-3 py-1.5 border border-amber-300 dark:border-amber-600 rounded-xl text-xs bg-surface text-ink font-bold"
                   />
                 )}
               </div>
@@ -376,7 +376,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   placeholder="فی واحد"
                   value={unitPrice}
                   onChange={(e) => handleUnitPriceChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
             </div>
@@ -387,7 +387,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   <ArrowRightLeft className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                   <span>تبدیل خودکار استاندارد:</span>
                 </span>
-                <span className="font-mono font-bold text-amber-800 dark:text-amber-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded shadow-2xs">
+                <span className="font-mono font-bold text-amber-800 dark:text-amber-300 bg-surface px-2 py-0.5 rounded shadow-2xs">
                   {conversionResult.explanation}
                 </span>
               </div>
@@ -419,7 +419,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 focus:bg-white text-xs font-mono text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-canvas focus:bg-white text-xs font-mono text-ink"
               />
             </div>
             <div>
@@ -432,7 +432,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 required
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 focus:bg-white text-xs font-mono text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-canvas focus:bg-white text-xs font-mono text-ink"
               />
             </div>
             <div>
@@ -444,13 +444,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 placeholder="بل نمبر #401"
                 value={billNumber}
                 onChange={(e) => setBillNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
               />
             </div>
           </div>
 
           {/* Section 3: Supplier / Vendor Selection */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/90 dark:border-slate-700 space-y-2">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
               <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-amber-600" />
@@ -471,13 +471,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 placeholder="نام فروشنده یا شرکت..."
                 value={partyName}
                 onChange={(e) => setPartyName(e.target.value)}
-                className="w-full px-3 py-2 border border-amber-300 dark:border-amber-600 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-amber-300 dark:border-amber-600 rounded-xl bg-surface font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
               />
             ) : (
               <select
                 value={partyName}
                 onChange={(e) => setPartyName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
               >
                 <option value="">-- انتخاب فروشنده ({projectSuppliers.length}) --</option>
                 {projectSuppliers.map((s) => (
@@ -511,13 +511,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   placeholder="نام دسته دلخواه..."
                   value={customCategoryText}
                   onChange={(e) => setCustomCategoryText(e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-400 dark:border-amber-600 rounded-xl bg-amber-50/30 dark:bg-slate-950 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-amber-400 dark:border-amber-600 rounded-xl bg-amber-50/30 dark:bg-slate-950 text-ink font-bold focus:ring-2 focus:ring-amber-500/20"
                 />
               ) : (
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
                 >
                   {COMMON_CATEGORIES.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -536,7 +536,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 placeholder="توضیحات فاکتور..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
           </div>
@@ -559,7 +559,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'credit'
                     ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 قرضداری کامل
@@ -570,7 +570,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'cash'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 نقدی کامل
@@ -581,7 +581,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'installment'
                     ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 مقداری نقدی و باقیمانده قرض
@@ -599,7 +599,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     step="any"
                     value={paidAmountInput}
                     onChange={(e) => setPaidAmountInput(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono text-emerald-800 dark:text-emerald-400 font-bold"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono text-emerald-800 dark:text-emerald-400 font-bold"
                   />
                 </div>
                 <div>
@@ -609,7 +609,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                   >
                     <option value="Cash">نقد (Cash)</option>
                     <option value="Bank">انتقال بانکی (Bank)</option>
@@ -647,7 +647,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 )}
               </label>
               <div className="flex items-center gap-2">
-                <label className="flex-1 cursor-pointer flex items-center justify-center space-x-1.5 rtl:space-x-reverse px-3 py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl bg-slate-50 dark:bg-slate-800 transition-colors text-xs text-slate-600 dark:text-slate-300 font-bold">
+                <label className="flex-1 cursor-pointer flex items-center justify-center space-x-1.5 rtl:space-x-reverse px-3 py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl bg-surface-2 transition-colors text-xs text-slate-600 dark:text-slate-300 font-bold">
                   <Upload className="w-4 h-4 text-slate-500" />
                   <span>{documentUrl ? 'عکس انتخاب شد' : 'انتخاب فایل از دستگاه'}</span>
                   <input
@@ -663,7 +663,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     title: `بل خرید: ${item || category}`,
                     amount: parsedAmount || undefined,
                   })}
-                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center gap-1 text-xs"
+                  className="px-3 py-2 bg-surface-2 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center gap-1 text-xs"
                   title="کمره زنده"
                 >
                   <Camera className="w-4 h-4 text-amber-600" />
@@ -680,14 +680,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 placeholder="توضیحات و شرایط..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
           </div>
 
           {/* Actions & Submit */}
-          <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-t border-slate-100 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-t border-line">
+            <div className="text-[11px] text-ink-muted font-medium">
               وضعیت در سیستم: <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{settlementMode === 'credit' ? 'قرضداری کامل' : settlementMode === 'installment' ? 'پرداخت قسمی' : 'تسویه شده'}</span>
             </div>
             <div className="flex items-center space-x-2 rtl:space-x-reverse w-full sm:w-auto">

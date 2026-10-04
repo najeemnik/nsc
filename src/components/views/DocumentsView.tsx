@@ -81,11 +81,11 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <FileCheck2 className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
             <span>{t('projectDocuments') || 'Engineering Blueprints & Documents'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {currentProject?.name} • {t('documentsDesc') || 'Store architectural plans, municipal permits, soil tests, contracts, and backup on Google Drive'}
           </p>
         </div>
@@ -110,7 +110,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
       </div>
 
       {/* Search and Filters */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-surface border border-line flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -118,14 +118,14 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
             placeholder={t('searchDocuments') || 'Search blueprint, permit, contract...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+            className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
           />
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none"
+          className="px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none"
         >
           <option value="all">{t('allCategories') || 'All Categories'}</option>
           {categories.map(c => (
@@ -139,7 +139,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
         {filteredDocs.map(doc => (
           <div 
             key={doc.id}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+            className="p-6 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -148,7 +148,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{doc.title}</h3>
+                    <h3 className="font-bold text-sm text-ink line-clamp-1">{doc.title}</h3>
                     <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">{doc.category}</p>
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
               </div>
 
               {doc.notes && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                <p className="text-xs text-ink-muted mb-4 line-clamp-2">
                   {doc.notes}
                 </p>
               )}
@@ -174,7 +174,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div className="pt-4 border-t border-line flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 {doc.fileUrl && (
                   <a
