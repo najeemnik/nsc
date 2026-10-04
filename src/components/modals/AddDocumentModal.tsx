@@ -49,8 +49,8 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 my-8">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white">
+      <div className="bg-surface rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-line my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <FileCheck2 className="w-5 h-5 text-amber-400" />
             <h3 className="font-extrabold text-sm">{t.uploadDocument}</h3>
@@ -69,7 +69,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               placeholder="مثلاً: تست لابراتوار مقاومت ۲۸ روزه کانکریت"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -79,7 +79,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as DocumentCategory)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               >
                 <option value="permits">{t.docPermits}</option>
                 <option value="drawings">{t.docDrawings}</option>
@@ -97,7 +97,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
           </div>
@@ -110,7 +110,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               placeholder="در صورتی که بل مالی است، مبلغ را بنویسید"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -138,7 +138,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 

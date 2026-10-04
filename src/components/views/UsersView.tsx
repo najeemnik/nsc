@@ -69,11 +69,11 @@ export const UsersView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <span>{t('staffManagement') || 'Staff & User Access Management'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {t('staffManagementDesc') || 'Control roles, permissions, accountants, site engineers, and viewers'}
           </p>
         </div>
@@ -89,8 +89,8 @@ export const UsersView: React.FC = () => {
 
       {/* Add User Form */}
       {isAdding && (
-        <form onSubmit={handleAdd} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg space-y-4">
-          <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-2">{t('createNewUser') || 'Create New Staff Account'}</h3>
+        <form onSubmit={handleAdd} className="p-6 rounded-3xl bg-surface border border-line shadow-lg space-y-4">
+          <h3 className="font-bold text-sm text-ink mb-2">{t('createNewUser') || 'Create New Staff Account'}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('fullName') || 'Full Name'} *</label>
@@ -100,7 +100,7 @@ export const UsersView: React.FC = () => {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Ahmad Tariq"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               />
             </div>
 
@@ -112,7 +112,7 @@ export const UsersView: React.FC = () => {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="e.g. tariq_nik"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               />
             </div>
 
@@ -124,7 +124,7 @@ export const UsersView: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               />
             </div>
 
@@ -133,7 +133,7 @@ export const UsersView: React.FC = () => {
               <select
                 value={role}
                 onChange={e => setRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               >
                 <option value="accountant">{t('accountant') || 'Accountant / Site Engineer'}</option>
                 <option value="admin">{t('admin') || 'Administrator'}</option>
@@ -148,7 +148,7 @@ export const UsersView: React.FC = () => {
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="+93 70..."
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               />
             </div>
 
@@ -159,7 +159,7 @@ export const UsersView: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="name@gmail.com"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ export const UsersView: React.FC = () => {
         {users.map(u => (
           <div 
             key={u.id}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+            className="p-6 rounded-3xl bg-surface border border-line shadow-sm flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -200,7 +200,7 @@ export const UsersView: React.FC = () => {
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <h3 className="font-bold text-sm text-ink flex items-center gap-1.5">
                       <span>{u.name}</span>
                       {u.isMasterSuperAdmin && (
                         <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold">Owner</span>
@@ -220,7 +220,7 @@ export const UsersView: React.FC = () => {
                 )}
               </div>
 
-              <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400 mb-4">
+              <div className="space-y-2 text-xs text-ink-muted mb-4">
                 <div className="flex justify-between">
                   <span>{t('role')}:</span>
                   <span className="font-bold capitalize text-slate-700 dark:text-slate-200">{u.role}</span>
@@ -240,7 +240,7 @@ export const UsersView: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px] text-slate-400">
+            <div className="pt-3 border-t border-line flex justify-between items-center text-[11px] text-slate-400">
               <span>{t('status') || 'Status'}: Active</span>
               {u.id === currentUser?.id && (
                 <span className="text-blue-600 font-bold">Current Session</span>

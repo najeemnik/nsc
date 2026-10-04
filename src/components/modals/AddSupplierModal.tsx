@@ -81,8 +81,8 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-0 sm:my-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white shrink-0">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Truck className="w-5 h-5 text-amber-400" />
             <h3 className="font-extrabold text-sm">{t.addSupplier}</h3>
@@ -114,7 +114,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                 placeholder="مثلاً: شرکت سیخ‌گول پامیر"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
@@ -125,7 +125,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                 placeholder="مثلاً: سمنت، ریگ، جغله، سیخ"
                 value={materialsSupplied}
                 onChange={(e) => setMaterialsSupplied(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
           </div>
@@ -138,7 +138,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                 placeholder="+93 78 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
@@ -164,7 +164,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                   <button
                     type="button"
                     onClick={() => setShowRateInput(!showRateInput)}
-                    className="px-1.5 py-0.5 text-[10px] font-bold border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    className="px-1.5 py-0.5 text-[10px] font-bold border border-slate-300 dark:border-slate-600 rounded bg-surface text-slate-700 dark:text-slate-200"
                   >
                     ۱$={exchangeRate}
                   </button>
@@ -179,7 +179,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                     step="any"
                     value={exchangeRate}
                     onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 70)}
-                    className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-amber-400 rounded text-center text-slate-900 dark:text-white"
+                    className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold bg-surface border border-amber-400 rounded text-center text-ink"
                   />
                   <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">افغانی</span>
                   <button
@@ -198,7 +198,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                 min="0"
                 value={initialPurchases}
                 onChange={(e) => setInitialPurchases(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
               />
             </div>
           </div>
@@ -210,7 +210,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
               placeholder="مثلاً: شماره حساب بانک ملی یا صرافی حاجی برات"
               value={bankOrSarafiDetails}
               onChange={(e) => setBankOrSarafiDetails(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -220,11 +220,11 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-line">
             <button
               type="button"
               onClick={onClose}

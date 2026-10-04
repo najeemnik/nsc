@@ -183,15 +183,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Total Expenses Card */}
         <div 
           onClick={() => setActiveTab && setActiveTab('expenses')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="p-5 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('totalExpenses')}</span>
+            <span className="text-xs font-semibold text-ink-muted">{t('totalExpenses')}</span>
             <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition">
               <Receipt className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <div className="text-xl sm:text-2xl font-black text-ink">
             {formatCurrency(totalExpenseUSD, 'USD')}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs text-rose-500">
@@ -203,15 +203,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Total Payments Made */}
         <div 
           onClick={() => setActiveTab && setActiveTab('payments')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="p-5 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('totalPaid')}</span>
+            <span className="text-xs font-semibold text-ink-muted">{t('totalPaid')}</span>
             <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition">
               <CreditCard className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <div className="text-xl sm:text-2xl font-black text-ink">
             {formatCurrency(totalPaidUSD, 'USD')}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-500">
@@ -223,15 +223,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Remaining Debt/Liabilities */}
         <div 
           onClick={() => setActiveTab && setActiveTab('contractors')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="p-5 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('remainingLiabilities')}</span>
+            <span className="text-xs font-semibold text-ink-muted">{t('remainingLiabilities')}</span>
             <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <div className="text-xl sm:text-2xl font-black text-ink">
             {formatCurrency(totalDebtUSD, 'USD')}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-500">
@@ -243,15 +243,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Steel & Concrete Quick Metric */}
         <div 
           onClick={() => setActiveTab && setActiveTab('steel')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="p-5 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('steelRebar')} / {t('concrete')}</span>
+            <span className="text-xs font-semibold text-ink-muted">{t('steelRebar')} / {t('concrete')}</span>
             <div className="p-2.5 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition">
               <Layers className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center justify-between">
+          <div className="text-lg sm:text-xl font-black text-ink flex items-center justify-between">
             <span>{formatNumber(totalSteelTons, 1)} {t('ton')}</span>
             <span className="text-xs text-slate-400 font-normal">|</span>
             <span>{formatNumber(totalConcreteM3, 1)} m³</span>
@@ -269,7 +269,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Recent Activity / Recent Bills & Payments Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Expenses / Bills */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-6 rounded-3xl bg-surface border border-line shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 rounded-xl">
@@ -291,7 +291,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {projectExpenses.slice(0, 5).map(exp => (
               <div 
                 key={exp.id}
-                className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 text-xs"
+                className="p-3.5 rounded-2xl bg-surface-2/50 border border-line flex items-center justify-between gap-3 text-xs"
               >
                 <div className="min-w-0">
                   <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{exp.title}</p>
@@ -315,7 +315,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Recent Payments */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-6 rounded-3xl bg-surface border border-line shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl">
@@ -337,7 +337,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {projectPayments.slice(0, 5).map(pay => (
               <div 
                 key={pay.id}
-                className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 text-xs"
+                className="p-3.5 rounded-2xl bg-surface-2/50 border border-line flex items-center justify-between gap-3 text-xs"
               >
                 <div className="min-w-0">
                   <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{pay.recipientName}</p>

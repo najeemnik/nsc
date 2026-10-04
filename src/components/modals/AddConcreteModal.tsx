@@ -140,10 +140,10 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-full sm:max-w-xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-full sm:max-w-xl max-h-[92vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
               <CircleDot className="w-5 h-5" />
@@ -179,7 +179,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 type="text"
                 value={billNumber}
                 onChange={(e) => setBillNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
               />
             </div>
             <div>
@@ -192,7 +192,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
               />
             </div>
           </div>
@@ -205,7 +205,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
               placeholder="مثلاً: شرکت کانکریت پامیر / آسیا"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-bold"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
             />
           </div>
 
@@ -215,7 +215,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
               <select
                 value={concreteGrade}
                 onChange={(e) => setConcreteGrade(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold"
               >
                 <option value="3000 PSI / C25">3000 PSI (C25)</option>
                 <option value="4000 PSI / C30">4000 PSI (C30)</option>
@@ -230,7 +230,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 placeholder="پایه‌ها، سقف منزل سوم، تهداب..."
                 value={elementPoured}
                 onChange={(e) => setElementPoured(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 required
                 value={quantityM3}
                 onChange={(e) => setQuantityM3(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
               />
             </div>
             <div>
@@ -254,7 +254,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 step="any"
                 value={pumpChargeInput}
                 onChange={(e) => setPumpChargeInput(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
               />
             </div>
           </div>
@@ -271,13 +271,13 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
             placeholder="85"
           />
 
-          <div className="p-3 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-between">
+          <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-line rounded-2xl flex items-center justify-between">
             <span className="font-bold text-slate-700 dark:text-slate-300">{t.totalAmount}:</span>
             <div className="text-end font-mono">
-              <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
+              <span className="text-sm font-extrabold text-ink block">
                 ${totalCalculatedUSD.toLocaleString()}
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] text-ink-muted">
                 معادل: {(totalCalculatedUSD * exchangeRate).toLocaleString()} افغانی
               </span>
             </div>
@@ -294,7 +294,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'cash'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {t.settlementCash}
@@ -305,7 +305,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'credit'
                     ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {t.settlementCredit}
@@ -316,7 +316,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 className={`py-2 px-2 rounded-xl font-bold text-xs transition-all ${
                   settlementMode === 'installment'
                     ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                    : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {t.settlementInstallment}
@@ -333,7 +333,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                   step="any"
                   value={paidAmountInput}
                   onChange={(e) => setPaidAmountInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 font-mono text-emerald-800 dark:text-emerald-400 font-bold"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono text-emerald-800 dark:text-emerald-400 font-bold"
                 />
               </div>
             )}
@@ -356,7 +356,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 type="number"
                 value={mixerCount}
                 onChange={(e) => setMixerCount(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
               />
             </div>
             <div>
@@ -366,13 +366,13 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 placeholder="..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
               />
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-2 flex items-center justify-end space-x-2 rtl:space-x-reverse border-t border-line">
             <button
               type="button"
               onClick={onClose}

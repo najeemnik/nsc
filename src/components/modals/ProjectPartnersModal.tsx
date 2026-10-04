@@ -258,10 +258,10 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 dark:border-slate-800 my-auto animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh]">
+      <div className="bg-surface rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-bold">
               <Users className="w-5 h-5" />
@@ -293,23 +293,23 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
         </div>
 
         {/* Top Summary Cards */}
-        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-850/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/60 border-b border-line shrink-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             
             {/* Total Capital */}
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+            <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-xs">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">مجموع سرمایه واریز شده:</span>
+                <span className="text-[11px] font-bold text-ink-muted">مجموع سرمایه واریز شده:</span>
                 <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="space-y-0.5">
                 {totalStats.totalAFN > 0 && (
-                  <div className="font-mono text-base font-black text-slate-900 dark:text-white">
+                  <div className="font-mono text-base font-black text-ink">
                     {totalStats.totalAFN.toLocaleString()} <span className="text-xs font-sans font-bold text-emerald-700 dark:text-emerald-400">افغانی</span>
                   </div>
                 )}
                 {totalStats.totalUSD > 0 && (
-                  <div className="font-mono text-base font-black text-slate-900 dark:text-white">
+                  <div className="font-mono text-base font-black text-ink">
                     ${totalStats.totalUSD.toLocaleString()} <span className="text-xs font-sans font-bold text-blue-700 dark:text-blue-400">دالر</span>
                   </div>
                 )}
@@ -320,13 +320,13 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
             </div>
 
             {/* Total Allocated Share % */}
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+            <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-xs">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">مجموع سهام تعیین‌شده:</span>
+                <span className="text-[11px] font-bold text-ink-muted">مجموع سهام تعیین‌شده:</span>
                 <PieChart className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="font-mono text-2xl font-black text-slate-900 dark:text-white">
+                <span className="font-mono text-2xl font-black text-ink">
                   {totalStats.totalShare}%
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -354,10 +354,10 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
             </div>
 
             {/* Partners Count & Quick Action */}
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">تعداد شرکا و تراکنش‌ها:</span>
-                <div className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="text-[11px] font-bold text-ink-muted block mb-1">تعداد شرکا و تراکنش‌ها:</span>
+                <div className="font-extrabold text-sm text-ink flex items-center gap-2">
                   <span>{totalStats.partnerCount} شریک</span>
                   <span>•</span>
                   <span>{totalStats.investmentCount} واریزی</span>
@@ -379,7 +379,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 text-xs shrink-0">
+        <div className="flex border-b border-line bg-surface px-6 text-xs shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('partners')}
@@ -413,13 +413,13 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
           {activeTab === 'partners' && (
             <div className="space-y-4 animate-in fade-in">
               {currentPartners.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="p-8 text-center bg-surface-2/40 rounded-2xl border border-line space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
                     <Users className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">هیچ شریکی برای این پروژه ثبت نشده است</h4>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                    <h4 className="font-extrabold text-ink text-sm">هیچ شریکی برای این پروژه ثبت نشده است</h4>
+                    <p className="text-ink-muted text-xs mt-1">
                       می‌توانید اشخاص و شرکا را به همراه درصد سهم و سرمایه‌گذاری اولیه در اینجا تعریف کنید.
                     </p>
                   </div>
@@ -439,14 +439,14 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   {partnersSummary.map((partner) => (
                     <div 
                       key={partner.id}
-                      className="bg-white dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-amber-400/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                      className="bg-surface/80 p-4 rounded-2xl border border-line hover:border-amber-400/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                     >
                       <div>
                         {/* Top Name and Share Badge */}
                         <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-700">
                           <div>
-                            <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">{partner.name}</h4>
-                            <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                            <h4 className="font-extrabold text-ink text-sm">{partner.name}</h4>
+                            <div className="flex items-center gap-3 text-ink-muted text-[11px] mt-0.5">
                               {partner.phone && (
                                 <span className="flex items-center gap-1">
                                   <Phone className="w-3 h-3 text-slate-400" />
@@ -538,7 +538,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
             <div className="space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">دفتر روزنامچه واریزی‌های سرمایه</h4>
+                  <h4 className="font-extrabold text-ink text-xs sm:text-sm">دفتر روزنامچه واریزی‌های سرمایه</h4>
                   <p className="text-[11px] text-slate-500">تمامی مبالغ نقد، صرافی و بانکی واریز شده توسط شرکا به صورت تفکیک‌شده ثبت می‌شود.</p>
                 </div>
                 <button
@@ -552,15 +552,15 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
               </div>
 
               {currentInvestments.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="p-8 text-center bg-surface-2/40 rounded-2xl border border-line space-y-2">
                   <Receipt className="w-8 h-8 text-slate-400 mx-auto" />
                   <p className="font-bold text-slate-700 dark:text-slate-300">هیچ واریزی سرمایه‌ای تا اکنون ثبت نشده است.</p>
                 </div>
               ) : (
-                <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-slate-800">
+                <div className="border border-line rounded-2xl overflow-hidden shadow-xs bg-surface">
                   <div className="overflow-x-auto">
                     <table className="w-full text-start text-xs">
-                      <thead className="bg-slate-100 dark:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                      <thead className="bg-slate-100 dark:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold border-b border-line">
                         <tr>
                           <th className="py-2.5 px-3 text-start">تاریخ</th>
                           <th className="py-2.5 px-3 text-start">نام شریک / واریزکننده</th>
@@ -578,10 +578,10 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                             <td className="py-2 px-3 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
                               {inv.date}
                             </td>
-                            <td className="py-2 px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                            <td className="py-2 px-3 font-bold text-ink whitespace-nowrap">
                               {inv.partnerName}
                             </td>
-                            <td className="py-2 px-3 font-mono font-black text-slate-900 dark:text-white whitespace-nowrap">
+                            <td className="py-2 px-3 font-mono font-black text-ink whitespace-nowrap">
                               <span className="text-emerald-700 dark:text-emerald-400">{inv.amount.toLocaleString()}</span>{' '}
                               <span className="text-[10px] text-slate-500 font-sans font-bold">{inv.currency}</span>
                             </td>
@@ -636,7 +636,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex justify-end shrink-0">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-line flex justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -650,11 +650,11 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
       {/* SUB-MODAL 1: Add/Edit Partner */}
       {isPartnerFormOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="bg-surface rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-line shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-amber-600" />
-                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                <h4 className="font-extrabold text-sm text-ink">
                   {editingPartner ? 'ویرایش مشخصات شریک' : 'افزودن شریک جدید به پروژه'}
                 </h4>
               </div>
@@ -682,7 +682,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   placeholder="مثلاً: حاجی محمد نادر"
                   value={partnerName}
                   onChange={(e) => setPartnerName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-bold"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
                 />
               </div>
 
@@ -694,7 +694,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="مثال: 0799123456"
                     value={partnerPhone}
                     onChange={(e) => setPartnerPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
                   />
                 </div>
                 <div>
@@ -704,7 +704,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="مثال: 1402-8877"
                     value={partnerNationalId}
                     onChange={(e) => setPartnerNationalId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
                   />
                 </div>
               </div>
@@ -720,7 +720,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="مثلاً: 50"
                     value={partnerShare}
                     onChange={(e) => setPartnerShare(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono font-bold"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono font-bold"
                   />
                 </div>
 
@@ -734,7 +734,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                       placeholder="مثلاً: 100000"
                       value={partnerInitialInv}
                       onChange={(e) => setPartnerInitialInv(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500/20 font-mono font-bold"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono font-bold"
                     />
                   </div>
                 )}
@@ -746,7 +746,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   <select
                     value={partnerCurrency}
                     onChange={(e) => setPartnerCurrency(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-surface text-ink"
                   >
                     <option value="AFN">افغانی (AFN)</option>
                     <option value="USD">دالر (USD $)</option>
@@ -758,7 +758,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     type="date"
                     value={partnerDate}
                     onChange={(e) => setPartnerDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
                   />
                 </div>
               </div>
@@ -770,11 +770,11 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   placeholder="شرایط توافق یا یادداشت شراکت..."
                   value={partnerNotes}
                   onChange={(e) => setPartnerNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="pt-2 flex justify-end gap-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsPartnerFormOpen(false)}
@@ -797,11 +797,11 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
       {/* SUB-MODAL 2: Add/Edit Investment */}
       {isInvestmentFormOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="bg-surface rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-line shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-emerald-600" />
-                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                <h4 className="font-extrabold text-sm text-ink">
                   {editingInvestment ? 'ویرایش واریزی سرمایه' : 'ثبت واریزی جدید توسط شریک'}
                 </h4>
               </div>
@@ -828,7 +828,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   required
                   value={selectedPartnerId}
                   onChange={(e) => setSelectedPartnerId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-surface text-ink"
                 >
                   {currentPartners.map(p => (
                     <option key={p.id} value={p.id}>
@@ -852,7 +852,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="مثال: 50000"
                     value={invAmount}
                     onChange={(e) => setInvAmount(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -860,7 +860,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   <select
                     value={invCurrency}
                     onChange={(e) => setInvCurrency(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold bg-surface text-ink"
                   >
                     <option value="AFN">افغانی (AFN)</option>
                     <option value="USD">دالر (USD $)</option>
@@ -876,7 +876,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     required
                     value={invDate}
                     onChange={(e) => setInvDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
                   />
                 </div>
                 <div>
@@ -884,7 +884,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   <select
                     value={invType}
                     onChange={(e) => setInvType(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
                   >
                     <option value="additional">واریز سهم / مرحله جدید</option>
                     <option value="initial">سرمایه اولیه</option>
@@ -900,7 +900,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="نقد، حساب بانکی، صرافی..."
                     value={invMethod}
                     onChange={(e) => setInvMethod(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
                   />
                 </div>
                 <div>
@@ -910,7 +910,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                     placeholder="مثال: REC-9920"
                     value={invReceipt}
                     onChange={(e) => setInvReceipt(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
                   />
                 </div>
               </div>
@@ -922,11 +922,11 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   placeholder="توضیحات واریزی..."
                   value={invNotes}
                   onChange={(e) => setInvNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="pt-2 flex justify-end gap-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsInvestmentFormOpen(false)}
@@ -949,13 +949,13 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
       {/* SUB-MODAL 3: Delete Partner Confirmation */}
       {partnerToDelete && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl text-xs">
+          <div className="bg-surface rounded-3xl max-w-sm w-full p-5 space-y-3 border border-line shadow-2xl text-xs">
             <div className="flex items-center gap-2.5 text-rose-600">
               <AlertTriangle className="w-5 h-5 shrink-0" />
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">حذف شریک</h4>
+              <h4 className="font-extrabold text-sm text-ink">حذف شریک</h4>
             </div>
             <p className="text-slate-600 dark:text-slate-300">
-              آیا از حذف شریک <strong className="text-slate-900 dark:text-white">"{partnerToDelete.name}"</strong> اطمینان دارید؟
+              آیا از حذف شریک <strong className="text-ink">"{partnerToDelete.name}"</strong> اطمینان دارید؟
             </p>
             <div className="pt-2 flex justify-end gap-2">
               <button
@@ -983,13 +983,13 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
       {/* SUB-MODAL 4: Delete Investment Confirmation */}
       {investmentToDelete && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl text-xs">
+          <div className="bg-surface rounded-3xl max-w-sm w-full p-5 space-y-3 border border-line shadow-2xl text-xs">
             <div className="flex items-center gap-2.5 text-rose-600">
               <AlertTriangle className="w-5 h-5 shrink-0" />
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">حذف تراکنش سرمایه</h4>
+              <h4 className="font-extrabold text-sm text-ink">حذف تراکنش سرمایه</h4>
             </div>
             <p className="text-slate-600 dark:text-slate-300">
-              آیا از حذف واریزی <strong className="text-slate-900 dark:text-white">{investmentToDelete.amount.toLocaleString()} {investmentToDelete.currency}</strong> از {investmentToDelete.partnerName} اطمینان دارید؟
+              آیا از حذف واریزی <strong className="text-ink">{investmentToDelete.amount.toLocaleString()} {investmentToDelete.currency}</strong> از {investmentToDelete.partnerName} اطمینان دارید؟
             </p>
             <div className="pt-2 flex justify-end gap-2">
               <button

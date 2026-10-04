@@ -109,8 +109,8 @@ export const CameraModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+      <div className="bg-surface rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-line">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-canvas">
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
             <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
               <Camera className="w-5 h-5" />
@@ -178,7 +178,7 @@ export const CameraModal: React.FC = () => {
                 value={billTitle}
                 onChange={(e) => setBillTitle(e.target.value)}
                 placeholder="مثال: بل سیخ‌گول کابل استیل #492"
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export const CameraModal: React.FC = () => {
                 value={billAmount}
                 onChange={(e) => setBillAmount(e.target.value)}
                 placeholder="مثلاً: 35000"
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ export const CameraModal: React.FC = () => {
           />
         </div>
 
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-canvas border-t border-line flex items-center justify-between">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

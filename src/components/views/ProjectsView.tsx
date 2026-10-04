@@ -66,11 +66,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>{t('buildingProjects') || 'Building Projects'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {t('manageProjectsDesc') || 'Manage multi-story buildings, residential complexes, and commercial towers'}
           </p>
         </div>
@@ -85,12 +85,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit text-xs">
+      <div className="flex items-center gap-2 p-1.5 bg-surface-2/80 rounded-2xl w-fit text-xs">
         <button
           onClick={() => setFilter('all')}
           className={`px-3 py-1.5 rounded-xl font-medium transition ${
             filter === 'all' 
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' 
+              ? 'bg-surface text-ink shadow-sm' 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -100,7 +100,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onClick={() => setFilter('active')}
           className={`px-3 py-1.5 rounded-xl font-medium transition ${
             filter === 'active' 
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' 
+              ? 'bg-surface text-ink shadow-sm' 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -110,7 +110,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onClick={() => setFilter('completed')}
           className={`px-3 py-1.5 rounded-xl font-medium transition ${
             filter === 'completed' 
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' 
+              ? 'bg-surface text-ink shadow-sm' 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -120,7 +120,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onClick={() => setFilter('on_hold')}
           className={`px-3 py-1.5 rounded-xl font-medium transition ${
             filter === 'on_hold' 
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' 
+              ? 'bg-surface text-ink shadow-sm' 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -136,10 +136,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <div
               key={project.id}
               onClick={() => setCurrentProjectId(project.id)}
-              className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border transition cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
+              className={`p-6 rounded-3xl bg-surface border transition cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
                 isSelected 
                   ? 'border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-500/20 shadow-lg' 
-                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-md'
+                  : 'border-line hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-md'
               }`}
             >
               {isSelected && (
@@ -155,7 +155,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       <Building2 className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                      <h3 className="font-bold text-base text-ink group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
                         {project.name}
                       </h3>
                       {project.code && (
@@ -185,7 +185,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   )}
                 </div>
 
-                <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400 mb-6">
+                <div className="space-y-2 text-xs text-ink-muted mb-6">
                   {project.address && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -206,7 +206,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2" onClick={e => e.stopPropagation()}>
+              <div className="pt-4 border-t border-line flex items-center justify-between gap-2" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5">
                   {onOpenTransfer && (
                     <button

@@ -75,14 +75,14 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
   if (!isApartmentsUnlocked) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl text-center">
+        <div className="max-w-md w-full bg-surface rounded-3xl p-8 border border-line shadow-xl text-center">
           <div className="w-16 h-16 bg-fuchsia-50 dark:bg-fuchsia-950/50 text-fuchsia-600 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+          <h2 className="text-xl font-bold text-ink mb-2">
             {t('apartmentsProtected') || 'Apartment Sales & Clients Section'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+          <p className="text-xs text-ink-muted mb-6">
             {t('apartmentsPasswordDesc') || 'This section contains sensitive client data and sales revenues. Enter master security PIN to proceed.'}
           </p>
 
@@ -93,8 +93,8 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
                 placeholder={t('enterPassword') || 'Enter Security PIN (e.g. 1234)'}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className={`w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-center text-sm font-bold tracking-widest focus:outline-none ${
-                  passwordError ? 'border-rose-500' : 'border-slate-200 dark:border-slate-700'
+                className={`w-full px-4 py-3 bg-surface-2 border rounded-2xl text-center text-sm font-bold tracking-widest focus:outline-none ${
+                  passwordError ? 'border-rose-500' : 'border-line'
                 }`}
                 autoFocus
               />
@@ -131,11 +131,11 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <Home className="w-6 h-6 text-fuchsia-600 dark:text-fuchsia-400" />
             <span>{t('apartmentsAndSales') || 'Apartment Units & Sales Portfolio'}</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             {currentProject?.name} • {soldUnits}/{totalUnits} {t('unitsSold') || 'Units Sold'}
           </p>
         </div>
@@ -161,19 +161,19 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('totalSalesContract') || 'Total Sales Contract'}</span>
-          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{formatCurrency(totalSalesRevenueUSD, 'USD')}</p>
+          <p className="text-xl font-black text-ink mt-1">{formatCurrency(totalSalesRevenueUSD, 'USD')}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('cashReceived') || 'Cash Received'}</span>
           <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{formatCurrency(totalCashCollectedUSD, 'USD')}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('receivableInstallments') || 'Pending Installments'}</span>
           <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">{formatCurrency(totalUnpaidInstallmentsUSD, 'USD')}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm">
           <span className="text-xs text-slate-400 font-medium">{t('occupancyRate') || 'Sales Status'}</span>
           <p className="text-xl font-black text-fuchsia-600 dark:text-fuchsia-400 mt-1">
             {totalUnits ? Math.round((soldUnits / totalUnits) * 100) : 0}%
@@ -182,7 +182,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
       </div>
 
       {/* Search and Filter */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-surface border border-line flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -190,14 +190,14 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
             placeholder={t('searchApartments') || 'Search unit #, floor, buyer name...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-fuchsia-500/20"
+            className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-fuchsia-500/20"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e: any) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none"
+          className="px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none"
         >
           <option value="all">{t('allApartments') || 'All Units'}</option>
           <option value="available">{t('available') || 'Available for Sale'}</option>
@@ -211,7 +211,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
         {filteredApartments.map(apt => (
           <div 
             key={apt.id}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+            className="p-6 rounded-3xl bg-surface border border-line shadow-sm hover:shadow-md transition flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -220,7 +220,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
                     <Home className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    <h3 className="font-bold text-base text-ink">
                       {t('apartmentUnit') || 'Unit'} {apt.unitNumber}
                     </h3>
                     <p className="text-xs text-slate-400">
@@ -241,10 +241,10 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
               </div>
 
               {/* Price Details */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2 text-xs mb-4">
+              <div className="p-3.5 rounded-2xl bg-surface-2/50 border border-line space-y-2 text-xs mb-4">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('totalPrice') || 'Total Price'}:</span>
-                  <span className="font-black text-slate-900 dark:text-white">{formatCurrency(apt.totalPriceUSD, 'USD')}</span>
+                  <span className="font-black text-ink">{formatCurrency(apt.totalPriceUSD, 'USD')}</span>
                 </div>
 
                 {apt.status === 'sold' && (
@@ -253,7 +253,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
                       <span>{t('paidAmount') || 'Collected'}:</span>
                       <span className="font-bold">{formatCurrency((apt.downPaymentUSD || 0) + (apt.paidAmountUSD || 0), 'USD')}</span>
                     </div>
-                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-semibold pt-1 border-t border-slate-200 dark:border-slate-700/60">
+                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-semibold pt-1 border-t border-line/60">
                       <span>{t('remainingDue') || 'Remaining'}:</span>
                       <span>{formatCurrency(Math.max(0, (apt.totalPriceUSD || 0) - (apt.downPaymentUSD || 0) - (apt.paidAmountUSD || 0)), 'USD')}</span>
                     </div>
@@ -263,7 +263,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
 
               {/* Buyer info if sold */}
               {apt.buyerName && (
-                <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4 p-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl">
+                <div className="space-y-1.5 text-xs text-ink-muted mb-4 p-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl">
                   <div className="flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="font-medium text-slate-800 dark:text-slate-200">{apt.buyerName}</span>

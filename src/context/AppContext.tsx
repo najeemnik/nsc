@@ -456,6 +456,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   });
 
+  // Persist app settings (theme, dark mode, branding, rates, ...) so the
+  // anti-FOUC script in index.html and the next visit can restore them.
+  useEffect(() => { saveToStorage('appSettings', appSettings); }, [appSettings]);
+
   useEffect(() => {
     if (appSettings.themeSchedule === 'auto') {
       const isNight = !isCurrentTimeDay();
@@ -492,13 +496,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'theme-metalmorphism',
       'theme-ar-morphism'
     ];
+    // Stored theme values map to CSS hook classes (note: 'ar_morphism' → 'theme-ar-morphism')
+    const themeClassMap: Record<string, string> = {
+      glassmorphism: 'theme-glassmorphism',
+      neumorphism: 'theme-neumorphism',
+      skeuomorphism: 'theme-skeuomorphism',
+      squirclemorphism: 'theme-squirclemorphism',
+      metalmorphism: 'theme-metalmorphism',
+      ar_morphism: 'theme-ar-morphism',
+      'ar-morphism': 'theme-ar-morphism',
+    };
     document.documentElement.classList.remove(...morphismClasses);
-    const activeClass = `theme-${appSettings.theme || 'glassmorphism'}`;
-    if (morphismClasses.includes(activeClass)) {
-      document.documentElement.classList.add(activeClass);
-    } else {
-      document.documentElement.classList.add('theme-glassmorphism');
-    }
+    const activeClass = themeClassMap[appSettings.theme || 'glassmorphism'] || 'theme-glassmorphism';
+    document.documentElement.classList.add(activeClass);
   }, [appSettings.theme]);
 
   // Section protection
