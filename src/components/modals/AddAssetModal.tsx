@@ -12,7 +12,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { currentProject, projects, formatCurrency, t, language } = useApp();
+  const { currentProject, projects, formatCurrency, t, language, addAsset } = useApp();
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
   const [assetName, setAssetName] = useState('');
   const [assetCode, setAssetCode] = useState(`AST-${Date.now().toString().slice(-4)}`);
@@ -68,15 +68,40 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const cost = parseFloat(purchasePrice) || 0;
+      const salvage = parseFloat(salvageValue) || 0;
+      const life = parseFloat(usefulLifeYears) || 5;
+      const mDeprec = life > 0 ? (cost - salvage) / (life * 12) : 0;
+
+      addAsset({
+        assetTag: assetCode.trim(),
+        name: assetName.trim(),
+        category,
+        assignedProjectId: projectId || undefined,
+        purchaseDate,
+        purchaseCost: cost,
+        salvageValue: salvage,
+        usefulLifeYears: life,
+        monthlyDepreciation: Math.round(mDeprec),
+        accumulatedDepreciation: 0,
+        currentBookValue: cost,
+        runningHours: 0,
+        hourlyOperatingRate: 20,
+        serialNumber: serialNumber.trim() || undefined,
+        assignedPerson: assignedTo.trim() || undefined,
+        status: 'active',
+        notes: notes.trim() || undefined,
+      });
+
       await backendApi.recordAsset({
         projectId: projectId || undefined,
         assetCode: assetCode.trim(),
         name: assetName.trim(),
         category,
         purchaseDate,
-        purchasePrice: parseFloat(purchasePrice) || 0,
-        salvageValue: parseFloat(salvageValue) || 0,
-        usefulLifeYears: parseFloat(usefulLifeYears) || 5,
+        purchasePrice: cost,
+        salvageValue: salvage,
+        usefulLifeYears: life,
         depreciationMethod: 'straight_line',
         serialNumber: serialNumber.trim() || undefined,
         assignedTo: assignedTo.trim() || undefined,

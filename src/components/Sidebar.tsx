@@ -26,7 +26,8 @@ import {
   ShieldCheck,
   Cloud,
   Wallet,
-  UserCheck
+  UserCheck,
+  Wrench
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -182,6 +183,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
           borderColorDark: 'dark:border-blue-500/30',
           activeGradient: 'from-blue-600 to-indigo-600',
           activeShadow: 'shadow-blue-500/35'
+        } : null),
+        (enabled.assets !== false ? { 
+          id: 'assets', 
+          label: t.navAssets, 
+          icon: Wrench,
+          colorName: 'amber',
+          iconColor: 'text-amber-600 dark:text-amber-300',
+          iconBgLight: 'bg-amber-500/15',
+          iconBgDark: 'dark:bg-amber-500/25',
+          borderColorLight: 'border-amber-200',
+          borderColorDark: 'dark:border-amber-500/30',
+          activeGradient: 'from-amber-600 to-orange-600',
+          activeShadow: 'shadow-amber-500/35'
         } : null),
       ].filter(Boolean) as NavItemConfig[]
     },

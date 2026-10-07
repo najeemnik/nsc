@@ -20,6 +20,7 @@ import { ConcreteView } from './components/views/ConcreteView';
 import { ContractorsView } from './components/views/ContractorsView';
 import { LaborView } from './components/views/LaborView';
 import { SuppliersView } from './components/views/SuppliersView';
+import { AssetsView } from './components/views/AssetsView';
 import { ApartmentsView } from './components/views/ApartmentsView';
 import { PaymentsView } from './components/views/PaymentsView';
 import { DocumentsView } from './components/views/DocumentsView';
@@ -248,6 +249,12 @@ function MainApp() {
                 <SuppliersView 
                   onOpenAddSupplier={() => setIsAddSupplierOpen(true)}
                   onOpenAddPayment={handleOpenPaymentForPayee}
+                />
+              )}
+
+              {activeTab === 'assets' && (
+                <AssetsView 
+                  onOpenAddAsset={() => setIsAddAssetOpen(true)}
                 />
               )}
 

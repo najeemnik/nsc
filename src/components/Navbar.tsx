@@ -285,32 +285,56 @@ export const Navbar: React.FC<NavbarProps> = ({
             {(() => {
               const actionHandlers: Record<string, (() => void) | undefined> = {
                 income: onOpenAddIncome,
+                addIncome: onOpenAddIncome,
                 material: onOpenAddMaterial,
+                addMaterial: onOpenAddMaterial,
                 labor: onOpenAddLabor,
+                addLabor: onOpenAddLabor,
                 transfer: onOpenAddTransfer,
+                addTransfer: onOpenAddTransfer,
                 petty_cash: onOpenAddPettyCash,
+                addPettyCash: onOpenAddPettyCash,
                 asset: onOpenAddAsset,
+                addAsset: onOpenAddAsset,
                 expense: onOpenAddExpense,
+                addExpense: onOpenAddExpense,
                 steel: onOpenAddSteel,
+                addSteel: onOpenAddSteel,
                 concrete: onOpenAddConcrete,
+                addConcrete: onOpenAddConcrete,
                 payment: onOpenAddPayment,
+                addPayment: onOpenAddPayment,
                 apartment: onOpenAddApartment,
+                addApartment: onOpenAddApartment,
                 contractor: onOpenAddContractor,
+                addContractor: onOpenAddContractor,
               };
 
               const actionIcons: Record<string, any> = {
                 income: Coins,
+                addIncome: Coins,
                 material: Truck,
+                addMaterial: Truck,
                 labor: UserCheck,
+                addLabor: UserCheck,
                 transfer: ArrowLeftRight,
+                addTransfer: ArrowLeftRight,
                 petty_cash: Wallet,
+                addPettyCash: Wallet,
                 asset: Scale,
+                addAsset: Scale,
                 expense: Receipt,
+                addExpense: Receipt,
                 steel: Layers,
+                addSteel: Layers,
                 concrete: CircleDot,
+                addConcrete: CircleDot,
                 payment: CreditCard,
+                addPayment: CreditCard,
                 apartment: Home,
+                addApartment: Home,
                 contractor: HardHat,
+                addContractor: HardHat,
               };
 
               const configuredButtons = (currentUser?.customButtonConfig && currentUser.customButtonConfig.length > 0)
@@ -318,13 +342,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : DEFAULT_ACTION_BUTTONS;
 
               const activeQuickButtons = configuredButtons
-                .filter(b => b.isEnabled !== false && actionHandlers[b.actionKey])
+                .filter(b => (b.enabled !== false && (b as any).isEnabled !== false) && (actionHandlers[b.id] || actionHandlers[(b as any).actionKey]))
                 .sort((a, b) => a.order - b.order);
 
               const topButton = activeQuickButtons[0];
               if (!topButton) return null;
-              const handler = actionHandlers[topButton.actionKey];
-              const IconComponent = actionIcons[topButton.actionKey] || Plus;
+              const handler = actionHandlers[topButton.id] || actionHandlers[(topButton as any).actionKey];
+              const IconComponent = actionIcons[topButton.id] || actionIcons[(topButton as any).actionKey] || Plus;
 
               const colorClass = topButton.color === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
                                 topButton.color === 'info' ? 'bg-blue-600 hover:bg-blue-700' :
@@ -369,40 +393,71 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {(() => {
                     const actionHandlers: Record<string, (() => void) | undefined> = {
                       income: onOpenAddIncome,
+                      addIncome: onOpenAddIncome,
                       material: onOpenAddMaterial,
+                      addMaterial: onOpenAddMaterial,
                       labor: onOpenAddLabor,
+                      addLabor: onOpenAddLabor,
                       transfer: onOpenAddTransfer,
+                      addTransfer: onOpenAddTransfer,
                       petty_cash: onOpenAddPettyCash,
+                      addPettyCash: onOpenAddPettyCash,
                       asset: onOpenAddAsset,
+                      addAsset: onOpenAddAsset,
                       expense: onOpenAddExpense,
+                      addExpense: onOpenAddExpense,
                       steel: onOpenAddSteel,
+                      addSteel: onOpenAddSteel,
                       concrete: onOpenAddConcrete,
+                      addConcrete: onOpenAddConcrete,
                       payment: onOpenAddPayment,
+                      addPayment: onOpenAddPayment,
                       apartment: onOpenAddApartment,
+                      addApartment: onOpenAddApartment,
                       contractor: onOpenAddContractor,
+                      addContractor: onOpenAddContractor,
                     };
 
                     const actionIcons: Record<string, any> = {
                       income: Coins,
+                      addIncome: Coins,
                       material: Truck,
+                      addMaterial: Truck,
                       labor: UserCheck,
+                      addLabor: UserCheck,
                       transfer: ArrowLeftRight,
+                      addTransfer: ArrowLeftRight,
                       petty_cash: Wallet,
+                      addPettyCash: Wallet,
                       asset: Scale,
+                      addAsset: Scale,
                       expense: Receipt,
+                      addExpense: Receipt,
                       steel: Layers,
+                      addSteel: Layers,
                       concrete: CircleDot,
+                      addConcrete: CircleDot,
                       payment: CreditCard,
+                      addPayment: CreditCard,
                       apartment: Home,
+                      addApartment: Home,
                       contractor: HardHat,
+                      addContractor: HardHat,
                     };
 
                     const iconColorClasses: Record<string, string> = {
                       primary: 'text-amber-600',
+                      amber: 'text-amber-600',
                       success: 'text-emerald-600',
+                      emerald: 'text-emerald-600',
                       danger: 'text-rose-600',
+                      rose: 'text-rose-600',
                       warning: 'text-orange-500',
+                      orange: 'text-orange-500',
                       info: 'text-blue-600',
+                      blue: 'text-blue-600',
+                      indigo: 'text-indigo-600',
+                      purple: 'text-purple-600',
                       slate: 'text-slate-600',
                     };
 
@@ -411,13 +466,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                       : DEFAULT_ACTION_BUTTONS;
 
                     const activeQuickButtons = configuredButtons
-                      .filter(b => b.isEnabled !== false && actionHandlers[b.actionKey])
+                      .filter(b => (b.enabled !== false && (b as any).isEnabled !== false) && (actionHandlers[b.id] || actionHandlers[(b as any).actionKey]))
                       .sort((a, b) => a.order - b.order);
 
                     return activeQuickButtons.map(btn => {
-                      const handler = actionHandlers[btn.actionKey];
-                      const IconComponent = actionIcons[btn.actionKey] || Plus;
+                      const handler = actionHandlers[btn.id] || actionHandlers[(btn as any).actionKey];
+                      const IconComponent = actionIcons[btn.id] || actionIcons[(btn as any).actionKey] || Plus;
                       const iconColor = iconColorClasses[btn.color] || 'text-amber-600';
+                      const label = (btn as any).labelFa || btn.label || btn.id;
 
                       return (
                         <button
@@ -430,7 +486,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         >
                           <IconComponent className={`w-4 h-4 ${iconColor} shrink-0`} />
                           <span className="truncate">
-                            {language === 'en' ? btn.labelEn : btn.labelFa}
+                            {label}
                           </span>
                         </button>
                       );

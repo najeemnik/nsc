@@ -132,6 +132,7 @@ export const DEFAULT_ACTION_BUTTONS: CustomActionButton[] = [
   { id: 'addContractor', label: 'قراردادی جدید', enabled: true, color: 'orange', shape: 'rounded-xl', order: 9 },
   { id: 'addTransfer', label: 'حواله پروژه‌ای', enabled: true, color: 'purple', shape: 'rounded-xl', order: 10 },
   { id: 'addPettyCash', label: 'تنخواه کارگاه', enabled: true, color: 'slate', shape: 'rounded-xl', order: 11 },
+  { id: 'addAsset', label: 'ثبت ماشین‌آلات', enabled: true, color: 'amber', shape: 'rounded-xl', order: 12 },
 ];
 
 export interface CustomBillDesign {
@@ -567,6 +568,28 @@ export interface SystemReminderNotification {
   priority: 1 | 2 | 3 | 4 | 5 | 6 | 7; // 1 = highest (overdue installments)
   actionTab?: string;
   actionPayload?: any;
+}
+
+export interface FixedAsset {
+  id: string;
+  assetTag: string;
+  name: string;
+  category: 'machinery' | 'vehicle' | 'equipment' | 'building' | 'it';
+  assignedProjectId?: string;
+  purchaseDate: string;
+  purchaseCost: number;
+  salvageValue: number;
+  usefulLifeYears: number;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  currentBookValue: number;
+  runningHours?: number;
+  hourlyOperatingRate?: number;
+  serialNumber?: string;
+  assignedPerson?: string;
+  status: 'active' | 'maintenance' | 'idle' | 'disposed';
+  notes?: string;
+  createdAt?: string;
 }
 
 /* ------------------------------------------------------------------------ */

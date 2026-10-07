@@ -32,7 +32,8 @@ import {
   UserActivityEvent,
   CustomBillDesign,
   CustomActionButton,
-  LaborRecord
+  LaborRecord,
+  FixedAsset
 } from '../types';
 import { 
   initialUsers, 
@@ -187,6 +188,10 @@ interface AppContextType {
   laborRecords: LaborRecord[];
   addLaborRecord: (record: Omit<LaborRecord, 'id' | 'createdAt'>) => void;
   deleteLaborRecord: (id: string) => void;
+  assets: FixedAsset[];
+  addAsset: (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => void;
+  updateAsset: (id: string, updates: Partial<FixedAsset>) => void;
+  deleteAsset: (id: string) => void;
   apartments: ApartmentUnit[];
   addApartment: (unit: Omit<ApartmentUnit, 'id' | 'salePrice' | 'remainingBalance' | 'createdAt'> & { salePrice?: number }) => void;
   updateApartment: (id: string, updates: Partial<ApartmentUnit>) => void;
@@ -398,6 +403,94 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   ];
 
+  const initialAssets: FixedAsset[] = [
+    {
+      id: 'ast-1',
+      assetTag: 'AST-101',
+      name: 'تاور کرین ۶۰ متر لیبهر (Liebherr)',
+      category: 'machinery',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-03-15',
+      purchaseCost: 85000,
+      salvageValue: 15000,
+      usefulLifeYears: 8,
+      monthlyDepreciation: 729,
+      accumulatedDepreciation: 21870,
+      currentBookValue: 63130,
+      runningHours: 1420,
+      hourlyOperatingRate: 25,
+      serialNumber: 'LH-60EC-9921',
+      assignedPerson: 'استاد صمد جرثقیل‌ران',
+      status: 'active',
+      notes: 'سرویس دوره‌ای سیم بکسل و هیدرولیک انجام شد',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-2',
+      assetTag: 'AST-102',
+      name: 'پمپ کانکریت هوایی ۳۶ متری شوئینگ',
+      category: 'machinery',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-06-10',
+      purchaseCost: 120000,
+      salvageValue: 20000,
+      usefulLifeYears: 10,
+      monthlyDepreciation: 833,
+      accumulatedDepreciation: 22491,
+      currentBookValue: 97509,
+      runningHours: 980,
+      hourlyOperatingRate: 40,
+      serialNumber: 'SCH-36B-5510',
+      assignedPerson: 'انجنیر حمید پمپ‌چی',
+      status: 'active',
+      notes: 'لوله و بست‌های خروجی در وضعیت عالی',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-3',
+      assetTag: 'AST-103',
+      name: 'دیزل جنراتور ۲۵۰ کاوا کامینز سایلنت',
+      category: 'equipment',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-08-01',
+      purchaseCost: 22000,
+      salvageValue: 4000,
+      usefulLifeYears: 6,
+      monthlyDepreciation: 250,
+      accumulatedDepreciation: 6250,
+      currentBookValue: 15750,
+      runningHours: 2150,
+      hourlyOperatingRate: 15,
+      serialNumber: 'CUM-250S-8812',
+      assignedPerson: 'مسئول برق کارگاه',
+      status: 'active',
+      notes: 'تأمین برق اضطراری و موتور جوش‌ها',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-4',
+      assetTag: 'AST-104',
+      name: 'لفت و بالابر مصالح ۱ تنی کارگاهی',
+      category: 'equipment',
+      assignedProjectId: 'p1',
+      purchaseDate: '2025-01-10',
+      purchaseCost: 7500,
+      salvageValue: 1000,
+      usefulLifeYears: 5,
+      monthlyDepreciation: 108,
+      accumulatedDepreciation: 2160,
+      currentBookValue: 5340,
+      runningHours: 3200,
+      hourlyOperatingRate: 8,
+      serialNumber: 'HST-1T-4029',
+      assignedPerson: 'سرپرست کارگاه',
+      status: 'maintenance',
+      notes: 'تعویض لنت ترمز و میکروسوئیچ ایمنی طبقات',
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const [assets, setAssets] = useState<FixedAsset[]>(() => loadFromStorage('assets', initialAssets));
   const [laborRecords, setLaborRecords] = useState<LaborRecord[]>(() => loadFromStorage('labor', initialLaborRecords));
   const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('payments', initialPayments));
   const [documents, setDocuments] = useState<DocumentRecord[]>(() => loadFromStorage('documents', initialDocuments));
@@ -459,6 +552,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('contractors', contractors); }, [contractors]);
   useEffect(() => { saveToStorage('suppliers', suppliers); }, [suppliers]);
   useEffect(() => { saveToStorage('labor', laborRecords); }, [laborRecords]);
+  useEffect(() => { saveToStorage('assets', assets); }, [assets]);
   useEffect(() => { saveToStorage('apartments', apartments); }, [apartments]);
   useEffect(() => { saveToStorage('payments', payments); }, [payments]);
   useEffect(() => { saveToStorage('documents', documents); }, [documents]);
@@ -2002,6 +2096,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logAudit('delete', 'expense', id, old?.workerName || 'Labor Record', `حذف رکورد معاش کارگری`, undefined, undefined, old?.projectId);
   };
 
+  // Fixed Assets & Heavy Machinery CRUD
+  const addAsset = (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
+    const id = 'ast-' + Date.now();
+    const newAsset: FixedAsset = {
+      ...asset,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setAssets(prev => [newAsset, ...prev]);
+    logAudit('create', 'expense', id, asset.name, `ثبت دارایی ثابت/ماشین‌آلات: ${asset.name} (${asset.assetTag}) - قیمت: $${asset.purchaseCost}`, undefined, undefined, asset.assignedProjectId);
+  };
+
+  const updateAsset = (id: string, updates: Partial<FixedAsset>) => {
+    const old = assets.find(a => a.id === id);
+    setAssets(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
+    logAudit('update', 'expense', id, updates.name || old?.name || 'Asset', `ویرایش مشخصات ماشین‌آلات/دارایی`, undefined, undefined, old?.assignedProjectId);
+  };
+
+  const deleteAsset = (id: string) => {
+    const old = assets.find(a => a.id === id);
+    setAssets(prev => prev.filter(a => a.id !== id));
+    logAudit('delete', 'expense', id, old?.name || 'Asset', `حذف دارایی ثابت/ماشین‌آلات`, undefined, undefined, old?.assignedProjectId);
+  };
+
   // Apartments & Sales CRUD
   const addApartment = (data: Omit<ApartmentUnit, 'id' | 'salePrice' | 'remainingBalance' | 'createdAt'> & { salePrice?: number }) => {
     const pricePerM2 = data.pricePerM2 || (data.salePrice && data.areaM2 ? Math.round(data.salePrice / data.areaM2) : 0);
@@ -2946,6 +3064,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       laborRecords,
       addLaborRecord,
       deleteLaborRecord,
+      assets,
+      addAsset,
+      updateAsset,
+      deleteAsset,
       apartments,
       addApartment,
       updateApartment,

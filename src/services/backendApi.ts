@@ -277,6 +277,10 @@ class BackendApiService {
     });
   }
 
+  public async recordAsset(payload: any) {
+    return this.saveAsset(payload);
+  }
+
   public async getProjectPnl() {
     return this.request<{ pnl: any[] }>('reports.php?type=project_pnl');
   }
