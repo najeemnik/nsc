@@ -228,6 +228,30 @@ export interface ProjectPartner {
   currency: 'USD' | 'AFN' | string;
   investmentDate?: string;
   notes?: string;
+  status?: 'active' | 'exited' | 'transferred';
+  exitDate?: string;
+  exitReason?: string;
+  transferredToPartnerId?: string;
+  transferredToPartnerName?: string;
+  transferPrice?: number;
+  transferCurrency?: 'USD' | 'AFN' | string;
+  createdAt: string;
+}
+
+export interface PartnerEquityTransfer {
+  id: string;
+  projectId: string;
+  fromPartnerId: string;
+  fromPartnerName: string;
+  toPartnerId?: string;
+  toPartnerName: string;
+  transferredPercentage: number;
+  transferPrice: number;
+  currency: 'USD' | 'AFN' | string;
+  transferDate: string;
+  transferType: 'partner_to_partner' | 'new_partner' | 'company_buyout';
+  deedNumber?: string;
+  notes?: string;
   createdAt: string;
 }
 

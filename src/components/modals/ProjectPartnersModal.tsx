@@ -19,6 +19,10 @@ import {
   Printer,
   Scale,
   TrendingUp,
+  ArrowRightLeft,
+  LogOut,
+  UserMinus,
+  ShieldAlert,
   History as HistoryIcon
 } from 'lucide-react';
 
@@ -36,6 +40,8 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
   const { 
     projectPartners, 
     projectInvestments, 
+    partnerEquityTransfers,
+    transferPartnerEquity,
     addProjectPartner, 
     updateProjectPartner, 
     deleteProjectPartner, 
@@ -47,9 +53,23 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
     currentUser
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'partners' | 'investments' | 'distribution'>('partners');
+  const [activeTab, setActiveTab] = useState<'partners' | 'investments' | 'distribution' | 'transfers'>('partners');
   const [distributableProfit, setDistributableProfit] = useState<string>('5000000');
   const [profitCurrency, setProfitCurrency] = useState<'AFN' | 'USD'>('AFN');
+
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferringPartner, setTransferringPartner] = useState<ProjectPartner | null>(null);
+  const [transferType, setTransferType] = useState<'partner_to_partner' | 'new_partner' | 'company_buyout'>('partner_to_partner');
+  const [targetPartnerId, setTargetPartnerId] = useState('');
+  const [targetPartnerName, setTargetPartnerName] = useState('');
+  const [transferPercentage, setTransferPercentage] = useState('');
+  const [transferPrice, setTransferPrice] = useState('');
+  const [transferCurrency, setTransferCurrency] = useState<'AFN' | 'USD' | string>('AFN');
+  const [transferDate, setTransferDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [transferDeedNumber, setTransferDeedNumber] = useState('');
+  const [transferNotes, setTransferNotes] = useState('');
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [printedTransferDeed, setPrintedTransferDeed] = useState<PartnerEquityTransfer | null>(null);
 
   const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<ProjectPartner | null>(null);
@@ -87,6 +107,11 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
     if (!project) return [];
     return projectInvestments.filter(i => i.projectId === project.id);
   }, [projectInvestments, project]);
+
+  const currentTransfers = useMemo(() => {
+    if (!project) return [];
+    return (partnerEquityTransfers || []).filter(t => t.projectId === project.id);
+  }, [partnerEquityTransfers, project]);
 
   const partnersSummary = useMemo(() => {
     return currentPartners.map(partner => {
@@ -262,6 +287,78 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
     setIsInvestmentFormOpen(false);
   };
 
+  const handleOpenTransferModal = (partner: ProjectPartner) => {
+    setTransferringPartner(partner);
+    setTransferType('partner_to_partner');
+    const otherPartner = currentPartners.find(p => p.id !== partner.id && p.status !== 'exited');
+    setTargetPartnerId(otherPartner?.id || '');
+    setTargetPartnerName(otherPartner?.name || '');
+    setTransferPercentage(String(partner.sharePercentage || ''));
+    setTransferPrice('');
+    setTransferCurrency(partner.currency || 'AFN');
+    setTransferDate(new Date().toISOString().split('T')[0]);
+    setTransferDeedNumber(`DEED-${Date.now().toString().slice(-4)}`);
+    setTransferNotes('');
+    setTransferError(null);
+    setIsTransferModalOpen(true);
+  };
+
+  const handleTransferSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transferringPartner || !project) return;
+    setTransferError(null);
+
+    const pct = parseFloat(transferPercentage) || 0;
+    if (pct <= 0 || pct > (transferringPartner.sharePercentage || 0)) {
+      setTransferError(`درصد واگذاری باید بین ۰.۱٪ تا ${transferringPartner.sharePercentage}% باشد.`);
+      return;
+    }
+
+    const price = parseFloat(transferPrice) || 0;
+    if (price < 0) {
+      setTransferError('مبلغ معامله نمی‌تواند منفی باشد.');
+      return;
+    }
+
+    let buyerName = targetPartnerName.trim();
+    let buyerId: string | undefined = undefined;
+
+    if (transferType === 'partner_to_partner') {
+      const existingBuyer = currentPartners.find(p => p.id === targetPartnerId);
+      if (!existingBuyer) {
+        setTransferError('لطفاً شریک خریدار را از لیست انتخاب کنید.');
+        return;
+      }
+      buyerName = existingBuyer.name;
+      buyerId = existingBuyer.id;
+    } else if (transferType === 'company_buyout') {
+      buyerName = 'خزانه شرکت / بازخرید توسط پروژه';
+    } else {
+      if (!buyerName) {
+        setTransferError('لطفاً نام خریدار یا سرمایه‌گذار جدید را بنویسید.');
+        return;
+      }
+    }
+
+    const record = transferPartnerEquity({
+      projectId: project.id,
+      fromPartnerId: transferringPartner.id,
+      fromPartnerName: transferringPartner.name,
+      toPartnerId: buyerId,
+      toPartnerName: buyerName,
+      transferredPercentage: pct,
+      transferPrice: price,
+      currency: transferCurrency,
+      transferDate,
+      transferType,
+      deedNumber: transferDeedNumber.trim() || undefined,
+      notes: transferNotes.trim() || undefined,
+    });
+
+    setPrintedTransferDeed(record);
+    setIsTransferModalOpen(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
       <div className="bg-surface rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95 flex flex-col max-h-[92dvh]">
@@ -422,6 +519,18 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
             <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span>تسهیم سود و تسویه سهم‌الشرکه</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('transfers')}
+            className={`py-3 px-4 font-bold border-b-2 flex items-center gap-2 transition-all ${
+              activeTab === 'transfers'
+                ? 'border-amber-600 text-amber-900 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <ArrowRightLeft className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span>واگذاری سهم و خروج شرکا ({currentTransfers.length})</span>
+          </button>
         </div>
 
         {/* Content Area */}
@@ -463,7 +572,14 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                         {/* Top Name and Share Badge */}
                         <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-700">
                           <div>
-                            <h4 className="font-extrabold text-ink text-sm">{partner.name}</h4>
+                            <h4 className="font-extrabold text-ink text-sm flex items-center gap-2">
+                              <span>{partner.name}</span>
+                              {partner.status === 'exited' && (
+                                <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-700 dark:text-rose-300 font-black text-[10px] border border-rose-500/30">
+                                  خارج‌شده / تسویه کامل
+                                </span>
+                              )}
+                            </h4>
                             <div className="flex items-center gap-3 text-ink-muted text-[11px] mt-0.5">
                               {partner.phone && (
                                 <span className="flex items-center gap-1">
@@ -478,10 +594,21 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                               )}
                             </div>
                           </div>
-                          <span className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-black font-mono text-xs">
+                          <span className={`px-2.5 py-1 rounded-xl border font-black font-mono text-xs ${
+                            partner.status === 'exited'
+                              ? 'bg-slate-100 text-slate-500 border-slate-300 dark:bg-slate-800 dark:text-slate-400'
+                              : 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                          }`}>
                             {partner.sharePercentage !== undefined ? `${partner.sharePercentage}%` : 'بدون سهم مشخص'}
                           </span>
                         </div>
+
+                        {partner.status === 'exited' && (
+                          <div className="p-2 mb-2 bg-rose-50/60 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900/40 rounded-xl text-[11px] text-rose-700 dark:text-rose-300">
+                            <strong>نوت خروج:</strong> {partner.exitReason || `سهم به ${partner.transferredToPartnerName || 'خریدار جدید'} واگذار گردیده است.`}
+                            {partner.exitDate && <span className="block text-[10px] text-slate-400 font-mono mt-0.5">تاریخ خروج: {partner.exitDate}</span>}
+                          </div>
+                        )}
 
                         {/* Financial Figures */}
                         <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl mb-3 border border-slate-100 dark:border-slate-750 text-[11px]">
@@ -513,15 +640,31 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                       </div>
 
                       {/* Bottom Actions */}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenInvestmentForm(partner.id)}
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-bold transition-colors flex items-center gap-1"
-                        >
-                          <Coins className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>+ ثبت واریزی پول</span>
-                        </button>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700 text-[11px] gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          {partner.status !== 'exited' && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenInvestmentForm(partner.id)}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-bold transition-colors flex items-center gap-1"
+                            >
+                              <Coins className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              <span>+ واریزی</span>
+                            </button>
+                          )}
+
+                          {partner.status !== 'exited' && (partner.sharePercentage || 0) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenTransferModal(partner)}
+                              className="px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold transition-colors flex items-center gap-1"
+                              title="فروش یا واگذاری سهم‌الشرکه و خروج از پروژه"
+                            >
+                              <ArrowRightLeft className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>واگذاری سهم / خروج</span>
+                            </button>
+                          )}
+                        </div>
 
                         {currentUser?.role === 'admin' && (
                           <div className="flex items-center gap-1">
@@ -783,6 +926,83 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: Equity Transfers & Partner Exits */}
+          {activeTab === 'transfers' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl">
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs sm:text-sm flex items-center gap-2">
+                    <ArrowRightLeft className="w-4 h-4 text-amber-600" />
+                    <span>دفتر ثبت نقل و انتقال سهام و خروج شرکا (Equity Transfers & Exits)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ثبت قانونی واگذاری سهام شرکا به شرکای موجود، سرمایه‌گذاران جدید یا بازخرید توسط پروژه.
+                  </p>
+                </div>
+              </div>
+
+              {currentTransfers.length === 0 ? (
+                <div className="p-8 text-center bg-surface-2/40 rounded-2xl border border-line space-y-2">
+                  <ArrowRightLeft className="w-8 h-8 text-slate-400 mx-auto" />
+                  <h5 className="font-bold text-ink">هیچ نقل و انتقال یا خروج سهمی ثبت نشده است</h5>
+                  <p className="text-[11px] text-slate-400">
+                    برای واگذاری سهم، از تب «فهرست شرکا» روی دکمه «واگذاری سهم / خروج» شریک مورد نظر کلیک کنید.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-right border-collapse">
+                      <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line">
+                        <tr>
+                          <th className="py-2.5 px-3">تاریخ معامله</th>
+                          <th className="py-2.5 px-3">شریک فروشنده (خارج‌شده)</th>
+                          <th className="py-2.5 px-3">خریدار سهم (انتقال‌گیرنده)</th>
+                          <th className="py-2.5 px-3 text-center">سهم واگذارشده</th>
+                          <th className="py-2.5 px-3 text-left">مبلغ معامله</th>
+                          <th className="py-2.5 px-3 text-center">شماره سند صلح</th>
+                          <th className="py-2.5 px-3 text-center">عملیات</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {currentTransfers.map((tr) => (
+                          <tr key={tr.id} className="hover:bg-surface-2/30">
+                            <td className="py-2.5 px-3 font-mono text-slate-500">{tr.transferDate}</td>
+                            <td className="py-2.5 px-3 font-bold text-rose-600 dark:text-rose-400">
+                              {tr.fromPartnerName}
+                            </td>
+                            <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">
+                              {tr.toPartnerName}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-mono font-black text-amber-600">
+                              {tr.transferredPercentage}%
+                            </td>
+                            <td className="py-2.5 px-3 text-left font-mono font-bold text-ink">
+                              {tr.currency === 'USD' ? `$${formatNumber(tr.transferPrice, 0)}` : `${formatNumber(tr.transferPrice, 0)} AFN`}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-mono text-slate-400">
+                              {tr.deedNumber || '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setPrintedTransferDeed(tr)}
+                                className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-[10px] inline-flex items-center gap-1"
+                              >
+                                <Printer className="w-3 h-3" />
+                                <span>چاپ صلح‌نامه</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1166,6 +1386,290 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
           </div>
         </div>
       )}
+
+      {/* SUB-MODAL 5: Partner Equity Transfer & Exit */}
+      {isTransferModalOpen && transferringPartner && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-3 animate-in fade-in overflow-y-auto">
+          <div className="bg-surface rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-line shadow-2xl text-xs my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-5 h-5 text-amber-600" />
+                <div>
+                  <h4 className="font-extrabold text-sm text-ink">
+                    واگذاری سهم‌الشرکه و خروج شریک از پروژه
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    شریک واگذارکننده: <strong className="text-amber-600">{transferringPartner.name}</strong> (سهم فعلی: {transferringPartner.sharePercentage}٪)
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsTransferModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {transferError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-300 rounded-xl text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{transferError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleTransferSubmit} className="space-y-3.5">
+              {/* Transfer Type */}
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">نوعیت واگذاری و خروج:</label>
+                <select
+                  value={transferType}
+                  onChange={(e) => {
+                    setTransferType(e.target.value as any);
+                    if (e.target.value === 'partner_to_partner') {
+                      const other = currentPartners.find(p => p.id !== transferringPartner.id && p.status !== 'exited');
+                      setTargetPartnerId(other?.id || '');
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold"
+                >
+                  <option value="partner_to_partner">واگذاری به یکی از شرکای موجود در پروژه</option>
+                  <option value="new_partner">ورود شریک / سرمایه‌گذار جدید (جایگزین)</option>
+                  <option value="company_buyout">بازخرید سهم توسط خزانه شرکت / پروژه</option>
+                </select>
+              </div>
+
+              {/* Target Buyer */}
+              {transferType === 'partner_to_partner' && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">شریک خریدار (انتقال‌گیرنده سهم):</label>
+                  <select
+                    value={targetPartnerId}
+                    onChange={(e) => {
+                      setTargetPartnerId(e.target.value);
+                      const found = currentPartners.find(p => p.id === e.target.value);
+                      if (found) setTargetPartnerName(found.name);
+                    }}
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold"
+                  >
+                    <option value="">-- انتخاب شریک خریدار --</option>
+                    {currentPartners
+                      .filter(p => p.id !== transferringPartner.id && p.status !== 'exited')
+                      .map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (سهم فعلی: {p.sharePercentage || 0}٪)
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {transferType === 'new_partner' && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام و مشخصات شریک جدید (خریدار سهم):</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثلاً: انجنیر فرهاد رحیمی (سرمایه‌گذار جدید)"
+                    value={targetPartnerName}
+                    onChange={(e) => setTargetPartnerName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    درصد سهم واگذارشده (٪):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.1"
+                    max={transferringPartner.sharePercentage || 100}
+                    required
+                    value={transferPercentage}
+                    onChange={(e) => setTransferPercentage(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
+                    placeholder={`حداکثر ${transferringPartner.sharePercentage}%`}
+                  />
+                  <span className="block text-[10px] text-slate-400 mt-0.5">
+                    اگر تمام سهم واگذار شود، شریک از پروژه خارج می‌شود.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">مبلغ معامله / تسویه سهم:</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    min="0"
+                    value={transferPrice}
+                    onChange={(e) => setTransferPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold"
+                    placeholder="مبلغ توافقی تسویه..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">واحد پولی:</label>
+                  <select
+                    value={transferCurrency}
+                    onChange={(e) => setTransferCurrency(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold"
+                  >
+                    <option value="AFN">افغانی (AFN)</option>
+                    <option value="USD">دالر (USD $)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">تاریخ واگذاری:</label>
+                  <input
+                    type="date"
+                    required
+                    value={transferDate}
+                    onChange={(e) => setTransferDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">شماره صلح‌نامه:</label>
+                  <input
+                    type="text"
+                    value={transferDeedNumber}
+                    onChange={(e) => setTransferDeedNumber(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"
+                    placeholder="DEED-104"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">توضیحات و توافقات تسویه حساب:</label>
+                <textarea
+                  rows={2}
+                  value={transferNotes}
+                  onChange={(e) => setTransferNotes(e.target.value)}
+                  placeholder="مثلاً: کلیه مطالبات و سود حاصله تا مورخه مذکور تسویه گردید و مشارالیه هیچ‌گونه ادعای مالی دیگری در پروژه ندارد."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setIsTransferModalOpen(false)}
+                  className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
+                >
+                  انصراف
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold shadow-md shadow-amber-500/20"
+                >
+                  ثبت رسمی واگذاری و خروج
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-MODAL 6: Printable Legal Equity Transfer Deed */}
+      {printedTransferDeed && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 animate-in fade-in overflow-y-auto">
+          <div className="bg-surface rounded-3xl max-w-2xl w-full p-6 space-y-4 border border-line shadow-2xl text-xs my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-line print:hidden">
+              <h4 className="font-extrabold text-sm text-ink flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-600" />
+                <span>سند رسمی صلح‌نامه و واگذاری سهم‌الشرکه</span>
+              </h4>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold flex items-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>چاپ سند رسمی</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintedTransferDeed(null)}
+                  className="text-slate-400 hover:text-white p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Legal Deed Printable Body */}
+            <div className="p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 print:border-none print:p-0">
+              <div className="text-center border-b pb-3 space-y-1">
+                <h2 className="text-base font-black text-slate-900 dark:text-white">
+                  توافق‌نامه رسمی صلح و واگذاری قطعی سهم‌الشرکه
+                </h2>
+                <p className="text-[11px] text-slate-500 font-bold">
+                  پروژه ساختمانی: {project?.name} ({project?.code}) • شماره سند: {printedTransferDeed.deedNumber || 'DEED-OFFICIAL'}
+                </p>
+                <p className="text-[10px] text-slate-400 font-mono">
+                  تاریخ عقد صلح: {printedTransferDeed.transferDate}
+                </p>
+              </div>
+
+              <div className="space-y-3 leading-relaxed text-slate-700 dark:text-slate-200 text-[11px]">
+                <p>
+                  به موجب این سند رسمی، آقا/خانم <strong>{printedTransferDeed.fromPartnerName}</strong> (مصالح / واگذارکننده)، با اراده و رضایت کامل، تمامی حقوق مادی، معنوی و سهم‌الشرکه خود را به میزان <strong className="font-mono text-amber-700 dark:text-amber-400">{printedTransferDeed.transferredPercentage}٪</strong> از کل منافع و دارایی‌های پروژه موصوف را به آقا/خانم/نهاد <strong>{printedTransferDeed.toPartnerName}</strong> (متصالح / انتقال‌گیرنده) در ازای بهای قطعی و توافق‌شده به مبلغ:
+                </p>
+
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center font-mono font-black text-sm text-amber-800 dark:text-amber-300">
+                  {formatNumber(printedTransferDeed.transferPrice, 0)} {printedTransferDeed.currency}
+                </div>
+
+                <p>
+                  صلح قطعی نمود و واگذار کرد. طرفین اقرار نمودند که حساب‌های مالی، بدهی‌ها و بستانکاری‌های مربوط به این میزان سهم تا تاریخ فوق‌الذکر کلاً تسویه گردیده و واگذارکننده حق هرگونه ادعای بعدی را در این خصوص از خود سلب و ساقط نمود.
+                </p>
+
+                {printedTransferDeed.notes && (
+                  <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-[10px]">
+                    <strong>شروط و توضیحات تکمیلی:</strong> {printedTransferDeed.notes}
+                  </div>
+                )}
+              </div>
+
+              {/* Signatures Table */}
+              <div className="grid grid-cols-3 gap-3 pt-6 border-t border-slate-200 dark:border-slate-700 text-center text-[10px]">
+                <div className="p-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl">
+                  <span className="font-bold block mb-1">امضا و اثر انگشت واگذارکننده:</span>
+                  <span className="text-slate-500">{printedTransferDeed.fromPartnerName}</span>
+                  <div className="h-14 mt-2"></div>
+                </div>
+
+                <div className="p-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl">
+                  <span className="font-bold block mb-1">امضا و اثر انگشت انتقال‌گیرنده:</span>
+                  <span className="text-slate-500">{printedTransferDeed.toPartnerName}</span>
+                  <div className="h-14 mt-2"></div>
+                </div>
+
+                <div className="p-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl">
+                  <span className="font-bold block mb-1">تایید مدیریت و مهر شرکت:</span>
+                  <span className="text-slate-500">مدیریت عامل شرکت ساختمانی</span>
+                  <div className="h-14 mt-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

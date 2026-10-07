@@ -33,7 +33,8 @@ import {
   CustomBillDesign,
   CustomActionButton,
   LaborRecord,
-  FixedAsset
+  FixedAsset,
+  PartnerEquityTransfer
 } from '../types';
 import { 
   initialUsers, 
@@ -162,6 +163,8 @@ interface AppContextType {
   addProjectInvestment: (investment: Omit<ProjectInvestment, 'id' | 'createdAt'>) => ProjectInvestment;
   updateProjectInvestment: (id: string, updates: Partial<ProjectInvestment>) => void;
   deleteProjectInvestment: (id: string) => void;
+  partnerEquityTransfers: PartnerEquityTransfer[];
+  transferPartnerEquity: (transfer: Omit<PartnerEquityTransfer, 'id' | 'createdAt'>) => PartnerEquityTransfer;
   getProjectPartners: (projectId: string) => ProjectPartner[];
   getProjectInvestments: (projectId: string) => ProjectInvestment[];
   expenses: Expense[];
@@ -498,6 +501,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activityEvents, setActivityEvents] = useState<UserActivityEvent[]>(() => loadFromStorage('activityEvents', []));
   const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>(() => loadFromStorage('projectPartners', initialProjectPartners));
   const [projectInvestments, setProjectInvestments] = useState<ProjectInvestment[]>(() => loadFromStorage('projectInvestments', initialProjectInvestments));
+  const [partnerEquityTransfers, setPartnerEquityTransfers] = useState<PartnerEquityTransfer[]>(() => loadFromStorage('partnerEquityTransfers', []));
   const [projectBudgets, setProjectBudgets] = useState<ProjectBudget[]>(() => loadFromStorage('projectBudgets', initialProjectBudgets));
 
   // Google Drive state (in-memory token cached in googleDriveAuth)
@@ -560,6 +564,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('activityEvents', activityEvents.slice(-600)); }, [activityEvents]);
   useEffect(() => { saveToStorage('projectPartners', projectPartners); }, [projectPartners]);
   useEffect(() => { saveToStorage('projectInvestments', projectInvestments); }, [projectInvestments]);
+  useEffect(() => { saveToStorage('partnerEquityTransfers', partnerEquityTransfers); }, [partnerEquityTransfers]);
   useEffect(() => { saveToStorage('projectBudgets', projectBudgets); }, [projectBudgets]);
 
   const isCurrentTimeDay = (): boolean => {
@@ -1679,6 +1684,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const old = projectInvestments.find(inv => inv.id === id);
     setProjectInvestments(prev => prev.filter(inv => inv.id !== id));
     logAudit('delete', 'project', id, `Investment: ${old?.partnerName || id}`, `Deleted investment record of ${old?.amount} ${old?.currency}`, undefined, undefined, old?.projectId);
+  };
+
+  const transferPartnerEquity = (data: Omit<PartnerEquityTransfer, 'id' | 'createdAt'>): PartnerEquityTransfer => {
+    const id = 'eq-tr-' + Date.now();
+    const newTransfer: PartnerEquityTransfer = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setPartnerEquityTransfers(prev => [newTransfer, ...prev]);
+
+    // Update seller partner
+    setProjectPartners(prev => prev.map(p => {
+      if (p.id === data.fromPartnerId) {
+        const remainingShare = Math.max(0, (p.sharePercentage || 0) - data.transferredPercentage);
+        return {
+          ...p,
+          sharePercentage: remainingShare,
+          status: remainingShare === 0 ? 'exited' : p.status,
+          exitDate: remainingShare === 0 ? data.transferDate : p.exitDate,
+          exitReason: remainingShare === 0 ? `واگذاری کامل سهم به ${data.toPartnerName}` : p.exitReason,
+          transferredToPartnerId: data.toPartnerId,
+          transferredToPartnerName: data.toPartnerName,
+          transferPrice: data.transferPrice,
+          transferCurrency: data.currency,
+        };
+      }
+      // If buyer is an existing partner, increase their share
+      if (data.toPartnerId && p.id === data.toPartnerId) {
+        return {
+          ...p,
+          sharePercentage: (p.sharePercentage || 0) + data.transferredPercentage,
+        };
+      }
+      return p;
+    }));
+
+    // If buyer is a new partner (no toPartnerId or transferType === 'new_partner'), create new partner
+    if (!data.toPartnerId && data.transferType === 'new_partner') {
+      const newPartnerId = 'pp-' + Date.now();
+      const createdBuyer: ProjectPartner = {
+        id: newPartnerId,
+        projectId: data.projectId,
+        name: data.toPartnerName,
+        sharePercentage: data.transferredPercentage,
+        initialInvestment: data.transferPrice,
+        currency: data.currency,
+        investmentDate: data.transferDate,
+        notes: `خرید سهم از ${data.fromPartnerName} (سند صلح: ${data.deedNumber || '—'})`,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+      setProjectPartners(prev => [...prev, createdBuyer]);
+    }
+
+    logAudit('create', 'project', data.projectId, data.fromPartnerName, `انتقال ${data.transferredPercentage}٪ سهم‌الشرکه از ${data.fromPartnerName} به ${data.toPartnerName} به مبلغ ${data.transferPrice} ${data.currency}`, undefined, undefined, data.projectId);
+
+    return newTransfer;
   };
 
   const getProjectPartners = (projectId: string): ProjectPartner[] => {
@@ -3038,6 +3101,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addProjectInvestment,
       updateProjectInvestment,
       deleteProjectInvestment,
+      partnerEquityTransfers,
+      transferPartnerEquity,
       getProjectPartners,
       getProjectInvestments,
       expenses,
