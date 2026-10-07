@@ -12,7 +12,13 @@ import {
   Lock, 
   DollarSign, 
   Printer, 
-  Key 
+  Key,
+  FileText,
+  X,
+  Calendar,
+  Building2,
+  CreditCard,
+  Coins
 } from 'lucide-react';
 import { ApartmentUnit } from '../../types';
 
@@ -37,6 +43,7 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'reserved' | 'sold'>('all');
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState<ApartmentUnit | null>(null);
 
   const projectApartments = useMemo(() => {
     return apartments.filter(a => a.projectId === currentProject?.id);
@@ -278,10 +285,24 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-line">
+              {(apt.status === 'sold' || apt.status === 'reserved') ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedApartment(apt)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-fuchsia-50 hover:bg-fuchsia-100 dark:bg-fuchsia-950/40 dark:hover:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300 rounded-xl text-xs font-bold transition"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>دفترچه اقساط و حساب</span>
+                </button>
+              ) : (
+                <span className="text-[11px] text-slate-400 font-semibold">آماده واگذاری و فروش</span>
+              )}
+
               <button
                 onClick={() => handleDelete(apt.id, apt.unitNumber)}
-                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                title="حذف واحد"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -289,6 +310,177 @@ export const ApartmentsView: React.FC<ApartmentsViewProps> = ({ onOpenAddApartme
           </div>
         ))}
       </div>
+
+      {/* Apartment Installment Schedule & Financial Ledger Modal */}
+      {selectedApartment && (() => {
+        const totalCost = selectedApartment.totalPriceUSD || 0;
+        const downPay = selectedApartment.downPaymentUSD || 0;
+        const paidInst = selectedApartment.paidAmountUSD || 0;
+        const totalPaid = downPay + paidInst;
+        const remainingDue = Math.max(0, totalCost - totalPaid);
+        const percentCollected = totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : 0;
+
+        // Realistic Construction Installment Milestones
+        const milestones = [
+          { phase: 'پیش‌پرداخت عقد قرارداد (Initial Down Payment)', percent: 30, amount: totalCost * 0.30, status: 'paid', date: 'در بدو قرارداد' },
+          { phase: 'اتمام اسکلت بتنی و سقف طبقات (Concrete Structure)', percent: 25, amount: totalCost * 0.25, status: totalPaid >= (totalCost * 0.55) ? 'paid' : 'pending', date: 'تکمیل اسکلت' },
+          { phase: 'اتمام دیوارچینی و تأسیسات (Masonry & MEP)', percent: 20, amount: totalCost * 0.20, status: totalPaid >= (totalCost * 0.75) ? 'paid' : 'pending', date: 'تکمیل سفت‌کاری' },
+          { phase: 'گچ‌کاری، کاشی و نازک‌کاری (Finishing & Tiles)', percent: 15, amount: totalCost * 0.15, status: totalPaid >= (totalCost * 0.90) ? 'paid' : 'pending', date: 'تکمیل نازک‌کاری' },
+          { phase: 'تحویل کلید و اسناد رسمی (Handover & Final Deed)', percent: 10, amount: totalCost * 0.10, status: remainingDue === 0 ? 'paid' : 'pending', date: 'زمان تحویل کلید' },
+        ];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-4xl bg-surface border border-line rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-line bg-gradient-to-r from-fuchsia-600/10 via-purple-600/5 to-transparent shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-fuchsia-500/20 text-fuchsia-600 flex items-center justify-center font-bold">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-ink flex items-center gap-2">
+                      <span>کارنامه مالی واحد {selectedApartment.unitNumber} (طبقه {selectedApartment.floor})</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-600 font-bold">
+                        {selectedApartment.areaSqm} متر مربع
+                      </span>
+                    </h2>
+                    <p className="text-xs text-ink-muted">
+                      خریدار: <strong className="text-ink">{selectedApartment.buyerName || 'ثبت نشده'}</strong> ({selectedApartment.buyerPhone || 'بدون تماس'}) • پروژه {currentProject?.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition"
+                  >
+                    <Printer className="w-4 h-4 text-slate-500" />
+                    <span className="hidden sm:inline">چاپ کارنامه</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedApartment(null)}
+                    className="p-2 text-slate-400 hover:text-ink rounded-xl hover:bg-surface-2 transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Body */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-xs">
+                {/* 4 Financial Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-4 rounded-2xl bg-surface-2/60 border border-line">
+                    <span className="text-slate-400 font-semibold block mb-1">ارزش کل قرارداد فروش:</span>
+                    <span className="text-base font-black font-mono text-ink">
+                      {formatCurrency(totalCost, 'USD')}
+                    </span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5">قیمت مقطوع واحد</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold block mb-1">پیش‌پرداخت اولیه:</span>
+                    <span className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300">
+                      {formatCurrency(downPay, 'USD')}
+                    </span>
+                    <span className="block text-[10px] text-emerald-600/80 mt-0.5">وصول در هنگام عقد قرارداد</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold block mb-1">مجموع وصولی نقد:</span>
+                    <span className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300">
+                      {formatCurrency(totalPaid, 'USD')}
+                    </span>
+                    <span className="block text-[10px] text-emerald-600/80 mt-0.5">پیش‌پرداخت + اقساط واریزی</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-surface-2/60 border border-line">
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold block mb-1">مانده مطالبات شرکت:</span>
+                    <span className="text-base font-black font-mono text-amber-600 dark:text-amber-400">
+                      {formatCurrency(remainingDue, 'USD')}
+                    </span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5">اقساط باقیمانده</span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="p-4 rounded-2xl bg-surface-2/40 border border-line space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold text-ink">
+                    <span>پیشرفت تسویه مالی قرارداد:</span>
+                    <span className="font-mono text-fuchsia-600">{percentCollected}% وصول شده</span>
+                  </div>
+                  <div className="w-full h-3 bg-surface-2 rounded-full overflow-hidden border border-line">
+                    <div 
+                      className="h-full bg-gradient-to-r from-fuchsia-600 to-emerald-500 rounded-full transition-all duration-500"
+                      style={{ width: `${percentCollected}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Milestones Schedule Table */}
+                <div className="border border-line rounded-2xl overflow-hidden">
+                  <div className="p-3 bg-surface-2 font-black text-xs text-ink flex items-center justify-between">
+                    <span>جدول زمان‌بندی مراحل پیشرفت کار و اقساط خریدار</span>
+                    <span className="text-[11px] font-mono text-slate-400">۵ مرحله مصوب</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right border-collapse">
+                      <thead className="bg-surface-2/40 border-b border-line text-slate-500 font-bold">
+                        <tr>
+                          <th className="p-2.5">#</th>
+                          <th className="p-2.5">مرحله و پیشرفت فیزیکی پروژه</th>
+                          <th className="p-2.5 text-center">درصد</th>
+                          <th className="p-2.5 text-left">مبلغ قسط (USD)</th>
+                          <th className="p-2.5">سررسید مرحله</th>
+                          <th className="p-2.5 text-center">وضعیت تسویه</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {milestones.map((m, idx) => (
+                          <tr key={idx} className="hover:bg-surface-2/30">
+                            <td className="p-2.5 font-mono text-slate-400">{idx + 1}</td>
+                            <td className="p-2.5 font-semibold text-ink">{m.phase}</td>
+                            <td className="p-2.5 text-center font-mono">{m.percent}%</td>
+                            <td className="p-2.5 text-left font-mono font-bold text-ink">{formatCurrency(m.amount, 'USD')}</td>
+                            <td className="p-2.5 font-mono text-slate-400">{m.date}</td>
+                            <td className="p-2.5 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                m.status === 'paid'
+                                  ? 'bg-emerald-500/10 text-emerald-600'
+                                  : 'bg-amber-500/10 text-amber-600'
+                              }`}>
+                                {m.status === 'paid' ? 'وصول شد' : 'در انتظار سررسید'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-line bg-surface-2 flex items-center justify-between shrink-0">
+                <span className="text-slate-400 text-[11px]">
+                  وضعیت قرارداد: {remainingDue <= 0 ? 'کاملاً تسویه شده (تسویه ۱۰۰٪)' : 'دارای اقساط موعد مقرر'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedApartment(null)}
+                  className="px-5 py-2 rounded-xl bg-surface hover:bg-slate-200 dark:hover:bg-slate-700 text-ink font-bold"
+                >
+                  بستن
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

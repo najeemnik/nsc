@@ -32,6 +32,8 @@ import {
   History,
   Sliders,
   Users,
+  UserCheck,
+  Wrench,
   ShieldCheck,
   Lock,
   LogOut,
@@ -94,7 +96,9 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
         ...(enabled.concrete !== false ? [{ id: 'concrete', label: t.navConcrete, icon: CircleDot, iconColor: 'text-teal-600', iconBg: 'bg-teal-500/15', gradient: 'from-teal-500 to-emerald-600' } as DrawerItem] : []),
         ...(enabled.expenses !== false ? [{ id: 'expenses', label: t.navExpenses, icon: Receipt, iconColor: 'text-rose-600', iconBg: 'bg-rose-500/15', gradient: 'from-rose-500 to-red-600' } as DrawerItem] : []),
         ...(enabled.contractors !== false ? [{ id: 'contractors', label: t.navContractors, icon: HardHat, iconColor: 'text-orange-600', iconBg: 'bg-orange-500/15', gradient: 'from-orange-500 to-amber-600' } as DrawerItem] : []),
+        ...(enabled.labor !== false ? [{ id: 'labor', label: t.navLabor, icon: UserCheck, iconColor: 'text-purple-600', iconBg: 'bg-purple-500/15', gradient: 'from-purple-600 to-indigo-600' } as DrawerItem] : []),
         ...(enabled.suppliers !== false ? [{ id: 'suppliers', label: t.navSuppliers, icon: Truck, iconColor: 'text-blue-600', iconBg: 'bg-blue-500/15', gradient: 'from-blue-600 to-indigo-600' } as DrawerItem] : []),
+        ...(enabled.assets !== false ? [{ id: 'assets', label: t.navAssets, icon: Wrench, iconColor: 'text-amber-600', iconBg: 'bg-amber-500/15', gradient: 'from-amber-600 to-orange-600' } as DrawerItem] : []),
       ],
     },
     {

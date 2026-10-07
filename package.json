@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "build:host": "vite build && rm -rf host_upload && mkdir -p host_upload && cp -r dist/* host_upload/ && cp -r api host_upload/ && cp -r database host_upload/",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist server.js host_upload",
     "lint": "tsc --noEmit",
     "verify:journal": "tsx scripts/verify-journal.ts"
   },

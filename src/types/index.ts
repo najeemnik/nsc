@@ -57,6 +57,8 @@ export interface AppSettings {
   customCategories?: string[];
   geminiApiKey?: string;
   aiEnabled?: boolean;
+  billDesign?: CustomBillDesign;
+  actionButtons?: CustomActionButton[];
   reportCustomization?: ReportCustomization;
   sectionProtection?: SectionProtectionSettings;
   googleDrive?: GoogleDriveConfig;
@@ -78,6 +80,14 @@ export interface AppSettings {
     users?: boolean;
     aiAssistant?: boolean;
     googleDrive?: boolean;
+    income?: boolean;
+    materials?: boolean;
+    labor?: boolean;
+    treasury?: boolean;
+    pettyCash?: boolean;
+    assets?: boolean;
+    transfers?: boolean;
+    journal?: boolean;
   };
 }
 
@@ -92,8 +102,54 @@ export interface UserPermissions {
   canManageProjects?: boolean;
   canManagePayments?: boolean;
   canManageSettings?: boolean;
+  canManageTreasury?: boolean;
+  canManagePayroll?: boolean;
+  canManageAssets?: boolean;
+  canManageTransfers?: boolean;
+  canManageJournal?: boolean;
   aiEnabled?: boolean;
   allowedModules?: string[];
+}
+
+export interface CustomActionButton {
+  id: string;
+  label: string;
+  enabled: boolean;
+  color: 'blue' | 'emerald' | 'amber' | 'rose' | 'purple' | 'slate' | 'indigo' | 'orange';
+  shape: 'pill' | 'rounded-xl' | 'rounded-md';
+  order: number;
+}
+
+export const DEFAULT_ACTION_BUTTONS: CustomActionButton[] = [
+  { id: 'addExpense', label: 'ثبت مصارف', enabled: true, color: 'blue', shape: 'rounded-xl', order: 1 },
+  { id: 'addPayment', label: 'پرداخت وجه', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 2 },
+  { id: 'addIncome', label: 'دریافت عواید', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 3 },
+  { id: 'addMaterial', label: 'خرید مصالح', enabled: true, color: 'amber', shape: 'rounded-xl', order: 4 },
+  { id: 'addLabor', label: 'معاشات کارگران', enabled: true, color: 'purple', shape: 'rounded-xl', order: 5 },
+  { id: 'addSteel', label: 'سیخ‌گول', enabled: true, color: 'amber', shape: 'rounded-xl', order: 6 },
+  { id: 'addConcrete', label: 'کانکریت', enabled: true, color: 'blue', shape: 'rounded-xl', order: 7 },
+  { id: 'addApartment', label: 'فروش پلاک', enabled: true, color: 'indigo', shape: 'rounded-xl', order: 8 },
+  { id: 'addContractor', label: 'قراردادی جدید', enabled: true, color: 'orange', shape: 'rounded-xl', order: 9 },
+  { id: 'addTransfer', label: 'حواله پروژه‌ای', enabled: true, color: 'purple', shape: 'rounded-xl', order: 10 },
+  { id: 'addPettyCash', label: 'تنخواه کارگاه', enabled: true, color: 'slate', shape: 'rounded-xl', order: 11 },
+  { id: 'addAsset', label: 'ثبت ماشین‌آلات', enabled: true, color: 'amber', shape: 'rounded-xl', order: 12 },
+];
+
+export interface CustomBillDesign {
+  receiptTitle?: string;
+  receiptHeader?: string;
+  receiptSubtitle?: string;
+  receiptFooter?: string;
+  receiptContact?: string;
+  taxNumber?: string;
+  watermarkText?: string;
+  themeColor?: string;
+  showStampArea?: boolean;
+  showQrCode?: boolean;
+  showWithholdingTax?: boolean;
+  showRetention?: boolean;
+  paperSize?: 'A4' | 'A5' | 'thermal';
+  customNotesHtml?: string;
 }
 
 export interface User {
@@ -118,12 +174,8 @@ export interface User {
   customTheme?: AppTheme;
   customBackgroundUrl?: string;
   customLogoUrl?: string;
-  customBillDesign?: {
-    receiptHeader?: string;
-    receiptFooter?: string;
-    receiptContact?: string;
-    taxNumber?: string;
-  };
+  customBillDesign?: CustomBillDesign;
+  customButtonConfig?: CustomActionButton[];
   customEnabledModules?: {
     steel?: boolean;
     concrete?: boolean;
@@ -138,6 +190,14 @@ export interface User {
     reports?: boolean;
     auditLogs?: boolean;
     users?: boolean;
+    income?: boolean;
+    materials?: boolean;
+    labor?: boolean;
+    treasury?: boolean;
+    pettyCash?: boolean;
+    assets?: boolean;
+    transfers?: boolean;
+    journal?: boolean;
   };
   createdAt: string;
   lastLoginAt?: string;
@@ -167,6 +227,30 @@ export interface ProjectPartner {
   initialInvestment?: number;
   currency: 'USD' | 'AFN' | string;
   investmentDate?: string;
+  notes?: string;
+  status?: 'active' | 'exited' | 'transferred';
+  exitDate?: string;
+  exitReason?: string;
+  transferredToPartnerId?: string;
+  transferredToPartnerName?: string;
+  transferPrice?: number;
+  transferCurrency?: 'USD' | 'AFN' | string;
+  createdAt: string;
+}
+
+export interface PartnerEquityTransfer {
+  id: string;
+  projectId: string;
+  fromPartnerId: string;
+  fromPartnerName: string;
+  toPartnerId?: string;
+  toPartnerName: string;
+  transferredPercentage: number;
+  transferPrice: number;
+  currency: 'USD' | 'AFN' | string;
+  transferDate: string;
+  transferType: 'partner_to_partner' | 'new_partner' | 'company_buyout';
+  deedNumber?: string;
   notes?: string;
   createdAt: string;
 }
@@ -510,6 +594,28 @@ export interface SystemReminderNotification {
   actionPayload?: any;
 }
 
+export interface FixedAsset {
+  id: string;
+  assetTag: string;
+  name: string;
+  category: 'machinery' | 'vehicle' | 'equipment' | 'building' | 'it';
+  assignedProjectId?: string;
+  purchaseDate: string;
+  purchaseCost: number;
+  salvageValue: number;
+  usefulLifeYears: number;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  currentBookValue: number;
+  runningHours?: number;
+  hourlyOperatingRate?: number;
+  serialNumber?: string;
+  assignedPerson?: string;
+  status: 'active' | 'maintenance' | 'idle' | 'disposed';
+  notes?: string;
+  createdAt?: string;
+}
+
 /* ------------------------------------------------------------------------ */
 /* Accounting / Chart of Accounts / Journal                                  */
 /*                                                                           */
@@ -797,3 +903,23 @@ export interface ProjectFinancialSummary {
   supplierUSD?: number;
   supplierAFN?: number;
 }
+
+export interface LaborRecord {
+  id: string;
+  projectId: string;
+  workerName: string;
+  role: string;
+  phone?: string;
+  workPeriod: string;
+  daysWorked: number;
+  dailyRate: number;
+  grossWage: number;
+  advanceDeduction: number;
+  netPayable: number;
+  paymentStatus: 'paid' | 'pending' | 'partial';
+  paidDate?: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt?: string;
+}
+

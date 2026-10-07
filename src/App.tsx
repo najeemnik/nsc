@@ -18,7 +18,9 @@ import { ExpensesView } from './components/views/ExpensesView';
 import { SteelView } from './components/views/SteelView';
 import { ConcreteView } from './components/views/ConcreteView';
 import { ContractorsView } from './components/views/ContractorsView';
+import { LaborView } from './components/views/LaborView';
 import { SuppliersView } from './components/views/SuppliersView';
+import { AssetsView } from './components/views/AssetsView';
 import { ApartmentsView } from './components/views/ApartmentsView';
 import { PaymentsView } from './components/views/PaymentsView';
 import { DocumentsView } from './components/views/DocumentsView';
@@ -44,6 +46,12 @@ import { AddPaymentModal } from './components/modals/AddPaymentModal';
 import { AddDocumentModal } from './components/modals/AddDocumentModal';
 import { GoogleDriveModal } from './components/modals/GoogleDriveModal';
 import { SystemGuideModal } from './components/modals/SystemGuideModal';
+import { AddIncomeModal } from './components/modals/AddIncomeModal';
+import { AddMaterialModal } from './components/modals/AddMaterialModal';
+import { AddLaborModal } from './components/modals/AddLaborModal';
+import { AddTransferModal } from './components/modals/AddTransferModal';
+import { AddPettyCashModal } from './components/modals/AddPettyCashModal';
+import { AddAssetModal } from './components/modals/AddAssetModal';
 import { MasterAdminModal } from './components/MasterAdminModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { CameraModal } from './components/CameraModal';
@@ -57,11 +65,19 @@ function MainApp() {
     isAiAssistantOpen, 
     setIsAiAssistantOpen,
     isMasterAdminOpen,
-    setIsMasterAdminOpen
+    setIsMasterAdminOpen,
+    isTabAllowed
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // اطمینان از مجاز بودن تب طبق پرمیژن‌های دفتر هفت
+  useEffect(() => {
+    if (activeTab !== 'dashboard' && !isTabAllowed(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, isTabAllowed]);
 
   // 🛡 دفتر هفت fast-path: master login lands DIRECTLY inside the panel (no second key)
   const [masterDirectAccess, setMasterDirectAccess] = useState(false);
@@ -99,6 +115,12 @@ function MainApp() {
   const [isAddDocumentOpen, setIsAddDocumentOpen] = useState(false);
   const [isGoogleDriveOpen, setIsGoogleDriveOpen] = useState(false);
   const [isSystemGuideOpen, setIsSystemGuideOpen] = useState(false);
+  const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
+  const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false);
+  const [isAddLaborOpen, setIsAddLaborOpen] = useState(false);
+  const [isAddInterProjectTransferOpen, setIsAddInterProjectTransferOpen] = useState(false);
+  const [isAddPettyCashOpen, setIsAddPettyCashOpen] = useState(false);
+  const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
 
   // Pre-selected payment payee if opened from contractor/supplier card
   const [paymentRecipient, setPaymentRecipient] = useState<{ id: string; name: string } | null>(null);
@@ -157,6 +179,12 @@ function MainApp() {
             onOpenAddConcrete={() => setIsAddConcreteOpen(true)}
             onOpenAddApartment={() => setIsAddApartmentOpen(true)}
             onOpenAddContractor={() => setIsAddContractorOpen(true)}
+            onOpenAddIncome={() => setIsAddIncomeOpen(true)}
+            onOpenAddMaterial={() => setIsAddMaterialOpen(true)}
+            onOpenAddLabor={() => setIsAddLaborOpen(true)}
+            onOpenAddTransfer={() => setIsAddInterProjectTransferOpen(true)}
+            onOpenAddPettyCash={() => setIsAddPettyCashOpen(true)}
+            onOpenAddAsset={() => setIsAddAssetOpen(true)}
             onOpenDrive={() => setIsGoogleDriveOpen(true)}
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
@@ -211,10 +239,22 @@ function MainApp() {
                 />
               )}
 
+              {activeTab === 'labor' && (
+                <LaborView 
+                  onOpenAddLabor={() => setIsAddLaborOpen(true)}
+                />
+              )}
+
               {activeTab === 'suppliers' && (
                 <SuppliersView 
                   onOpenAddSupplier={() => setIsAddSupplierOpen(true)}
                   onOpenAddPayment={handleOpenPaymentForPayee}
+                />
+              )}
+
+              {activeTab === 'assets' && (
+                <AssetsView 
+                  onOpenAddAsset={() => setIsAddAssetOpen(true)}
                 />
               )}
 
@@ -352,6 +392,36 @@ function MainApp() {
       <AddDocumentModal 
         isOpen={isAddDocumentOpen} 
         onClose={() => setIsAddDocumentOpen(false)} 
+      />
+
+      <AddIncomeModal
+        isOpen={isAddIncomeOpen}
+        onClose={() => setIsAddIncomeOpen(false)}
+      />
+
+      <AddMaterialModal
+        isOpen={isAddMaterialOpen}
+        onClose={() => setIsAddMaterialOpen(false)}
+      />
+
+      <AddLaborModal
+        isOpen={isAddLaborOpen}
+        onClose={() => setIsAddLaborOpen(false)}
+      />
+
+      <AddTransferModal
+        isOpen={isAddInterProjectTransferOpen}
+        onClose={() => setIsAddInterProjectTransferOpen(false)}
+      />
+
+      <AddPettyCashModal
+        isOpen={isAddPettyCashOpen}
+        onClose={() => setIsAddPettyCashOpen(false)}
+      />
+
+      <AddAssetModal
+        isOpen={isAddAssetOpen}
+        onClose={() => setIsAddAssetOpen(false)}
       />
 
       <GoogleDriveModal 

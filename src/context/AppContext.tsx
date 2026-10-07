@@ -29,7 +29,12 @@ import {
   ProjectBudget,
   BudgetLineReport,
   UserPermissions,
-  UserActivityEvent
+  UserActivityEvent,
+  CustomBillDesign,
+  CustomActionButton,
+  LaborRecord,
+  FixedAsset,
+  PartnerEquityTransfer
 } from '../types';
 import { 
   initialUsers, 
@@ -55,6 +60,7 @@ import { buildJournal, computeAccountBalances, buildTrialBalance } from '../util
 import { CHART_OF_ACCOUNTS, getAccountName } from '../data/chartOfAccounts';
 import type { Account } from '../data/chartOfAccounts';
 import { computeBudgetReport } from '../utils/budgetUtils';
+import { backendApi } from '../services/backendApi';
 
 interface AppContextType {
   language: Language;
@@ -123,25 +129,9 @@ interface AppContextType {
     companyAddress?: string;
     password?: string;
     customLogoUrl?: string;
-    customBillDesign?: {
-      receiptHeader?: string;
-      receiptFooter?: string;
-      receiptContact?: string;
-      taxNumber?: string;
-    };
-    customEnabledModules?: {
-      steel?: boolean;
-      concrete?: boolean;
-      expenses?: boolean;
-      contractors?: boolean;
-      suppliers?: boolean;
-      apartments?: boolean;
-      payments?: boolean;
-      documents?: boolean;
-      reports?: boolean;
-      auditLogs?: boolean;
-      users?: boolean;
-    };
+    customBillDesign?: CustomBillDesign;
+    customButtonConfig?: CustomActionButton[];
+    customEnabledModules?: User['customEnabledModules'];
     aiEnabled?: boolean;
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
@@ -173,6 +163,8 @@ interface AppContextType {
   addProjectInvestment: (investment: Omit<ProjectInvestment, 'id' | 'createdAt'>) => ProjectInvestment;
   updateProjectInvestment: (id: string, updates: Partial<ProjectInvestment>) => void;
   deleteProjectInvestment: (id: string) => void;
+  partnerEquityTransfers: PartnerEquityTransfer[];
+  transferPartnerEquity: (transfer: Omit<PartnerEquityTransfer, 'id' | 'createdAt'>) => PartnerEquityTransfer;
   getProjectPartners: (projectId: string) => ProjectPartner[];
   getProjectInvestments: (projectId: string) => ProjectInvestment[];
   expenses: Expense[];
@@ -196,6 +188,13 @@ interface AppContextType {
   addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => void;
   updateSupplier: (id: string, updates: Partial<Supplier>) => void;
   deleteSupplier: (id: string) => void;
+  laborRecords: LaborRecord[];
+  addLaborRecord: (record: Omit<LaborRecord, 'id' | 'createdAt'>) => void;
+  deleteLaborRecord: (id: string) => void;
+  assets: FixedAsset[];
+  addAsset: (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => void;
+  updateAsset: (id: string, updates: Partial<FixedAsset>) => void;
+  deleteAsset: (id: string) => void;
   apartments: ApartmentUnit[];
   addApartment: (unit: Omit<ApartmentUnit, 'id' | 'salePrice' | 'remainingBalance' | 'createdAt'> & { salePrice?: number }) => void;
   updateApartment: (id: string, updates: Partial<ApartmentUnit>) => void;
@@ -351,12 +350,158 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [contractors, setContractors] = useState<Contractor[]>(() => loadFromStorage('contractors', initialContractors));
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => loadFromStorage('suppliers', initialSuppliers));
   const [apartments, setApartments] = useState<ApartmentUnit[]>(() => loadFromStorage('apartments', initialApartments));
+  const initialLaborRecords: LaborRecord[] = [
+    {
+      id: 'lab-1',
+      projectId: 'p1',
+      workerName: 'استاد رحیم گل‌کار',
+      role: 'گل‌کار و سنگ‌کار نما',
+      phone: '0789123456',
+      workPeriod: 'ماه جاری',
+      daysWorked: 26,
+      dailyRate: 1200,
+      grossWage: 31200,
+      advanceDeduction: 5000,
+      netPayable: 26200,
+      paymentStatus: 'paid',
+      paidDate: '2026-09-30',
+      approvedBy: 'مهندس ناظر پروژه',
+      notes: 'تکمیل سنگ‌کاری دیوارهای لابی',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'lab-2',
+      projectId: 'p1',
+      workerName: 'شیرخان آرماتوربند',
+      role: 'سرکارگر بافت میلگرد',
+      phone: '0772345678',
+      workPeriod: 'ماه جاری',
+      daysWorked: 24,
+      dailyRate: 1100,
+      grossWage: 26400,
+      advanceDeduction: 4000,
+      netPayable: 22400,
+      paymentStatus: 'paid',
+      paidDate: '2026-09-30',
+      approvedBy: 'مهندس ناظر پروژه',
+      notes: 'آرماتوربندی سقف طبقه ۳',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'lab-3',
+      projectId: 'p1',
+      workerName: 'غلام‌حیدر کارگر ساده',
+      role: 'تخلیه مصالح و بتن‌ریزی',
+      phone: '0798765432',
+      workPeriod: 'ماه جاری',
+      daysWorked: 28,
+      dailyRate: 600,
+      grossWage: 16800,
+      advanceDeduction: 3000,
+      netPayable: 13800,
+      paymentStatus: 'pending',
+      approvedBy: 'سرپرست کارگاه',
+      notes: 'کمک در تخلیه سیمان و نظافت',
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const initialAssets: FixedAsset[] = [
+    {
+      id: 'ast-1',
+      assetTag: 'AST-101',
+      name: 'تاور کرین ۶۰ متر لیبهر (Liebherr)',
+      category: 'machinery',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-03-15',
+      purchaseCost: 85000,
+      salvageValue: 15000,
+      usefulLifeYears: 8,
+      monthlyDepreciation: 729,
+      accumulatedDepreciation: 21870,
+      currentBookValue: 63130,
+      runningHours: 1420,
+      hourlyOperatingRate: 25,
+      serialNumber: 'LH-60EC-9921',
+      assignedPerson: 'استاد صمد جرثقیل‌ران',
+      status: 'active',
+      notes: 'سرویس دوره‌ای سیم بکسل و هیدرولیک انجام شد',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-2',
+      assetTag: 'AST-102',
+      name: 'پمپ کانکریت هوایی ۳۶ متری شوئینگ',
+      category: 'machinery',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-06-10',
+      purchaseCost: 120000,
+      salvageValue: 20000,
+      usefulLifeYears: 10,
+      monthlyDepreciation: 833,
+      accumulatedDepreciation: 22491,
+      currentBookValue: 97509,
+      runningHours: 980,
+      hourlyOperatingRate: 40,
+      serialNumber: 'SCH-36B-5510',
+      assignedPerson: 'انجنیر حمید پمپ‌چی',
+      status: 'active',
+      notes: 'لوله و بست‌های خروجی در وضعیت عالی',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-3',
+      assetTag: 'AST-103',
+      name: 'دیزل جنراتور ۲۵۰ کاوا کامینز سایلنت',
+      category: 'equipment',
+      assignedProjectId: 'p1',
+      purchaseDate: '2024-08-01',
+      purchaseCost: 22000,
+      salvageValue: 4000,
+      usefulLifeYears: 6,
+      monthlyDepreciation: 250,
+      accumulatedDepreciation: 6250,
+      currentBookValue: 15750,
+      runningHours: 2150,
+      hourlyOperatingRate: 15,
+      serialNumber: 'CUM-250S-8812',
+      assignedPerson: 'مسئول برق کارگاه',
+      status: 'active',
+      notes: 'تأمین برق اضطراری و موتور جوش‌ها',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ast-4',
+      assetTag: 'AST-104',
+      name: 'لفت و بالابر مصالح ۱ تنی کارگاهی',
+      category: 'equipment',
+      assignedProjectId: 'p1',
+      purchaseDate: '2025-01-10',
+      purchaseCost: 7500,
+      salvageValue: 1000,
+      usefulLifeYears: 5,
+      monthlyDepreciation: 108,
+      accumulatedDepreciation: 2160,
+      currentBookValue: 5340,
+      runningHours: 3200,
+      hourlyOperatingRate: 8,
+      serialNumber: 'HST-1T-4029',
+      assignedPerson: 'سرپرست کارگاه',
+      status: 'maintenance',
+      notes: 'تعویض لنت ترمز و میکروسوئیچ ایمنی طبقات',
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const [assets, setAssets] = useState<FixedAsset[]>(() => loadFromStorage('assets', initialAssets));
+  const [laborRecords, setLaborRecords] = useState<LaborRecord[]>(() => loadFromStorage('labor', initialLaborRecords));
   const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('payments', initialPayments));
   const [documents, setDocuments] = useState<DocumentRecord[]>(() => loadFromStorage('documents', initialDocuments));
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => loadFromStorage('auditLogs', initialAuditLogs));
   const [activityEvents, setActivityEvents] = useState<UserActivityEvent[]>(() => loadFromStorage('activityEvents', []));
   const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>(() => loadFromStorage('projectPartners', initialProjectPartners));
   const [projectInvestments, setProjectInvestments] = useState<ProjectInvestment[]>(() => loadFromStorage('projectInvestments', initialProjectInvestments));
+  const [partnerEquityTransfers, setPartnerEquityTransfers] = useState<PartnerEquityTransfer[]>(() => loadFromStorage('partnerEquityTransfers', []));
   const [projectBudgets, setProjectBudgets] = useState<ProjectBudget[]>(() => loadFromStorage('projectBudgets', initialProjectBudgets));
 
   // Google Drive state (in-memory token cached in googleDriveAuth)
@@ -410,6 +555,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('concrete', concreteRecords); }, [concreteRecords]);
   useEffect(() => { saveToStorage('contractors', contractors); }, [contractors]);
   useEffect(() => { saveToStorage('suppliers', suppliers); }, [suppliers]);
+  useEffect(() => { saveToStorage('labor', laborRecords); }, [laborRecords]);
+  useEffect(() => { saveToStorage('assets', assets); }, [assets]);
   useEffect(() => { saveToStorage('apartments', apartments); }, [apartments]);
   useEffect(() => { saveToStorage('payments', payments); }, [payments]);
   useEffect(() => { saveToStorage('documents', documents); }, [documents]);
@@ -417,6 +564,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('activityEvents', activityEvents.slice(-600)); }, [activityEvents]);
   useEffect(() => { saveToStorage('projectPartners', projectPartners); }, [projectPartners]);
   useEffect(() => { saveToStorage('projectInvestments', projectInvestments); }, [projectInvestments]);
+  useEffect(() => { saveToStorage('partnerEquityTransfers', partnerEquityTransfers); }, [partnerEquityTransfers]);
   useEffect(() => { saveToStorage('projectBudgets', projectBudgets); }, [projectBudgets]);
 
   const isCurrentTimeDay = (): boolean => {
@@ -623,7 +771,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isTabAllowed = (tabId: string): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'admin' || currentUser.isMasterSuperAdmin) {
+    if (currentUser.isMasterSuperAdmin) {
+      return true;
+    }
+    // بررسی وضعیت ماژول غیرفعال‌شده توسط دفتر هفت
+    const modules = currentUser.customEnabledModules;
+    if (modules && (modules as any)[tabId] === false) {
+      return false;
+    }
+    if (currentUser.role === 'admin') {
       return true;
     }
     if (tabId === 'settings' || tabId === 'users' || tabId === 'admin') {
@@ -830,6 +986,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       aiEnabled: found.permissions?.aiEnabled !== false,
     }));
     logAudit('login', 'user', found.id, `User ${found.name} logged in (${found.role})`, 'Authenticated successfully');
+    backendApi.login(trimmedInput, password || '').catch(() => {});
     return { success: true };
   };
 
@@ -1037,6 +1194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (u.id === userId) {
         const isLocked = !u.isLockedBySuperAdmin;
         logAudit('update', 'user', u.id, `Super admin toggled lock for ${u.name}`, `Locked: ${isLocked}`);
+        backendApi.toggleUserLock(userId, isLocked).catch(() => {});
         return { ...u, isLockedBySuperAdmin: isLocked };
       }
       return u;
@@ -1131,25 +1289,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     companyAddress?: string;
     password?: string;
     customLogoUrl?: string;
-    customBillDesign?: {
-      receiptHeader?: string;
-      receiptFooter?: string;
-      receiptContact?: string;
-      taxNumber?: string;
-    };
-    customEnabledModules?: {
-      steel?: boolean;
-      concrete?: boolean;
-      expenses?: boolean;
-      contractors?: boolean;
-      suppliers?: boolean;
-      apartments?: boolean;
-      payments?: boolean;
-      documents?: boolean;
-      reports?: boolean;
-      auditLogs?: boolean;
-      users?: boolean;
-    };
+    customBillDesign?: CustomBillDesign;
+    customButtonConfig?: CustomActionButton[];
+    customEnabledModules?: User['customEnabledModules'];
     aiEnabled?: boolean;
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
@@ -1176,6 +1318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : u.password,
           customLogoUrl: updates.customLogoUrl !== undefined ? updates.customLogoUrl : u.customLogoUrl,
           customBillDesign: updates.customBillDesign !== undefined ? updates.customBillDesign : u.customBillDesign,
+          customButtonConfig: updates.customButtonConfig !== undefined ? updates.customButtonConfig : u.customButtonConfig,
           customEnabledModules: updates.customEnabledModules !== undefined ? updates.customEnabledModules : u.customEnabledModules,
           subscriptionExpiresAt: updates.subscriptionExpiresAt !== undefined ? updates.subscriptionExpiresAt : u.subscriptionExpiresAt,
           isLockedBySuperAdmin: updates.isLockedBySuperAdmin !== undefined ? updates.isLockedBySuperAdmin : u.isLockedBySuperAdmin,
@@ -1196,6 +1339,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         companyName: updates.companyName || prev.companyName,
         logoUrl: updates.customLogoUrl || prev.logoUrl,
         receiptHeader: updates.customBillDesign?.receiptHeader || prev.receiptHeader,
+        billDesign: updates.customBillDesign || prev.billDesign,
+        actionButtons: updates.customButtonConfig || prev.actionButtons,
         receiptFooter: updates.customBillDesign?.receiptFooter || prev.receiptFooter,
         receiptContact: updates.customBillDesign?.receiptContact || prev.receiptContact,
         enabledModules: updates.customEnabledModules ? { ...prev.enabledModules, ...updates.customEnabledModules } : prev.enabledModules,
@@ -1203,6 +1348,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (targetFound) {
       logAudit('update', 'user', userId, `Master Admin updated tenant settings`, 'Tenant full-control configuration updated');
+      backendApi.updateTenantByOffice7({
+        id: userId,
+        ...updates,
+      }).catch(() => {});
       return { success: true };
     }
     return { success: false, error: 'User not found' };
@@ -1372,6 +1521,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'project', newProject.id, newProject.name, `New building project created: ${newProject.floors} floors, ${newProject.units} units`, undefined, undefined, newProject.id);
+    backendApi.saveProject({
+      id: newProject.id,
+      name: newProject.name,
+      contractValue: newProject.budget,
+      approvedBudget: newProject.budget,
+      currency: newProject.currency,
+      location: newProject.address || newProject.city || '',
+      startDate: newProject.startDate,
+      expectedFinish: newProject.expectedCompletionDate,
+      status: newProject.status,
+    }).catch(() => {});
   };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
@@ -1440,6 +1600,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transferData.newOwner,
       transferData.projectId
     );
+
+    backendApi.interProjectTransfer({
+      fromProjectId: transferData.projectId,
+      toProjectId: transferData.projectId,
+      amount: transferData.amountPaid || transferData.transferValue || 0,
+      description: `انتقال به ${transferData.newOwner}: ${transferData.notes || ''}`,
+      transferDate: transferData.transferDate,
+      approvedBy: transferData.createdBy || 'مدیریت',
+    }).catch(() => {});
 
     return newEvent;
   };
@@ -1515,6 +1684,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const old = projectInvestments.find(inv => inv.id === id);
     setProjectInvestments(prev => prev.filter(inv => inv.id !== id));
     logAudit('delete', 'project', id, `Investment: ${old?.partnerName || id}`, `Deleted investment record of ${old?.amount} ${old?.currency}`, undefined, undefined, old?.projectId);
+  };
+
+  const transferPartnerEquity = (data: Omit<PartnerEquityTransfer, 'id' | 'createdAt'>): PartnerEquityTransfer => {
+    const id = 'eq-tr-' + Date.now();
+    const newTransfer: PartnerEquityTransfer = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setPartnerEquityTransfers(prev => [newTransfer, ...prev]);
+
+    // Update seller partner
+    setProjectPartners(prev => prev.map(p => {
+      if (p.id === data.fromPartnerId) {
+        const remainingShare = Math.max(0, (p.sharePercentage || 0) - data.transferredPercentage);
+        return {
+          ...p,
+          sharePercentage: remainingShare,
+          status: remainingShare === 0 ? 'exited' : p.status,
+          exitDate: remainingShare === 0 ? data.transferDate : p.exitDate,
+          exitReason: remainingShare === 0 ? `واگذاری کامل سهم به ${data.toPartnerName}` : p.exitReason,
+          transferredToPartnerId: data.toPartnerId,
+          transferredToPartnerName: data.toPartnerName,
+          transferPrice: data.transferPrice,
+          transferCurrency: data.currency,
+        };
+      }
+      // If buyer is an existing partner, increase their share
+      if (data.toPartnerId && p.id === data.toPartnerId) {
+        return {
+          ...p,
+          sharePercentage: (p.sharePercentage || 0) + data.transferredPercentage,
+        };
+      }
+      return p;
+    }));
+
+    // If buyer is a new partner (no toPartnerId or transferType === 'new_partner'), create new partner
+    if (!data.toPartnerId && data.transferType === 'new_partner') {
+      const newPartnerId = 'pp-' + Date.now();
+      const createdBuyer: ProjectPartner = {
+        id: newPartnerId,
+        projectId: data.projectId,
+        name: data.toPartnerName,
+        sharePercentage: data.transferredPercentage,
+        initialInvestment: data.transferPrice,
+        currency: data.currency,
+        investmentDate: data.transferDate,
+        notes: `خرید سهم از ${data.fromPartnerName} (سند صلح: ${data.deedNumber || '—'})`,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+      setProjectPartners(prev => [...prev, createdBuyer]);
+    }
+
+    logAudit('create', 'project', data.projectId, data.fromPartnerName, `انتقال ${data.transferredPercentage}٪ سهم‌الشرکه از ${data.fromPartnerName} به ${data.toPartnerName} به مبلغ ${data.transferPrice} ${data.currency}`, undefined, undefined, data.projectId);
+
+    return newTransfer;
   };
 
   const getProjectPartners = (projectId: string): ProjectPartner[] => {
@@ -1606,6 +1833,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'expense', newExpense.id, `${newExpense.category}: ${newExpense.description}`, `Amount: $${newExpense.amount.toLocaleString()} - Status: ${newExpense.paymentStatus}`, undefined, `$${newExpense.amount}`, newExpense.projectId);
+    backendApi.createPayment({
+      projectId: newExpense.projectId,
+      amount: newExpense.amount,
+      currency: newExpense.currency,
+      exchangeRate: newExpense.exchangeRate,
+      payeeName: newExpense.partyName || newExpense.category,
+      expenseCategory: newExpense.category,
+      description: newExpense.description || newExpense.item,
+      paymentMethod: (newExpense.paymentMethod || 'cash').toLowerCase(),
+      date: newExpense.date,
+    }).catch(() => {});
   };
 
   const updateExpense = (id: string, updates: Partial<Expense>) => {
@@ -1901,6 +2139,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const old = suppliers.find(s => s.id === id);
     setSuppliers(prev => prev.filter(s => s.id !== id));
     logAudit('delete', 'supplier', id, old?.name || 'Supplier', `Deleted supplier`, undefined, undefined, old?.projectId);
+  };
+
+  // Labor & Payroll Records
+  const addLaborRecord = (record: Omit<LaborRecord, 'id' | 'createdAt'>) => {
+    const id = 'lab-' + Date.now();
+    const newRecord: LaborRecord = {
+      ...record,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setLaborRecords(prev => [newRecord, ...prev]);
+    logAudit('create', 'expense', id, record.workerName, `ثبت معاش کارگری برای ${record.workerName}: ${record.netPayable} AFN`, undefined, undefined, record.projectId);
+  };
+
+  const deleteLaborRecord = (id: string) => {
+    const old = laborRecords.find(l => l.id === id);
+    setLaborRecords(prev => prev.filter(l => l.id !== id));
+    logAudit('delete', 'expense', id, old?.workerName || 'Labor Record', `حذف رکورد معاش کارگری`, undefined, undefined, old?.projectId);
+  };
+
+  // Fixed Assets & Heavy Machinery CRUD
+  const addAsset = (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
+    const id = 'ast-' + Date.now();
+    const newAsset: FixedAsset = {
+      ...asset,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setAssets(prev => [newAsset, ...prev]);
+    logAudit('create', 'expense', id, asset.name, `ثبت دارایی ثابت/ماشین‌آلات: ${asset.name} (${asset.assetTag}) - قیمت: $${asset.purchaseCost}`, undefined, undefined, asset.assignedProjectId);
+  };
+
+  const updateAsset = (id: string, updates: Partial<FixedAsset>) => {
+    const old = assets.find(a => a.id === id);
+    setAssets(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
+    logAudit('update', 'expense', id, updates.name || old?.name || 'Asset', `ویرایش مشخصات ماشین‌آلات/دارایی`, undefined, undefined, old?.assignedProjectId);
+  };
+
+  const deleteAsset = (id: string) => {
+    const old = assets.find(a => a.id === id);
+    setAssets(prev => prev.filter(a => a.id !== id));
+    logAudit('delete', 'expense', id, old?.name || 'Asset', `حذف دارایی ثابت/ماشین‌آلات`, undefined, undefined, old?.assignedProjectId);
   };
 
   // Apartments & Sales CRUD
@@ -2821,6 +3101,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addProjectInvestment,
       updateProjectInvestment,
       deleteProjectInvestment,
+      partnerEquityTransfers,
+      transferPartnerEquity,
       getProjectPartners,
       getProjectInvestments,
       expenses,
@@ -2844,6 +3126,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addSupplier,
       updateSupplier,
       deleteSupplier,
+      laborRecords,
+      addLaborRecord,
+      deleteLaborRecord,
+      assets,
+      addAsset,
+      updateAsset,
+      deleteAsset,
       apartments,
       addApartment,
       updateApartment,

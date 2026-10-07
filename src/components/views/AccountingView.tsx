@@ -30,12 +30,13 @@ import {
   Building2,
   Home,
   Box,
+  Search,
 } from 'lucide-react';
 import { JournalEntry } from '../../types';
 import { computeWipCostBreakdown } from '../../utils/journalEngine';
 import { computeUnitProfitability } from '../../utils/wipAllocation';
 
-type ReportTab = 'trial' | 'income' | 'balance' | 'units' | 'journal';
+type ReportTab = 'trial' | 'income' | 'balance' | 'units' | 'journal' | 'coa';
 
 export const AccountingView: React.FC = () => {
   const {
@@ -44,6 +45,7 @@ export const AccountingView: React.FC = () => {
     getTrialBalance,
     accountBalances,
     getAccountBalance,
+    chartOfAccounts,
     apartments,
     expenses,
     steelRecords,
@@ -57,6 +59,8 @@ export const AccountingView: React.FC = () => {
 
   const [tab, setTab] = useState<ReportTab>('trial');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [coaSearch, setCoaSearch] = useState('');
+  const [coaGroup, setCoaGroup] = useState('all');
 
   const projectId = currentProject?.id;
   const projectJournal = useMemo(
@@ -122,6 +126,7 @@ export const AccountingView: React.FC = () => {
     { id: 'balance', label: t('accTabBalance') || 'Balance Sheet', Icon: Landmark },
     { id: 'units', label: t('accTabUnits') || 'Per-Unit Profit', Icon: Home },
     { id: 'journal', label: t('accTabJournal') || 'Journal Ledger', Icon: ListOrdered },
+    { id: 'coa', label: language === 'en' ? 'Chart of Accounts (COA)' : 'درخت و کدینگ حساب‌ها (COA)', Icon: BookOpen },
   ];
 
   const SectionHeader: React.FC<{ Icon: any; title: string; tint: string }> = ({ Icon, title, tint }) => (
@@ -547,6 +552,114 @@ export const AccountingView: React.FC = () => {
               {t('accJournalTruncated') || `Showing latest 200 of ${projectJournal.length} entries`}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ==================== Chart of Accounts ======================= */}
+      {tab === 'coa' && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-surface border border-line flex flex-col sm:flex-row gap-3 items-center justify-between print:hidden">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="جستجوی کد ۴ رقمی یا نام حساب..."
+                value={coaSearch}
+                onChange={(e) => setCoaSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <select
+                value={coaGroup}
+                onChange={(e) => setCoaGroup(e.target.value)}
+                className="px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none"
+              >
+                <option value="all">همه طبقات حساب‌ها (All Groups)</option>
+                <option value="1">۱۰۰۰ - دارایی‌ها (Assets)</option>
+                <option value="2">۲۰۰۰ - بدهی‌ها (Liabilities)</option>
+                <option value="3">۳۰۰۰ - حقوق صاحبان سهام و سرمایه (Equity)</option>
+                <option value="4">۴۰۰۰ - درآمدها و فروش (Revenue)</option>
+                <option value="5">۵۰۰۰ - بهای تمام‌شده و مصارف ساخت (Project Costs)</option>
+                <option value="6">۶۰۰۰ - مصارف عمومی و اداری (Operating Expenses)</option>
+                <option value="7">۷۰۰۰ - هزینه‌های مالی (Finance Costs)</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition shrink-0"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>چاپ درخت حساب‌ها</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-surface rounded-3xl border border-line shadow-sm overflow-hidden p-5 sm:p-6 print:border-none print:p-0">
+            <div className="overflow-x-auto scroll-touch">
+              <table className="w-full text-xs text-right border-collapse">
+                <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line print:bg-slate-100">
+                  <tr>
+                    <th className="py-3 px-3 w-24">کد ۴ رقمی</th>
+                    <th className="py-3 px-3">عنوان حسابداری (دری / فارسی)</th>
+                    <th className="py-3 px-3">نام لاتین (English)</th>
+                    <th className="py-3 px-3 text-center">ماهیت استاندارد</th>
+                    <th className="py-3 px-3 text-center">سطح درخت</th>
+                    <th className="py-3 px-3 text-left">مانده زنده در دفاتر ($)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {chartOfAccounts
+                    .filter(a => {
+                      const matchesSearch = 
+                        a.code.includes(coaSearch) ||
+                        (a.nameFa || '').toLowerCase().includes(coaSearch.toLowerCase()) ||
+                        (a.nameEn || '').toLowerCase().includes(coaSearch.toLowerCase());
+                      const matchesGroup = coaGroup === 'all' || a.code.startsWith(coaGroup);
+                      return matchesSearch && matchesGroup;
+                    })
+                    .map(a => {
+                      const balance = getAccountBalance(a.code, projectId);
+                      const isHeader = !!a.isHeader;
+
+                      return (
+                        <tr 
+                          key={a.code} 
+                          className={`transition ${isHeader ? 'bg-surface-2/60 font-black' : 'hover:bg-surface-2/30'}`}
+                        >
+                          <td className="py-2.5 px-3 font-mono font-bold text-amber-600">
+                            {a.code}
+                          </td>
+                          <td className={`py-2.5 px-3 text-ink ${isHeader ? 'font-black text-sm' : a.parentCode && a.parentCode !== '1000' && a.parentCode !== '2000' && a.parentCode !== '3000' && a.parentCode !== '4000' && a.parentCode !== '5000' && a.parentCode !== '6000' ? 'ps-6 text-slate-600 dark:text-slate-300' : 'font-bold'}`}>
+                            {a.nameFa}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                            {a.nameEn}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] ${
+                              a.normalBalance === 'debit'
+                                ? 'bg-amber-500/10 text-amber-600'
+                                : 'bg-emerald-500/10 text-emerald-600'
+                            }`}>
+                              {a.normalBalance === 'debit' ? 'بدهکار (Dr)' : 'بستانکار (Cr)'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-[10px] text-slate-400">
+                            {isHeader ? 'گروه / کل' : 'معین'}
+                          </td>
+                          <td className="py-2.5 px-3 text-left font-mono font-bold text-ink">
+                            {balance ? fmt(balance.netUSD) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>
