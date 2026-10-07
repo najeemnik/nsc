@@ -253,7 +253,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 text-xs max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 text-xs max-h-[75dvh] overflow-y-auto">
           
           {/* Error Banner */}
           {formError && (

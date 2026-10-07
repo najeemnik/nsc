@@ -153,7 +153,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
 
       {/* Expenses Table */}
       <div className="bg-surface rounded-3xl border border-line shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto scroll-touch">
           <table className="w-full text-xs text-left">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>

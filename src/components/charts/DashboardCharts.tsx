@@ -157,7 +157,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = (props) => {
         </div>
 
         {/* Tab Selection Navigation */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 text-xs">
+        <div className="flex items-center gap-1 overflow-x-auto scroll-touch no-scrollbar py-1 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}

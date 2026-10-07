@@ -258,7 +258,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-surface rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh]">
+      <div className="bg-surface rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-line my-auto animate-in fade-in zoom-in-95 flex flex-col max-h-[92dvh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
@@ -558,7 +558,7 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                 </div>
               ) : (
                 <div className="border border-line rounded-2xl overflow-hidden shadow-xs bg-surface">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto scroll-touch">
                     <table className="w-full text-start text-xs">
                       <thead className="bg-slate-100 dark:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold border-b border-line">
                         <tr>

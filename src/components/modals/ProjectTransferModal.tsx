@@ -168,7 +168,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full max-w-3xl bg-surface rounded-3xl shadow-2xl border border-line overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-3xl bg-surface rounded-3xl shadow-2xl border border-line overflow-hidden flex flex-col max-h-[92dvh]"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Header */}

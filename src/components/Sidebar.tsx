@@ -24,7 +24,8 @@ import {
   BookOpen,
   Users,
   ShieldCheck,
-  Cloud
+  Cloud,
+  Wallet
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -61,7 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
     isTabAllowed,
     isSectionProtected,
     isSectionUnlocked,
-    isGoogleDriveConnected
+    isGoogleDriveConnected,
+    setIsMasterAdminOpen
   } = useApp();
 
   const enabled = appSettings.enabledModules || {};
@@ -200,6 +202,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
           activeGradient: 'from-emerald-600 to-teal-600',
           activeShadow: 'shadow-emerald-500/35'
         } : null),
+        (enabled.budget !== false ? { 
+          id: 'budget', 
+          label: t.navBudget, 
+          icon: Wallet,
+          colorName: 'teal',
+          iconColor: 'text-teal-600 dark:text-teal-300',
+          iconBgLight: 'bg-teal-500/15',
+          iconBgDark: 'dark:bg-teal-500/25',
+          borderColorLight: 'border-teal-200',
+          borderColorDark: 'dark:border-teal-500/30',
+          activeGradient: 'from-teal-500 to-emerald-600',
+          activeShadow: 'shadow-teal-500/35'
+        } : null),
         (enabled.documents !== false ? { 
           id: 'documents', 
           label: t.navDocuments, 
@@ -226,6 +241,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
           activeGradient: 'from-purple-600 to-violet-600',
           activeShadow: 'shadow-purple-500/35'
         } : null),
+        (enabled.accounting !== false ? { 
+          id: 'accounting', 
+          label: t.navAccounting, 
+          icon: BookOpen,
+          colorName: 'violet',
+          iconColor: 'text-violet-600 dark:text-violet-300',
+          iconBgLight: 'bg-violet-500/15',
+          iconBgDark: 'dark:bg-violet-500/25',
+          borderColorLight: 'border-violet-200',
+          borderColorDark: 'dark:border-violet-500/30',
+          activeGradient: 'from-violet-600 to-purple-600',
+          activeShadow: 'shadow-violet-500/35'
+        } : null),
       ].filter(Boolean) as NavItemConfig[]
     }
   ];
@@ -236,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       items: [
         (currentUser?.isMasterSuperAdmin ? {
           id: 'super_admin',
-          label: language === 'en' ? 'Super Admin Portal' : language === 'ps' ? 'عمومي مدیر' : 'مدیر ارشد (احمد نجیم نیک)',
+          label: language === 'en' ? 'Office 7 (Master)' : language === 'ps' ? 'دفتر اووه' : 'دفتر هفت',
           icon: ShieldCheck,
           colorName: 'rose',
           iconColor: 'text-rose-600 dark:text-rose-300',
@@ -358,7 +386,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => {
+                        if (item.id === 'super_admin') {
+                          setIsMasterAdminOpen(true);
+                          return;
+                        }
+                        setActiveTab(item.id);
+                      }}
                       className={`theme-nav-item w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 group border relative overflow-hidden ${
                         isActive 
                           ? `active bg-gradient-to-r ${item.activeGradient} text-white ${item.activeShadow} shadow-md border-transparent font-black ring-1 ring-white/30` 

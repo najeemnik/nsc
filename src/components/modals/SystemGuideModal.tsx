@@ -93,7 +93,7 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({ isOpen, onCl
       aria-labelledby="guide-title"
     >
       <div 
-        className="bg-surface w-full max-w-4xl rounded-3xl shadow-2xl border border-line overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className="bg-surface w-full max-w-4xl rounded-3xl shadow-2xl border border-line overflow-hidden my-auto max-h-[92dvh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         dir={isRtl ? 'rtl' : 'ltr'}
       >

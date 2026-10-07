@@ -28,6 +28,9 @@ const THEME_OPTIONS: { id: AppTheme; labelKey: string; swatch: string }[] = [
   { id: 'squirclemorphism',labelKey: 'themeSquirclemorphism',swatch: 'linear-gradient(135deg, #818cf8, #f59e0b)' },
   { id: 'metalmorphism',   labelKey: 'themeMetalmorphism',   swatch: 'linear-gradient(135deg, #f2f4f7, #98a3b0)' },
   { id: 'ar_morphism',     labelKey: 'themeArmorphism',      swatch: 'linear-gradient(135deg, #0e7490, #22d3ee)' },
+  { id: 'cosmic_orange',   labelKey: 'themeCosmicOrange',    swatch: 'linear-gradient(135deg, #fff7ed, #f96b1f)' },
+  { id: 'blue_titanium',   labelKey: 'themeBlueTitanium',    swatch: 'linear-gradient(135deg, #eaf1fb, #3b6fe0)' },
+  { id: 'desert_titanium', labelKey: 'themeDesertTitanium',  swatch: 'linear-gradient(135deg, #faf3e3, #c08a3e)' },
 ];
 
 interface SettingsViewProps {
