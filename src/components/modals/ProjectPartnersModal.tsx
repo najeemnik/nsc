@@ -16,6 +16,9 @@ import {
   Coins, 
   Receipt,
   FileText,
+  Printer,
+  Scale,
+  TrendingUp,
   History as HistoryIcon
 } from 'lucide-react';
 
@@ -39,11 +42,14 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
     addProjectInvestment, 
     updateProjectInvestment, 
     deleteProjectInvestment,
+    formatNumber,
     t,
     currentUser
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'partners' | 'investments'>('partners');
+  const [activeTab, setActiveTab] = useState<'partners' | 'investments' | 'distribution'>('partners');
+  const [distributableProfit, setDistributableProfit] = useState<string>('5000000');
+  const [profitCurrency, setProfitCurrency] = useState<'AFN' | 'USD'>('AFN');
 
   const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<ProjectPartner | null>(null);
@@ -404,6 +410,18 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
             <HistoryIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span>دفتر واریزی‌ها و سرمایه ({currentInvestments.length})</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('distribution')}
+            className={`py-3 px-4 font-bold border-b-2 flex items-center gap-2 transition-all ${
+              activeTab === 'distribution'
+                ? 'border-amber-600 text-amber-900 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span>تسهیم سود و تسویه سهم‌الشرکه</span>
+          </button>
         </div>
 
         {/* Content Area */}
@@ -630,6 +648,141 @@ export const ProjectPartnersModal: React.FC<ProjectPartnersModalProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 3: Profit & Loss Distribution */}
+          {activeTab === 'distribution' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl">
+                <div>
+                  <h4 className="font-extrabold text-ink text-xs sm:text-sm flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-amber-600" />
+                    <span>تسهیم قانونی سود، زیان و بازگشت سرمایه شرکا (Equity & Dividend Distribution)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    بر اساس درصد سهم‌الشرکه رسمی ثبت‌شده و کل سرمایه‌گذاری نقدی هر شریک.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shrink-0"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>چاپ صورت‌جلسه رسمی تقسیم سود</span>
+                </button>
+              </div>
+
+              {/* Profit Input Simulator */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-surface-2/50 rounded-2xl border border-line">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                    کل سود خالص قابل تقسیم پروژه:
+                  </label>
+                  <input
+                    type="number"
+                    value={distributableProfit}
+                    onChange={(e) => setDistributableProfit(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono font-bold focus:ring-2 focus:ring-amber-500/20"
+                    placeholder="مبلغ سود به عدد..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                    واحد پولی سود:
+                  </label>
+                  <select
+                    value={profitCurrency}
+                    onChange={(e) => setProfitCurrency(e.target.value as 'AFN' | 'USD')}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-bold focus:ring-2 focus:ring-amber-500/20"
+                  >
+                    <option value="AFN">افغانی (AFN)</option>
+                    <option value="USD">دالر آمریکایی (USD)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                    مجموع سهم تخصیص‌یافته:
+                  </label>
+                  <div className={`px-3 py-2 rounded-xl font-mono font-black text-sm border flex items-center justify-between ${
+                    totalStats.totalShare === 100 
+                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                      : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                  }`}>
+                    <span>{totalStats.totalShare}٪ از ۱۰۰٪</span>
+                    {totalStats.totalShare === 100 ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <span className="text-[10px] font-normal">
+                        ({100 - totalStats.totalShare}٪ آزاد)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Partners Profit Table */}
+              <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-right border-collapse">
+                    <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line">
+                      <tr>
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">نام و مشخصات شریک</th>
+                        <th className="py-2.5 px-3 text-center">فیصدی سهم</th>
+                        <th className="py-2.5 px-3 text-left">مجموع سرمایه واریزی</th>
+                        <th className="py-2.5 px-3 text-left text-emerald-600">سود تخصیصی ({profitCurrency})</th>
+                        <th className="py-2.5 px-3 text-left font-black text-ink">مجموع قابل تسویه</th>
+                        <th className="py-2.5 px-3 text-center w-32">امضا و اثر انگشت شریک</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {partnersSummary.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-400">
+                            هیچ شریکی برای محاسبه سهم سود ثبت نشده است.
+                          </td>
+                        </tr>
+                      ) : (
+                        partnersSummary.map((partner, idx) => {
+                          const profitNum = parseFloat(distributableProfit) || 0;
+                          const partnerProfit = ((partner.sharePercentage || 0) / 100) * profitNum;
+                          const partnerCap = profitCurrency === 'USD' ? partner.totalInvUSD : partner.totalInvAFN;
+                          const totalReturn = partnerCap + partnerProfit;
+
+                          return (
+                            <tr key={partner.id} className="hover:bg-surface-2/30">
+                              <td className="py-2.5 px-3 font-mono text-slate-400">{idx + 1}</td>
+                              <td className="py-2.5 px-3 font-bold text-ink">
+                                <div>{partner.name}</div>
+                                {partner.phone && <div className="text-[10px] text-slate-400 font-mono">{partner.phone}</div>}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-mono font-black text-amber-600">
+                                {partner.sharePercentage || 0}٪
+                              </td>
+                              <td className="py-2.5 px-3 text-left font-mono">
+                                {profitCurrency === 'USD' 
+                                  ? `$${formatNumber(partner.totalInvUSD, 0)}`
+                                  : `${formatNumber(partner.totalInvAFN, 0)} AFN`}
+                              </td>
+                              <td className="py-2.5 px-3 text-left font-mono font-bold text-emerald-600">
+                                +{formatNumber(partnerProfit, 0)} {profitCurrency}
+                              </td>
+                              <td className="py-2.5 px-3 text-left font-mono font-black text-ink">
+                                {formatNumber(totalReturn, 0)} {profitCurrency}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <div className="h-8 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg mx-auto w-24"></div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
