@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { User, UserActivityEvent } from '../types';
+import { User, UserActivityEvent, CustomActionButton, CustomBillDesign, DEFAULT_ACTION_BUTTONS } from '../types';
 import { 
   ShieldCheck, 
   Lock, 
@@ -49,7 +49,21 @@ import {
   Activity,
   TrendingUp,
   Timer,
-  Key
+  Key,
+  Coins,
+  Wallet,
+  Banknote,
+  Truck,
+  ArrowLeftRight,
+  BookOpen,
+  Scale,
+  Landmark,
+  QrCode,
+  MoveUp,
+  MoveDown,
+  Stamp,
+  Printer,
+  Palette
 } from 'lucide-react';
 
 interface MasterAdminModalProps {
@@ -65,17 +79,25 @@ interface MasterAdminModalProps {
 const TAB_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'dashboard',   label: 'داشبورد' },
   { id: 'projects',    label: 'پروژه‌ها' },
+  { id: 'income',      label: 'عواید و دریافت‌ها' },
+  { id: 'materials',   label: 'خرید مصالح و تدارکات' },
+  { id: 'labor',       label: 'کارکرد و معاشات' },
   { id: 'steel',       label: 'سیخ‌گول' },
   { id: 'concrete',    label: 'کانکریت' },
   { id: 'expenses',    label: 'هزینه‌ها' },
   { id: 'contractors', label: 'پیمانکاران' },
   { id: 'suppliers',   label: 'عرضه‌کنندگان' },
-  { id: 'apartments',  label: 'پلاک‌ها' },
+  { id: 'apartments',  label: 'پلاک‌ها و فروش' },
   { id: 'payments',    label: 'پرداخت‌ها' },
+  { id: 'treasury',    label: 'بانک و حسابداری' },
+  { id: 'petty_cash',  label: 'صندوق خُرد' },
+  { id: 'assets',      label: 'اموال و تجهیزات' },
+  { id: 'transfers',   label: 'انتقالات کارگاهی' },
   { id: 'budget',      label: 'بودجه پروژه' },
+  { id: 'accounting',  label: 'دفاتر حسابداری' },
+  { id: 'journal',     label: 'اسناد روزنامچه' },
   { id: 'documents',   label: 'اسناد و بِل‌ها' },
   { id: 'reports',     label: 'گزارشات' },
-  { id: 'accounting',  label: 'دفاتر حسابداری' },
   { id: 'settings',    label: 'تنظیمات' },
   { id: 'users',       label: 'مدیریت کارمندان' },
   { id: 'audit_logs',  label: 'ثبت رویدادها' },
@@ -111,7 +133,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'locked' | 'ai'>('all');
 
   const [selectedTenant, setSelectedTenant] = useState<User | null>(null);
-  const [inspectorTab, setInspectorTab] = useState<'profile' | 'modules' | 'bill' | 'subscription' | 'access'>('profile');
+  const [inspectorTab, setInspectorTab] = useState<'profile' | 'modules' | 'buttons' | 'bill' | 'subscription' | 'access'>('profile');
 
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -127,6 +149,34 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
   const [editReceiptContact, setEditReceiptContact] = useState('');
   const [editTaxNumber, setEditTaxNumber] = useState('');
 
+  // 🎨 Action Button Configuration (Order, Shape, Color, Visibility, Labels)
+  const [editButtonConfig, setEditButtonConfig] = useState<CustomActionButton[]>(DEFAULT_ACTION_BUTTONS);
+
+  // 🧾 Freeform Visual Voucher & Bill Designer State
+  const [editBillDesign, setEditBillDesign] = useState<CustomBillDesign>({
+    receiptHeader: '',
+    receiptSubheader: '',
+    receiptFooter: '',
+    receiptContact: '',
+    taxNumber: '',
+    companyAddress: '',
+    companyPhone: '',
+    companyEmail: '',
+    logoPosition: 'right',
+    primaryColor: '#0f172a',
+    accentColor: '#d97706',
+    paperSize: 'A4',
+    showQrCode: true,
+    showStampSignature: true,
+    showWatermark: true,
+    showRetentionBox: true,
+    showWithholdingTax: true,
+    termsAndConditions: 'تسویه نهایی پس از ارزیابی کمیت کار، کسر تضمین حسن انجام کار و تأیید مهندس ناظر معتبر است.',
+    customNote: 'سند رسمی و معتبر محاسباتی پروژه ساختمانی',
+    borderStyle: 'solid',
+  });
+  const [billPreviewType, setBillPreviewType] = useState<'rv' | 'pv' | 'pcv' | 'contractor'>('pv');
+
   const [editModules, setEditModules] = useState<{
     steel: boolean;
     concrete: boolean;
@@ -138,6 +188,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     documents: boolean;
     reports: boolean;
     auditLogs: boolean;
+    income: boolean;
+    materials: boolean;
+    labor: boolean;
+    treasury: boolean;
+    pettyCash: boolean;
+    assets: boolean;
+    transfers: boolean;
+    journal: boolean;
   }>({
     steel: true,
     concrete: true,
@@ -149,6 +207,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     documents: true,
     reports: true,
     auditLogs: true,
+    income: true,
+    materials: true,
+    labor: true,
+    treasury: true,
+    pettyCash: true,
+    assets: true,
+    transfers: true,
+    journal: true,
   });
 
   const [editAiEnabled, setEditAiEnabled] = useState(true);
@@ -257,6 +323,35 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     setEditReceiptContact(bill.receiptContact || user.phone || '');
     setEditTaxNumber(bill.taxNumber || '');
 
+    setEditBillDesign({
+      receiptHeader: bill.receiptHeader || user.companyName || 'شرکت مهندسی و ساختمانی',
+      receiptSubheader: bill.receiptSubheader || 'سهامی خاص · شماره ثبت تجارتی کابل',
+      receiptFooter: bill.receiptFooter || 'کابل، افغانستان · تمامی حقوق مالی و مهندسی محفوظ است.',
+      receiptContact: bill.receiptContact || user.phone || '0783788278 / 0700000000',
+      taxNumber: bill.taxNumber || 'TIN-9821-AF',
+      companyAddress: bill.companyAddress || user.companyAddress || 'چهارراهی صدارت، کابل، افغانستان',
+      companyPhone: bill.companyPhone || user.phone || '+93 78 378 8278',
+      companyEmail: bill.companyEmail || user.email || 'finance@construction.af',
+      logoPosition: bill.logoPosition || 'right',
+      primaryColor: bill.primaryColor || '#0f172a',
+      accentColor: bill.accentColor || '#d97706',
+      paperSize: bill.paperSize || 'A4',
+      showQrCode: bill.showQrCode !== false,
+      showStampSignature: bill.showStampSignature !== false,
+      showWatermark: bill.showWatermark !== false,
+      showRetentionBox: bill.showRetentionBox !== false,
+      showWithholdingTax: bill.showWithholdingTax !== false,
+      termsAndConditions: bill.termsAndConditions || 'تسویه نهایی پس از ارزیابی کمیت کار، کسر تضمین حسن انجام کار و تأیید مهندس ناظر معتبر است.',
+      customNote: bill.customNote || 'سند رسمی و معتبر محاسباتی پروژه ساختمانی',
+      borderStyle: bill.borderStyle || 'solid',
+    });
+
+    setEditButtonConfig(
+      user.customButtonConfig && user.customButtonConfig.length > 0 
+        ? user.customButtonConfig 
+        : DEFAULT_ACTION_BUTTONS
+    );
+
     const mods = user.customEnabledModules || {};
     setEditModules({
       steel: mods.steel !== false,
@@ -269,6 +364,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       documents: mods.documents !== false,
       reports: mods.reports !== false,
       auditLogs: mods.auditLogs !== false,
+      income: mods.income !== false,
+      materials: mods.materials !== false,
+      labor: mods.labor !== false,
+      treasury: mods.treasury !== false,
+      pettyCash: mods.pettyCash !== false,
+      assets: mods.assets !== false,
+      transfers: mods.transfers !== false,
+      journal: mods.journal !== false,
     });
 
     setEditAiEnabled(user.permissions?.aiEnabled !== false);
@@ -302,12 +405,8 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       companyAddress: editCompanyAddress.trim(),
       password: editPassword.trim() || undefined,
       customLogoUrl: editLogoUrl.trim() || undefined,
-      customBillDesign: {
-        receiptHeader: editReceiptHeader.trim() || undefined,
-        receiptFooter: editReceiptFooter.trim() || undefined,
-        receiptContact: editReceiptContact.trim() || undefined,
-        taxNumber: editTaxNumber.trim() || undefined,
-      },
+      customBillDesign: editBillDesign,
+      customButtonConfig: editButtonConfig,
       customEnabledModules: editModules,
       aiEnabled: editAiEnabled,
       subscriptionExpiresAt: editExpiresAt ? new Date(editExpiresAt).toISOString() : undefined,
@@ -731,8 +830,9 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 {[
                   { id: 'profile', label: 'مشخصات شرکت', icon: UserCheck },
                   { id: 'access', label: 'پرمیژن و اکسس', icon: UserCog },
-                  { id: 'modules', label: 'کنترل ماژول‌ها', icon: Sliders },
-                  { id: 'bill', label: 'طراحی رسید و سربرگ', icon: Receipt },
+                  { id: 'modules', label: 'کنترل ماژول‌ها (۱۸)', icon: Sliders },
+                  { id: 'buttons', label: 'دکمه‌ها و اکشن‌بار', icon: Sliders },
+                  { id: 'bill', label: 'استودیوی بل و واچر', icon: Receipt },
                   { id: 'subscription', label: 'تمدید و قفل اشتراک', icon: Calendar },
                 ].map(t => {
                   const Icon = t.icon;
@@ -906,6 +1006,9 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 <div className="space-y-4 max-w-4xl mx-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     {[
+                      { id: 'income', label: 'عواید و دریافت‌ها', desc: 'اقساط، فروش واحد و سرمایه‌گذاران', icon: Coins },
+                      { id: 'materials', label: 'خرید مصالح و تدارکات', desc: 'سیمان، ریگ، خشت با اتصال به مصرف', icon: Truck },
+                      { id: 'labor', label: 'معاشات کارگران', desc: 'دستمزد، مساعده و تسویه کارکرد', icon: UserCheck },
                       { id: 'steel', label: 'سیخ‌گول و آهن‌آلات', desc: 'محاسبات کیلو و تن و قیمت', icon: Layers },
                       { id: 'concrete', label: 'کانکریت و پمپ', desc: 'بچینگ، مکسر و کرایه پمپ', icon: CircleDot },
                       { id: 'expenses', label: 'مصارف روزمره', desc: 'خریدهای عمومی و متفرقه', icon: Receipt },
@@ -913,8 +1016,13 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       { id: 'suppliers', label: 'تأمین‌کنندگان', desc: 'فروشندگان مصالح و طلبکاری', icon: Building2 },
                       { id: 'apartments', label: 'آپارتمان‌ها', desc: 'فروش، متراژ و اقساط', icon: Home },
                       { id: 'payments', label: 'پرداخت و رسید', desc: 'صدور رسید و ثبت چک و بانکی', icon: CreditCard },
+                      { id: 'treasury', label: 'بانک و خزانه‌داری', desc: 'حساب‌های بانکی و موجودی آنی', icon: Landmark },
+                      { id: 'pettyCash', label: 'تنخواه‌گردان کارگاه', desc: 'مصارف خرد و واچرهای روزمره', icon: Wallet },
+                      { id: 'assets', label: 'اموال و تجهیزات', desc: 'ماشین‌آلات، کرین و استهلاک', icon: Scale },
+                      { id: 'transfers', label: 'انتقالات پروژه‌ای', desc: 'انتقال پول و مصالح بین پروژه‌ها', icon: ArrowLeftRight },
+                      { id: 'journal', label: 'دفتر روزنامچه و تعدیلات', desc: 'اسناد دوبل دبت/کردت و اصلاحی', icon: BookOpen },
                       { id: 'documents', label: 'اسناد و بل‌ها', desc: 'آرشیو تصاویر و اسناد', icon: FileCheck2 },
-                      { id: 'reports', label: 'گزارشات A4', desc: 'بیلان چاپی و خروجی اکسل/PDF', icon: BarChart3 },
+                      { id: 'reports', label: 'گزارشات A4 و P&L', desc: 'بیلان چاپی و سود/زیان پروژه', icon: BarChart3 },
                       { id: 'auditLogs', label: 'لاگ امنیتی', desc: 'ردیابی تمام تغییرات سیستم', icon: History },
                     ].map(mod => {
                       const isEnabled = (editModules as any)[mod.id] !== false;
@@ -948,6 +1056,697 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {inspectorTab === 'buttons' && (
+                <div className="space-y-5 max-w-4xl mx-auto animate-in fade-in">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <Sliders className="w-4 h-4 text-amber-500" />
+                        <span>مدیریت دکمه‌های اکشن‌بار و ثبت سریع</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        تنظیم ترتیب قرارگیری، فعال/غیرفعال بودن، شکل دکمه (Pill, Rounded, Square)، رنگ و عنوان هر دکمه.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditButtonConfig([...DEFAULT_ACTION_BUTTONS])}
+                      className="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+                    >
+                      بازنشانی به حالت اولیه
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {editButtonConfig
+                      .slice()
+                      .sort((a, b) => a.order - b.order)
+                      .map((btn, index, arr) => {
+                        const moveUp = () => {
+                          if (index === 0) return;
+                          const prev = arr[index - 1];
+                          const updated = editButtonConfig.map(b => {
+                            if (b.id === btn.id) return { ...b, order: prev.order };
+                            if (b.id === prev.id) return { ...b, order: btn.order };
+                            return b;
+                          });
+                          setEditButtonConfig(updated);
+                        };
+
+                        const moveDown = () => {
+                          if (index === arr.length - 1) return;
+                          const next = arr[index + 1];
+                          const updated = editButtonConfig.map(b => {
+                            if (b.id === btn.id) return { ...b, order: next.order };
+                            if (b.id === next.id) return { ...b, order: btn.order };
+                            return b;
+                          });
+                          setEditButtonConfig(updated);
+                        };
+
+                        const toggleEnable = () => {
+                          setEditButtonConfig(prev =>
+                            prev.map(b => (b.id === btn.id ? { ...b, isEnabled: !b.isEnabled } : b))
+                          );
+                        };
+
+                        const updateField = (field: keyof CustomActionButton, val: any) => {
+                          setEditButtonConfig(prev =>
+                            prev.map(b => (b.id === btn.id ? { ...b, [field]: val } : b))
+                          );
+                        };
+
+                        return (
+                          <div
+                            key={btn.id}
+                            className={`p-4 rounded-2xl border transition-all ${
+                              btn.isEnabled
+                                ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm'
+                                : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200/50 opacity-60'
+                            }`}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              {/* Left info & order buttons */}
+                              <div className="flex items-center gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={index === 0}
+                                    onClick={moveUp}
+                                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 disabled:opacity-30"
+                                    title="حرکت به بالا"
+                                  >
+                                    <MoveUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={index === arr.length - 1}
+                                    onClick={moveDown}
+                                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 disabled:opacity-30"
+                                    title="حرکت به پایین"
+                                  >
+                                    <MoveDown className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <div className="w-7 h-7 rounded-xl bg-amber-500/15 text-amber-600 font-mono font-bold text-xs flex items-center justify-center">
+                                  #{index + 1}
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-xs text-slate-800 dark:text-slate-100">
+                                      {btn.labelFa}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      ({btn.actionKey})
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] text-slate-400">{btn.labelEn}</span>
+                                </div>
+                              </div>
+
+                              {/* Live button style preview */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-400 font-semibold">پیش‌نمایش دکمه:</span>
+                                <div
+                                  className={`px-3 py-1.5 text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all ${
+                                    btn.color === 'primary' ? 'bg-amber-600 text-white' :
+                                    btn.color === 'success' ? 'bg-emerald-600 text-white' :
+                                    btn.color === 'danger' ? 'bg-rose-600 text-white' :
+                                    btn.color === 'warning' ? 'bg-orange-500 text-white' :
+                                    btn.color === 'info' ? 'bg-blue-600 text-white' :
+                                    'bg-slate-700 text-white'
+                                  } ${
+                                    btn.shape === 'pill' ? 'rounded-full' :
+                                    btn.shape === 'square' ? 'rounded-md' : 'rounded-xl'
+                                  }`}
+                                >
+                                  <span>{btn.labelFa}</span>
+                                </div>
+                              </div>
+
+                              {/* Form Controls */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {/* Editable label */}
+                                <input
+                                  type="text"
+                                  value={btn.labelFa}
+                                  onChange={e => updateField('labelFa', e.target.value)}
+                                  placeholder="عنوان فارسی/دری"
+                                  className="w-28 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                />
+
+                                {/* Color picker */}
+                                <select
+                                  value={btn.color}
+                                  onChange={e => updateField('color', e.target.value as any)}
+                                  className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                >
+                                  <option value="primary">رنگ طلایی (Amber)</option>
+                                  <option value="success">رنگ سبز (Emerald)</option>
+                                  <option value="info">رنگ آبی (Blue)</option>
+                                  <option value="danger">رنگ قرمز (Rose)</option>
+                                  <option value="warning">رنگ نارنجی (Orange)</option>
+                                  <option value="slate">رنگ سرمه‌ای (Slate)</option>
+                                </select>
+
+                                {/* Shape picker */}
+                                <select
+                                  value={btn.shape}
+                                  onChange={e => updateField('shape', e.target.value as any)}
+                                  className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                >
+                                  <option value="rounded">گوشه گرد (Rounded)</option>
+                                  <option value="pill">کپسولی (Pill)</option>
+                                  <option value="square">مربعی (Square)</option>
+                                </select>
+
+                                {/* On/Off Switch */}
+                                <button
+                                  type="button"
+                                  onClick={toggleEnable}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                    btn.isEnabled
+                                      ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                                  }`}
+                                >
+                                  {btn.isEnabled ? 'فعال' : 'غیرفعال'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {inspectorTab === 'bill' && (
+                <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in">
+                  {/* Top Bar with Voucher Type Switcher & Print Test */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-amber-500" />
+                        <span>استودیو و دیزاینر آزاد و انعطاف‌پذیر رسیدها، بل‌ها و واچرها (Voucher Studio)</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        تنظیم آزادانه سربرگ، پاورقی، رنگ سازمانی، کسر تضمین حسن نیت، مالیات موضوعی، بارکد اصالت و پیش‌نمایش آنی
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setBillPreviewType('pv')}
+                          className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'pv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+                        >
+                          واچر پرداخت (PV)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBillPreviewType('rv')}
+                          className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'rv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+                        >
+                          واچر دریافت (RV)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBillPreviewType('pcv')}
+                          className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'pcv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+                        >
+                          تنخواه‌گردان (PCV)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBillPreviewType('contractor')}
+                          className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'contractor' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+                        >
+                          بل پیمانکار
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>چاپ آزمایشی (Print)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Two-column layout: Controls on Left, Live Preview on Right */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Controls Column (5 cols) */}
+                    <div className="lg:col-span-5 space-y-4">
+                      {/* Identity & Company Data */}
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-indigo-500" />
+                          <span>هویت و سربرگ رسمی سند</span>
+                        </h4>
+
+                        <div className="space-y-2.5 text-xs">
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">نام یا سربرگ شرکت:</label>
+                            <input
+                              type="text"
+                              value={editBillDesign.receiptHeader || ''}
+                              onChange={e => setEditBillDesign(p => ({ ...p, receiptHeader: e.target.value }))}
+                              placeholder="شرکت ساختمانی و مهندسی نگین کابل"
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">زیرعنوان یا نوع فعالیت:</label>
+                            <input
+                              type="text"
+                              value={editBillDesign.receiptSubheader || ''}
+                              onChange={e => setEditBillDesign(p => ({ ...p, receiptSubheader: e.target.value }))}
+                              placeholder="سهامی خاص · شماره ثبت تجارتی کابل"
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-slate-500 font-bold mb-1">نمبر تشخیصیه (TIN):</label>
+                              <input
+                                type="text"
+                                value={editBillDesign.taxNumber || ''}
+                                onChange={e => setEditBillDesign(p => ({ ...p, taxNumber: e.target.value }))}
+                                placeholder="TIN-908234-AF"
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-500 font-bold mb-1">تلفن تماس شرکت:</label>
+                              <input
+                                type="text"
+                                value={editBillDesign.receiptContact || ''}
+                                onChange={e => setEditBillDesign(p => ({ ...p, receiptContact: e.target.value }))}
+                                placeholder="0783788278"
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">آدرس رسمی دفتر:</label>
+                            <input
+                              type="text"
+                              value={editBillDesign.companyAddress || ''}
+                              onChange={e => setEditBillDesign(p => ({ ...p, companyAddress: e.target.value }))}
+                              placeholder="چهارراهی صدارت، کابل، افغانستان"
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Design & Color Palette */}
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-amber-500" />
+                          <span>رنگ و قالب چاپی</span>
+                        </h4>
+
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">رنگ سازمانی سربرگ:</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={editBillDesign.primaryColor || '#0f172a'}
+                                onChange={e => setEditBillDesign(p => ({ ...p, primaryColor: e.target.value }))}
+                                className="w-8 h-8 rounded-xl border border-line cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={editBillDesign.primaryColor || '#0f172a'}
+                                onChange={e => setEditBillDesign(p => ({ ...p, primaryColor: e.target.value }))}
+                                className="w-24 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">سایز کاغذ چاپی:</label>
+                            <select
+                              value={editBillDesign.paperSize || 'A4'}
+                              onChange={e => setEditBillDesign(p => ({ ...p, paperSize: e.target.value as any }))}
+                              className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                            >
+                              <option value="A4">A4 (استاندارد شرکتی)</option>
+                              <option value="A5">A5 (نیم‌صفحه رسید)</option>
+                              <option value="Letter">Letter</option>
+                              <option value="Thermal80mm">حرارتی ۸۰ میلی‌متری</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Presets */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-[10px] text-slate-400">رنگ‌های محبوب:</span>
+                          {[
+                            { name: 'سرمه‌ای', color: '#0f172a' },
+                            { name: 'زمردی', color: '#065f46' },
+                            { name: 'نیلی', color: '#3730a3' },
+                            { name: 'طلایی', color: '#b45309' },
+                            { name: 'زرشکی', color: '#991b1b' },
+                          ].map(c => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() => setEditBillDesign(p => ({ ...p, primaryColor: c.color }))}
+                              className="w-5 h-5 rounded-full border border-white/50 shadow-xs transition hover:scale-110"
+                              style={{ backgroundColor: c.color }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Construction Feature Toggles */}
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                          <span>بخش‌های حسابداری ساختمانی و مهندسی</span>
+                        </h4>
+
+                        <div className="space-y-2 text-xs">
+                          <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              نمایش جدول کسر ۱۰٪ حسن نیت (Retention)
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={editBillDesign.showRetentionBox !== false}
+                              onChange={e => setEditBillDesign(p => ({ ...p, showRetentionBox: e.target.checked }))}
+                              className="w-4 h-4 accent-amber-600 rounded"
+                            />
+                          </label>
+
+                          <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              نمایش کسر مالیات موضوعی ۲٪ یا ۷٪ (BRT)
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={editBillDesign.showWithholdingTax !== false}
+                              onChange={e => setEditBillDesign(p => ({ ...p, showWithholdingTax: e.target.checked }))}
+                              className="w-4 h-4 accent-amber-600 rounded"
+                            />
+                          </label>
+
+                          <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              نمایش بارکد هوشمند اصالت سند (QR Code)
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={editBillDesign.showQrCode !== false}
+                              onChange={e => setEditBillDesign(p => ({ ...p, showQrCode: e.target.checked }))}
+                              className="w-4 h-4 accent-amber-600 rounded"
+                            />
+                          </label>
+
+                          <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              کادر دو امضا (محاسب / مدیر پروژه) و محل مهر
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={editBillDesign.showStampSignature !== false}
+                              onChange={e => setEditBillDesign(p => ({ ...p, showStampSignature: e.target.checked }))}
+                              className="w-4 h-4 accent-amber-600 rounded"
+                            />
+                          </label>
+
+                          <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              نمایش واترمارک رسمی در پس‌زمینه سند
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={editBillDesign.showWatermark !== false}
+                              onChange={e => setEditBillDesign(p => ({ ...p, showWatermark: e.target.checked }))}
+                              className="w-4 h-4 accent-amber-600 rounded"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Terms & Footer Note */}
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">شرایط و پاورقی سند</h4>
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">شرایط پرداخت و تسویه:</label>
+                            <textarea
+                              rows={2}
+                              value={editBillDesign.termsAndConditions || ''}
+                              onChange={e => setEditBillDesign(p => ({ ...p, termsAndConditions: e.target.value }))}
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1">متن پاورقی:</label>
+                            <input
+                              type="text"
+                              value={editBillDesign.receiptFooter || ''}
+                              onChange={e => setEditBillDesign(p => ({ ...p, receiptFooter: e.target.value }))}
+                              placeholder="کابل، افغانستان · تمامی حقوق مالی محفوظ است."
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Column (7 cols) */}
+                    <div className="lg:col-span-7">
+                      <div className="sticky top-20 bg-slate-200 dark:bg-slate-950 p-4 sm:p-6 rounded-3xl border border-slate-300 dark:border-slate-800 shadow-xl overflow-x-auto">
+                        <div className="text-center mb-3">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-line">
+                            پیش‌نمایش زنده چاپی · Live WYSIWYG Print Preview ({editBillDesign.paperSize || 'A4'})
+                          </span>
+                        </div>
+
+                        {/* Paper Sheet Mockup */}
+                        <div
+                          className="bg-white text-slate-900 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-xl mx-auto border relative overflow-hidden transition-all text-xs"
+                          style={{
+                            borderColor: editBillDesign.primaryColor || '#0f172a',
+                            borderWidth: editBillDesign.borderStyle === 'double' ? '3px' : '1px',
+                            borderStyle: editBillDesign.borderStyle || 'solid',
+                          }}
+                        >
+                          {/* Security Watermark Background */}
+                          {editBillDesign.showWatermark !== false && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] rotate-[-25deg] select-none text-6xl font-black font-mono">
+                              OFFICIAL VOUCHER
+                            </div>
+                          )}
+
+                          {/* Company Header */}
+                          <div
+                            className="p-4 rounded-xl text-white flex items-center justify-between mb-4 shadow-sm"
+                            style={{ backgroundColor: editBillDesign.primaryColor || '#0f172a' }}
+                          >
+                            <div className="flex items-center gap-3">
+                              {editLogoUrl ? (
+                                <img
+                                  src={editLogoUrl}
+                                  alt="Company Logo"
+                                  className="w-12 h-12 rounded-xl object-cover bg-white p-1"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-lg">
+                                  NSC
+                                </div>
+                              )}
+                              <div>
+                                <h1 className="text-base font-black">
+                                  {editBillDesign.receiptHeader || editCompanyName || 'شرکت ساختمانی نگین کابل'}
+                                </h1>
+                                <p className="text-[10px] text-white/80">
+                                  {editBillDesign.receiptSubheader || 'سهامی خاص · شماره ثبت تجارتی کابل'}
+                                </p>
+                                <p className="text-[10px] text-white/70 font-mono">
+                                  TIN: {editBillDesign.taxNumber || 'TIN-908234-AF'} | {editBillDesign.receiptContact || '0783788278'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-left font-mono">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-white/20 text-[10px] font-black uppercase">
+                                {billPreviewType === 'rv' ? 'واچر دریافت (RV)' :
+                                 billPreviewType === 'pv' ? 'واچر پرداخت (PV)' :
+                                 billPreviewType === 'pcv' ? 'تنخواه‌گردان (PCV)' : 'صورت وضعیت بل'}
+                              </span>
+                              <div className="text-[11px] font-bold mt-1">
+                                No: {billPreviewType.toUpperCase()}-2026-0891
+                              </div>
+                              <div className="text-[10px] text-white/80">
+                                Date: {new Date().toISOString().split('T')[0]}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Voucher Meta Info */}
+                          <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] mb-4">
+                            <div>
+                              <span className="text-slate-500 block">پروژه ساختمانی:</span>
+                              <span className="font-bold text-slate-800">برج تجارتی نگین کابل (فاز ۲)</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block">
+                                {billPreviewType === 'rv' ? 'دریافت شده از:' : 'پرداخت شده به:'}
+                              </span>
+                              <span className="font-bold text-slate-800">شرکت تدارکات مصالح برادران رحیمی</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block">بابت / شرح عملیات:</span>
+                              <span className="font-semibold text-slate-700">تأمین ۵۰۰ خریطه سیمان غوری تیپ ۲ با کرایه تخلیه</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block">حساب معین / منبع:</span>
+                              <span className="font-semibold text-slate-700">حساب جاری کابل بانک پروژه</span>
+                            </div>
+                          </div>
+
+                          {/* Line Items Table */}
+                          <table className="w-full text-right border-collapse mb-4 text-[11px]">
+                            <thead>
+                              <tr className="border-b-2 border-slate-300 bg-slate-100 text-slate-700 font-bold">
+                                <th className="p-2">#</th>
+                                <th className="p-2">شرح کالا یا خدمات</th>
+                                <th className="p-2 text-center">مقدار</th>
+                                <th className="p-2 text-left">فی (AFN)</th>
+                                <th className="p-2 text-left">مجموع (AFN)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200">
+                              <tr>
+                                <td className="p-2 font-mono">1</td>
+                                <td className="p-2 font-semibold">سیمان غوری پورتلند پاکتی ۵۰ کیلویی</td>
+                                <td className="p-2 text-center font-mono">500 خریطه</td>
+                                <td className="p-2 text-left font-mono">380</td>
+                                <td className="p-2 text-left font-mono font-bold">190,000</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2 font-mono">2</td>
+                                <td className="p-2 font-semibold">کرایه لاری و تخلیه کارگری ساحه کارگاه</td>
+                                <td className="p-2 text-center font-mono">1 سرویس</td>
+                                <td className="p-2 text-left font-mono">10,000</td>
+                                <td className="p-2 text-left font-mono font-bold">10,000</td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          {/* Financial Calculations Box (Retention + Tax Deductions) */}
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 mb-4 text-[11px]">
+                            <div className="flex justify-between items-center text-slate-600">
+                              <span>مبلغ کل ناخالص (Gross Amount):</span>
+                              <span className="font-mono font-bold">200,000 AFN</span>
+                            </div>
+
+                            {editBillDesign.showRetentionBox !== false && (
+                              <div className="flex justify-between items-center text-amber-700 font-semibold">
+                                <span>کسر ۱۰٪ تضمین حسن نیت کار (Retention 10%):</span>
+                                <span className="font-mono">-20,000 AFN</span>
+                              </div>
+                            )}
+
+                            {editBillDesign.showWithholdingTax !== false && (
+                              <div className="flex justify-between items-center text-rose-700 font-semibold">
+                                <span>کسر مالیات موضوعی قرارداد (BRT 2% Withholding):</span>
+                                <span className="font-mono">-4,000 AFN</span>
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-300 flex justify-between items-center font-black text-sm text-slate-900">
+                              <span>خالص قابل پرداخت / تسویه (Net Payable):</span>
+                              <span
+                                className="font-mono text-base px-2 py-0.5 rounded-lg text-white"
+                                style={{ backgroundColor: editBillDesign.primaryColor || '#0f172a' }}
+                              >
+                                {editBillDesign.showRetentionBox !== false && editBillDesign.showWithholdingTax !== false
+                                  ? '176,000 AFN'
+                                  : editBillDesign.showRetentionBox !== false
+                                  ? '180,000 AFN'
+                                  : '200,000 AFN'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Terms & Conditions */}
+                          {editBillDesign.termsAndConditions && (
+                            <div className="p-2.5 rounded-xl bg-slate-100 text-[10px] text-slate-600 mb-4 leading-relaxed">
+                              <span className="font-bold text-slate-800 block mb-0.5">شرایط و ملاحظات:</span>
+                              {editBillDesign.termsAndConditions}
+                            </div>
+                          )}
+
+                          {/* Signatures & Stamp & QR Section */}
+                          <div className="flex items-end justify-between pt-2 border-t border-slate-200">
+                            {/* Dual Signatures */}
+                            {editBillDesign.showStampSignature !== false ? (
+                              <div className="grid grid-cols-2 gap-6 text-center text-[10px]">
+                                <div>
+                                  <span className="text-slate-500 block mb-6">امضای محاسب و صندوق‌دار:</span>
+                                  <div className="border-t border-slate-400 pt-1 font-bold text-slate-700">
+                                    امضای امور مالی
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-slate-500 block mb-6">تأیید مهندس ناظر / مدیر:</span>
+                                  <div className="border-t border-slate-400 pt-1 font-bold text-slate-700">
+                                    امضای مدیریت پروژه
+                                  </div>
+                                </div>
+                              </div>
+                            ) : <div />}
+
+                            {/* Official Stamp Box */}
+                            <div className="flex items-center gap-3">
+                              {editBillDesign.showStampSignature !== false && (
+                                <div className="w-16 h-16 rounded-full border-2 border-dashed border-rose-500/60 flex flex-col items-center justify-center text-[8px] font-black text-rose-500 rotate-[-12deg]">
+                                  <span>مهر رسمی</span>
+                                  <span>تأیید شد</span>
+                                </div>
+                              )}
+
+                              {/* QR Code */}
+                              {editBillDesign.showQrCode !== false && (
+                                <div className="p-1.5 bg-white border border-slate-300 rounded-xl shadow-xs text-center">
+                                  <QrCode className="w-10 h-10 text-slate-800 mx-auto" />
+                                  <span className="text-[8px] font-mono block text-slate-500 mt-0.5">اصالت سند</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer Note */}
+                          {editBillDesign.receiptFooter && (
+                            <div className="text-center text-[9px] text-slate-400 pt-4 mt-2 border-t border-slate-100 font-mono">
+                              {editBillDesign.receiptFooter}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

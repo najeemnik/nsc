@@ -57,6 +57,8 @@ export interface AppSettings {
   customCategories?: string[];
   geminiApiKey?: string;
   aiEnabled?: boolean;
+  billDesign?: CustomBillDesign;
+  actionButtons?: CustomActionButton[];
   reportCustomization?: ReportCustomization;
   sectionProtection?: SectionProtectionSettings;
   googleDrive?: GoogleDriveConfig;
@@ -78,6 +80,14 @@ export interface AppSettings {
     users?: boolean;
     aiAssistant?: boolean;
     googleDrive?: boolean;
+    income?: boolean;
+    materials?: boolean;
+    labor?: boolean;
+    treasury?: boolean;
+    pettyCash?: boolean;
+    assets?: boolean;
+    transfers?: boolean;
+    journal?: boolean;
   };
 }
 
@@ -92,8 +102,53 @@ export interface UserPermissions {
   canManageProjects?: boolean;
   canManagePayments?: boolean;
   canManageSettings?: boolean;
+  canManageTreasury?: boolean;
+  canManagePayroll?: boolean;
+  canManageAssets?: boolean;
+  canManageTransfers?: boolean;
+  canManageJournal?: boolean;
   aiEnabled?: boolean;
   allowedModules?: string[];
+}
+
+export interface CustomActionButton {
+  id: string;
+  label: string;
+  enabled: boolean;
+  color: 'blue' | 'emerald' | 'amber' | 'rose' | 'purple' | 'slate' | 'indigo' | 'orange';
+  shape: 'pill' | 'rounded-xl' | 'rounded-md';
+  order: number;
+}
+
+export const DEFAULT_ACTION_BUTTONS: CustomActionButton[] = [
+  { id: 'addExpense', label: 'ثبت مصارف', enabled: true, color: 'blue', shape: 'rounded-xl', order: 1 },
+  { id: 'addPayment', label: 'پرداخت وجه', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 2 },
+  { id: 'addIncome', label: 'دریافت عواید', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 3 },
+  { id: 'addMaterial', label: 'خرید مصالح', enabled: true, color: 'amber', shape: 'rounded-xl', order: 4 },
+  { id: 'addLabor', label: 'معاشات کارگران', enabled: true, color: 'purple', shape: 'rounded-xl', order: 5 },
+  { id: 'addSteel', label: 'سیخ‌گول', enabled: true, color: 'amber', shape: 'rounded-xl', order: 6 },
+  { id: 'addConcrete', label: 'کانکریت', enabled: true, color: 'blue', shape: 'rounded-xl', order: 7 },
+  { id: 'addApartment', label: 'فروش پلاک', enabled: true, color: 'indigo', shape: 'rounded-xl', order: 8 },
+  { id: 'addContractor', label: 'قراردادی جدید', enabled: true, color: 'orange', shape: 'rounded-xl', order: 9 },
+  { id: 'addTransfer', label: 'حواله پروژه‌ای', enabled: true, color: 'purple', shape: 'rounded-xl', order: 10 },
+  { id: 'addPettyCash', label: 'تنخواه کارگاه', enabled: true, color: 'slate', shape: 'rounded-xl', order: 11 },
+];
+
+export interface CustomBillDesign {
+  receiptTitle?: string;
+  receiptHeader?: string;
+  receiptSubtitle?: string;
+  receiptFooter?: string;
+  receiptContact?: string;
+  taxNumber?: string;
+  watermarkText?: string;
+  themeColor?: string;
+  showStampArea?: boolean;
+  showQrCode?: boolean;
+  showWithholdingTax?: boolean;
+  showRetention?: boolean;
+  paperSize?: 'A4' | 'A5' | 'thermal';
+  customNotesHtml?: string;
 }
 
 export interface User {
@@ -118,12 +173,8 @@ export interface User {
   customTheme?: AppTheme;
   customBackgroundUrl?: string;
   customLogoUrl?: string;
-  customBillDesign?: {
-    receiptHeader?: string;
-    receiptFooter?: string;
-    receiptContact?: string;
-    taxNumber?: string;
-  };
+  customBillDesign?: CustomBillDesign;
+  customButtonConfig?: CustomActionButton[];
   customEnabledModules?: {
     steel?: boolean;
     concrete?: boolean;
@@ -138,6 +189,14 @@ export interface User {
     reports?: boolean;
     auditLogs?: boolean;
     users?: boolean;
+    income?: boolean;
+    materials?: boolean;
+    labor?: boolean;
+    treasury?: boolean;
+    pettyCash?: boolean;
+    assets?: boolean;
+    transfers?: boolean;
+    journal?: boolean;
   };
   createdAt: string;
   lastLoginAt?: string;

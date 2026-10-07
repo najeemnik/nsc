@@ -24,9 +24,15 @@ import {
   BookOpen,
   Users,
   Cloud,
-  MoreHorizontal
+  MoreHorizontal,
+  Coins,
+  Truck,
+  UserCheck,
+  ArrowLeftRight,
+  Wallet,
+  Scale
 } from 'lucide-react';
-import { Language } from '../types';
+import { Language, DEFAULT_ACTION_BUTTONS, CustomActionButton } from '../types';
 
 interface NavbarProps {
   onOpenNewProject: () => void;
@@ -40,6 +46,12 @@ interface NavbarProps {
   onOpenAddConcrete?: () => void;
   onOpenAddApartment?: () => void;
   onOpenAddContractor?: () => void;
+  onOpenAddIncome?: () => void;
+  onOpenAddMaterial?: () => void;
+  onOpenAddLabor?: () => void;
+  onOpenAddTransfer?: () => void;
+  onOpenAddPettyCash?: () => void;
+  onOpenAddAsset?: () => void;
   onOpenDrive?: () => void;
 }
 
@@ -55,6 +67,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAddConcrete,
   onOpenAddApartment,
   onOpenAddContractor,
+  onOpenAddIncome,
+  onOpenAddMaterial,
+  onOpenAddLabor,
+  onOpenAddTransfer,
+  onOpenAddPettyCash,
+  onOpenAddAsset,
   onOpenDrive,
 }) => {
   const { 
@@ -262,6 +280,73 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action Bar */}
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
+
+            {/* Direct Quick Action (Highest configured priority) */}
+            {(() => {
+              const actionHandlers: Record<string, (() => void) | undefined> = {
+                income: onOpenAddIncome,
+                material: onOpenAddMaterial,
+                labor: onOpenAddLabor,
+                transfer: onOpenAddTransfer,
+                petty_cash: onOpenAddPettyCash,
+                asset: onOpenAddAsset,
+                expense: onOpenAddExpense,
+                steel: onOpenAddSteel,
+                concrete: onOpenAddConcrete,
+                payment: onOpenAddPayment,
+                apartment: onOpenAddApartment,
+                contractor: onOpenAddContractor,
+              };
+
+              const actionIcons: Record<string, any> = {
+                income: Coins,
+                material: Truck,
+                labor: UserCheck,
+                transfer: ArrowLeftRight,
+                petty_cash: Wallet,
+                asset: Scale,
+                expense: Receipt,
+                steel: Layers,
+                concrete: CircleDot,
+                payment: CreditCard,
+                apartment: Home,
+                contractor: HardHat,
+              };
+
+              const configuredButtons = (currentUser?.customButtonConfig && currentUser.customButtonConfig.length > 0)
+                ? currentUser.customButtonConfig
+                : DEFAULT_ACTION_BUTTONS;
+
+              const activeQuickButtons = configuredButtons
+                .filter(b => b.isEnabled !== false && actionHandlers[b.actionKey])
+                .sort((a, b) => a.order - b.order);
+
+              const topButton = activeQuickButtons[0];
+              if (!topButton) return null;
+              const handler = actionHandlers[topButton.actionKey];
+              const IconComponent = actionIcons[topButton.actionKey] || Plus;
+
+              const colorClass = topButton.color === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                topButton.color === 'info' ? 'bg-blue-600 hover:bg-blue-700' :
+                                topButton.color === 'danger' ? 'bg-rose-600 hover:bg-rose-700' :
+                                topButton.color === 'warning' ? 'bg-orange-500 hover:bg-orange-600' :
+                                topButton.color === 'slate' ? 'bg-slate-700 hover:bg-slate-800' :
+                                'bg-amber-600 hover:bg-amber-700';
+
+              const shapeClass = topButton.shape === 'pill' ? 'rounded-full' :
+                                topButton.shape === 'square' ? 'rounded-lg' : 'rounded-xl';
+
+              return (
+                <button
+                  type="button"
+                  onClick={() => handler?.()}
+                  className={`hidden xl:flex items-center space-x-1.5 rtl:space-x-reverse ${colorClass} ${shapeClass} text-white px-3 py-1.5 text-xs font-bold shadow-xs transition-colors`}
+                >
+                  <IconComponent className="w-3.5 h-3.5" />
+                  <span className="whitespace-nowrap">{language === 'en' ? topButton.labelEn : topButton.labelFa}</span>
+                </button>
+              );
+            })()}
             
             {/* Quick Add Menu */}
             <div ref={quickAddRef} className="relative">
@@ -276,55 +361,81 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {quickAddOpen && (
-                <div className="absolute top-full mt-1.5 end-0 w-56 bg-surface rounded-2xl shadow-2xl border border-line py-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-full mt-1.5 end-0 w-60 max-w-[90vw] bg-surface rounded-2xl shadow-2xl border border-line py-1.5 z-50 animate-in fade-in zoom-in-95 max-h-[85vh] overflow-y-auto">
                   <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     {t.quickActions}
                   </div>
-                  {onOpenAddExpense && (
-                    <button
-                      onClick={() => { setQuickAddOpen(false); onOpenAddExpense(); }}
-                      className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
-                    >
-                      <Receipt className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>{t.addExpense}</span>
-                    </button>
-                  )}
-                  {onOpenAddSteel && (
-                    <button
-                      onClick={() => { setQuickAddOpen(false); onOpenAddSteel(); }}
-                      className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
-                    >
-                      <Layers className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>{t.addSteel}</span>
-                    </button>
-                  )}
-                  {onOpenAddConcrete && (
-                    <button
-                      onClick={() => { setQuickAddOpen(false); onOpenAddConcrete(); }}
-                      className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
-                    >
-                      <CircleDot className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>{t.addConcrete}</span>
-                    </button>
-                  )}
-                  {onOpenAddPayment && (
-                    <button
-                      onClick={() => { setQuickAddOpen(false); onOpenAddPayment(); }}
-                      className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
-                    >
-                      <CreditCard className="w-4 h-4 text-rose-600 shrink-0" />
-                      <span>{t.addPayment}</span>
-                    </button>
-                  )}
-                  {onOpenAddApartment && (
-                    <button
-                      onClick={() => { setQuickAddOpen(false); onOpenAddApartment(); }}
-                      className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
-                    >
-                      <Home className="w-4 h-4 text-slate-800 dark:text-slate-300 shrink-0" />
-                      <span>{t.addApartment}</span>
-                    </button>
-                  )}
+
+                  {(() => {
+                    const actionHandlers: Record<string, (() => void) | undefined> = {
+                      income: onOpenAddIncome,
+                      material: onOpenAddMaterial,
+                      labor: onOpenAddLabor,
+                      transfer: onOpenAddTransfer,
+                      petty_cash: onOpenAddPettyCash,
+                      asset: onOpenAddAsset,
+                      expense: onOpenAddExpense,
+                      steel: onOpenAddSteel,
+                      concrete: onOpenAddConcrete,
+                      payment: onOpenAddPayment,
+                      apartment: onOpenAddApartment,
+                      contractor: onOpenAddContractor,
+                    };
+
+                    const actionIcons: Record<string, any> = {
+                      income: Coins,
+                      material: Truck,
+                      labor: UserCheck,
+                      transfer: ArrowLeftRight,
+                      petty_cash: Wallet,
+                      asset: Scale,
+                      expense: Receipt,
+                      steel: Layers,
+                      concrete: CircleDot,
+                      payment: CreditCard,
+                      apartment: Home,
+                      contractor: HardHat,
+                    };
+
+                    const iconColorClasses: Record<string, string> = {
+                      primary: 'text-amber-600',
+                      success: 'text-emerald-600',
+                      danger: 'text-rose-600',
+                      warning: 'text-orange-500',
+                      info: 'text-blue-600',
+                      slate: 'text-slate-600',
+                    };
+
+                    const configuredButtons = (currentUser?.customButtonConfig && currentUser.customButtonConfig.length > 0)
+                      ? currentUser.customButtonConfig
+                      : DEFAULT_ACTION_BUTTONS;
+
+                    const activeQuickButtons = configuredButtons
+                      .filter(b => b.isEnabled !== false && actionHandlers[b.actionKey])
+                      .sort((a, b) => a.order - b.order);
+
+                    return activeQuickButtons.map(btn => {
+                      const handler = actionHandlers[btn.actionKey];
+                      const IconComponent = actionIcons[btn.actionKey] || Plus;
+                      const iconColor = iconColorClasses[btn.color] || 'text-amber-600';
+
+                      return (
+                        <button
+                          key={btn.id}
+                          onClick={() => {
+                            setQuickAddOpen(false);
+                            handler?.();
+                          }}
+                          className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
+                        >
+                          <IconComponent className={`w-4 h-4 ${iconColor} shrink-0`} />
+                          <span className="truncate">
+                            {language === 'en' ? btn.labelEn : btn.labelFa}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>

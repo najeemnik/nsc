@@ -20,6 +20,7 @@ import {
   Globe 
 } from 'lucide-react';
 import { AppTheme } from '../../types';
+import { backendApi } from '../../services/backendApi';
 
 const THEME_OPTIONS: { id: AppTheme; labelKey: string; swatch: string }[] = [
   { id: 'glassmorphism',   labelKey: 'themeGlassmorphism',   swatch: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(191,219,254,0.85))' },
@@ -59,6 +60,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
   const [companyName, setCompanyName] = useState(appSettings.companyName || 'NIK SMART COUNT');
   const [defaultCurrency, setDefaultCurrency] = useState(appSettings.defaultCurrency || 'USD');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [testingDb, setTestingDb] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ checked: boolean; ok: boolean; message: string } | null>(null);
+
+  const handleTestDatabaseConnection = async () => {
+    setTestingDb(true);
+    setDbStatus(null);
+    try {
+      const res = await backendApi.getCurrentUser();
+      if (res.success) {
+        setDbStatus({
+          checked: true,
+          ok: true,
+          message: language === 'fa' ? 'ارتباط با هاست Shahhost و پایگاه داده MySQL برقرار است.' : 'Connected to Shahhost MySQL Server.'
+        });
+      } else {
+        setDbStatus({
+          checked: true,
+          ok: false,
+          message: res.error || (language === 'fa' ? 'سرور هنوز کانفیگ نشده است یا برنامه در حالت لوکال کش کار می‌کند.' : 'Server offline, running in local cached mode.')
+        });
+      }
+    } catch (e: any) {
+      setDbStatus({
+        checked: true,
+        ok: false,
+        message: e.message || 'خطا در برقراری تماس با هاست.'
+      });
+    } finally {
+      setTestingDb(false);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,6 +347,67 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
             <input type="file" accept=".json" onChange={handleImportLocal} className="hidden" />
           </label>
         </div>
+      </div>
+
+      {/* Shahhost MySQL Database Integration Section */}
+      <div className="p-6 rounded-3xl bg-surface border border-line shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-ink">
+                {language === 'fa' ? 'پایگاه داده آنلاین Shahhost (SSD Silver)' : 'Shahhost MySQL Cloud Database'}
+              </h3>
+              <p className="text-xs text-ink-muted">
+                {language === 'fa' ? 'پایگاه داده ۲۸ جدولی MySQL با ظرفیت نامحدود و همگام‌سازی ابری' : '28-Table Relational MySQL Architecture with Unlimited Storage'}
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            {language === 'fa' ? 'پشتیبانی کامل MySQL & PHP' : 'MySQL & PHP Ready'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+          <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
+            <span className="text-slate-400 font-medium">{language === 'fa' ? 'نوع هاست و پکیج:' : 'Hosting Tier:'}</span>
+            <p className="font-bold text-ink mt-0.5">Shahhost NVMe SSD Silver</p>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
+            <span className="text-slate-400 font-medium">{language === 'fa' ? 'جداول فعال پایگاه‌داده:' : 'Database Tables:'}</span>
+            <p className="font-bold text-ink mt-0.5">{language === 'fa' ? '۲۸ جدول یکپارچه (پوشش ۲۳ شیت اکسل)' : '28 Tables (All 23 Sheets)'}</p>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
+            <span className="text-slate-400 font-medium">{language === 'fa' ? 'امنیت و کنترل:' : 'Security & Master Gate:'}</span>
+            <p className="font-bold text-ink mt-0.5">{language === 'fa' ? 'دفتر هفت (office_7) فعال' : 'Office 7 Master Active'}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleTestDatabaseConnection}
+            disabled={testingDb}
+            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${testingDb ? 'animate-spin' : ''}`} />
+            <span>{language === 'fa' ? 'بررسی وضعیت اتصال سرور' : 'Test Server Connectivity'}</span>
+          </button>
+        </div>
+
+        {dbStatus && (
+          <div className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
+            dbStatus.ok 
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' 
+              : 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+          }`}>
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span>{dbStatus.message}</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,7 +29,9 @@ import {
   ProjectBudget,
   BudgetLineReport,
   UserPermissions,
-  UserActivityEvent
+  UserActivityEvent,
+  CustomBillDesign,
+  CustomActionButton
 } from '../types';
 import { 
   initialUsers, 
@@ -55,6 +57,7 @@ import { buildJournal, computeAccountBalances, buildTrialBalance } from '../util
 import { CHART_OF_ACCOUNTS, getAccountName } from '../data/chartOfAccounts';
 import type { Account } from '../data/chartOfAccounts';
 import { computeBudgetReport } from '../utils/budgetUtils';
+import { backendApi } from '../services/backendApi';
 
 interface AppContextType {
   language: Language;
@@ -123,25 +126,9 @@ interface AppContextType {
     companyAddress?: string;
     password?: string;
     customLogoUrl?: string;
-    customBillDesign?: {
-      receiptHeader?: string;
-      receiptFooter?: string;
-      receiptContact?: string;
-      taxNumber?: string;
-    };
-    customEnabledModules?: {
-      steel?: boolean;
-      concrete?: boolean;
-      expenses?: boolean;
-      contractors?: boolean;
-      suppliers?: boolean;
-      apartments?: boolean;
-      payments?: boolean;
-      documents?: boolean;
-      reports?: boolean;
-      auditLogs?: boolean;
-      users?: boolean;
-    };
+    customBillDesign?: CustomBillDesign;
+    customButtonConfig?: CustomActionButton[];
+    customEnabledModules?: User['customEnabledModules'];
     aiEnabled?: boolean;
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
@@ -623,7 +610,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isTabAllowed = (tabId: string): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'admin' || currentUser.isMasterSuperAdmin) {
+    if (currentUser.isMasterSuperAdmin) {
+      return true;
+    }
+    // بررسی وضعیت ماژول غیرفعال‌شده توسط دفتر هفت
+    const modules = currentUser.customEnabledModules;
+    if (modules && (modules as any)[tabId] === false) {
+      return false;
+    }
+    if (currentUser.role === 'admin') {
       return true;
     }
     if (tabId === 'settings' || tabId === 'users' || tabId === 'admin') {
@@ -830,6 +825,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       aiEnabled: found.permissions?.aiEnabled !== false,
     }));
     logAudit('login', 'user', found.id, `User ${found.name} logged in (${found.role})`, 'Authenticated successfully');
+    backendApi.login(trimmedInput, password || '').catch(() => {});
     return { success: true };
   };
 
@@ -1037,6 +1033,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (u.id === userId) {
         const isLocked = !u.isLockedBySuperAdmin;
         logAudit('update', 'user', u.id, `Super admin toggled lock for ${u.name}`, `Locked: ${isLocked}`);
+        backendApi.toggleUserLock(userId, isLocked).catch(() => {});
         return { ...u, isLockedBySuperAdmin: isLocked };
       }
       return u;
@@ -1131,25 +1128,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     companyAddress?: string;
     password?: string;
     customLogoUrl?: string;
-    customBillDesign?: {
-      receiptHeader?: string;
-      receiptFooter?: string;
-      receiptContact?: string;
-      taxNumber?: string;
-    };
-    customEnabledModules?: {
-      steel?: boolean;
-      concrete?: boolean;
-      expenses?: boolean;
-      contractors?: boolean;
-      suppliers?: boolean;
-      apartments?: boolean;
-      payments?: boolean;
-      documents?: boolean;
-      reports?: boolean;
-      auditLogs?: boolean;
-      users?: boolean;
-    };
+    customBillDesign?: CustomBillDesign;
+    customButtonConfig?: CustomActionButton[];
+    customEnabledModules?: User['customEnabledModules'];
     aiEnabled?: boolean;
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
@@ -1176,6 +1157,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : u.password,
           customLogoUrl: updates.customLogoUrl !== undefined ? updates.customLogoUrl : u.customLogoUrl,
           customBillDesign: updates.customBillDesign !== undefined ? updates.customBillDesign : u.customBillDesign,
+          customButtonConfig: updates.customButtonConfig !== undefined ? updates.customButtonConfig : u.customButtonConfig,
           customEnabledModules: updates.customEnabledModules !== undefined ? updates.customEnabledModules : u.customEnabledModules,
           subscriptionExpiresAt: updates.subscriptionExpiresAt !== undefined ? updates.subscriptionExpiresAt : u.subscriptionExpiresAt,
           isLockedBySuperAdmin: updates.isLockedBySuperAdmin !== undefined ? updates.isLockedBySuperAdmin : u.isLockedBySuperAdmin,
@@ -1196,6 +1178,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         companyName: updates.companyName || prev.companyName,
         logoUrl: updates.customLogoUrl || prev.logoUrl,
         receiptHeader: updates.customBillDesign?.receiptHeader || prev.receiptHeader,
+        billDesign: updates.customBillDesign || prev.billDesign,
+        actionButtons: updates.customButtonConfig || prev.actionButtons,
         receiptFooter: updates.customBillDesign?.receiptFooter || prev.receiptFooter,
         receiptContact: updates.customBillDesign?.receiptContact || prev.receiptContact,
         enabledModules: updates.customEnabledModules ? { ...prev.enabledModules, ...updates.customEnabledModules } : prev.enabledModules,
@@ -1203,6 +1187,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (targetFound) {
       logAudit('update', 'user', userId, `Master Admin updated tenant settings`, 'Tenant full-control configuration updated');
+      backendApi.updateTenantByOffice7({
+        id: userId,
+        ...updates,
+      }).catch(() => {});
       return { success: true };
     }
     return { success: false, error: 'User not found' };
@@ -1372,6 +1360,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'project', newProject.id, newProject.name, `New building project created: ${newProject.floors} floors, ${newProject.units} units`, undefined, undefined, newProject.id);
+    backendApi.saveProject({
+      id: newProject.id,
+      name: newProject.name,
+      contractValue: newProject.budget,
+      approvedBudget: newProject.budget,
+      currency: newProject.currency,
+      location: newProject.address || newProject.city || '',
+      startDate: newProject.startDate,
+      expectedFinish: newProject.expectedCompletionDate,
+      status: newProject.status,
+    }).catch(() => {});
   };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
@@ -1440,6 +1439,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transferData.newOwner,
       transferData.projectId
     );
+
+    backendApi.interProjectTransfer({
+      fromProjectId: transferData.projectId,
+      toProjectId: transferData.projectId,
+      amount: transferData.amountPaid || transferData.transferValue || 0,
+      description: `انتقال به ${transferData.newOwner}: ${transferData.notes || ''}`,
+      transferDate: transferData.transferDate,
+      approvedBy: transferData.createdBy || 'مدیریت',
+    }).catch(() => {});
 
     return newEvent;
   };
@@ -1606,6 +1614,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'expense', newExpense.id, `${newExpense.category}: ${newExpense.description}`, `Amount: $${newExpense.amount.toLocaleString()} - Status: ${newExpense.paymentStatus}`, undefined, `$${newExpense.amount}`, newExpense.projectId);
+    backendApi.createPayment({
+      projectId: newExpense.projectId,
+      amount: newExpense.amount,
+      currency: newExpense.currency,
+      exchangeRate: newExpense.exchangeRate,
+      payeeName: newExpense.partyName || newExpense.category,
+      expenseCategory: newExpense.category,
+      description: newExpense.description || newExpense.item,
+      paymentMethod: (newExpense.paymentMethod || 'cash').toLowerCase(),
+      date: newExpense.date,
+    }).catch(() => {});
   };
 
   const updateExpense = (id: string, updates: Partial<Expense>) => {
