@@ -856,3 +856,23 @@ export interface ProjectFinancialSummary {
   supplierUSD?: number;
   supplierAFN?: number;
 }
+
+export interface LaborRecord {
+  id: string;
+  projectId: string;
+  workerName: string;
+  role: string;
+  phone?: string;
+  workPeriod: string;
+  daysWorked: number;
+  dailyRate: number;
+  grossWage: number;
+  advanceDeduction: number;
+  netPayable: number;
+  paymentStatus: 'paid' | 'pending' | 'partial';
+  paidDate?: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt?: string;
+}
+

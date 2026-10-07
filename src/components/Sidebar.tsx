@@ -25,7 +25,8 @@ import {
   Users,
   ShieldCheck,
   Cloud,
-  Wallet
+  Wallet,
+  UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -155,6 +156,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
           borderColorDark: 'dark:border-orange-500/30',
           activeGradient: 'from-orange-500 to-amber-600',
           activeShadow: 'shadow-orange-500/35'
+        } : null),
+        (enabled.labor !== false ? { 
+          id: 'labor', 
+          label: t.navLabor, 
+          icon: UserCheck,
+          colorName: 'purple',
+          iconColor: 'text-purple-600 dark:text-purple-300',
+          iconBgLight: 'bg-purple-500/15',
+          iconBgDark: 'dark:bg-purple-500/25',
+          borderColorLight: 'border-purple-200',
+          borderColorDark: 'dark:border-purple-500/30',
+          activeGradient: 'from-purple-600 to-indigo-600',
+          activeShadow: 'shadow-purple-500/35'
         } : null),
         (enabled.suppliers !== false ? { 
           id: 'suppliers', 

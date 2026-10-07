@@ -31,7 +31,8 @@ import {
   UserPermissions,
   UserActivityEvent,
   CustomBillDesign,
-  CustomActionButton
+  CustomActionButton,
+  LaborRecord
 } from '../types';
 import { 
   initialUsers, 
@@ -183,6 +184,9 @@ interface AppContextType {
   addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => void;
   updateSupplier: (id: string, updates: Partial<Supplier>) => void;
   deleteSupplier: (id: string) => void;
+  laborRecords: LaborRecord[];
+  addLaborRecord: (record: Omit<LaborRecord, 'id' | 'createdAt'>) => void;
+  deleteLaborRecord: (id: string) => void;
   apartments: ApartmentUnit[];
   addApartment: (unit: Omit<ApartmentUnit, 'id' | 'salePrice' | 'remainingBalance' | 'createdAt'> & { salePrice?: number }) => void;
   updateApartment: (id: string, updates: Partial<ApartmentUnit>) => void;
@@ -338,6 +342,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [contractors, setContractors] = useState<Contractor[]>(() => loadFromStorage('contractors', initialContractors));
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => loadFromStorage('suppliers', initialSuppliers));
   const [apartments, setApartments] = useState<ApartmentUnit[]>(() => loadFromStorage('apartments', initialApartments));
+  const initialLaborRecords: LaborRecord[] = [
+    {
+      id: 'lab-1',
+      projectId: 'p1',
+      workerName: 'استاد رحیم گل‌کار',
+      role: 'گل‌کار و سنگ‌کار نما',
+      phone: '0789123456',
+      workPeriod: 'ماه جاری',
+      daysWorked: 26,
+      dailyRate: 1200,
+      grossWage: 31200,
+      advanceDeduction: 5000,
+      netPayable: 26200,
+      paymentStatus: 'paid',
+      paidDate: '2026-09-30',
+      approvedBy: 'مهندس ناظر پروژه',
+      notes: 'تکمیل سنگ‌کاری دیوارهای لابی',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'lab-2',
+      projectId: 'p1',
+      workerName: 'شیرخان آرماتوربند',
+      role: 'سرکارگر بافت میلگرد',
+      phone: '0772345678',
+      workPeriod: 'ماه جاری',
+      daysWorked: 24,
+      dailyRate: 1100,
+      grossWage: 26400,
+      advanceDeduction: 4000,
+      netPayable: 22400,
+      paymentStatus: 'paid',
+      paidDate: '2026-09-30',
+      approvedBy: 'مهندس ناظر پروژه',
+      notes: 'آرماتوربندی سقف طبقه ۳',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'lab-3',
+      projectId: 'p1',
+      workerName: 'غلام‌حیدر کارگر ساده',
+      role: 'تخلیه مصالح و بتن‌ریزی',
+      phone: '0798765432',
+      workPeriod: 'ماه جاری',
+      daysWorked: 28,
+      dailyRate: 600,
+      grossWage: 16800,
+      advanceDeduction: 3000,
+      netPayable: 13800,
+      paymentStatus: 'pending',
+      approvedBy: 'سرپرست کارگاه',
+      notes: 'کمک در تخلیه سیمان و نظافت',
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  const [laborRecords, setLaborRecords] = useState<LaborRecord[]>(() => loadFromStorage('labor', initialLaborRecords));
   const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('payments', initialPayments));
   const [documents, setDocuments] = useState<DocumentRecord[]>(() => loadFromStorage('documents', initialDocuments));
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => loadFromStorage('auditLogs', initialAuditLogs));
@@ -397,6 +458,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('concrete', concreteRecords); }, [concreteRecords]);
   useEffect(() => { saveToStorage('contractors', contractors); }, [contractors]);
   useEffect(() => { saveToStorage('suppliers', suppliers); }, [suppliers]);
+  useEffect(() => { saveToStorage('labor', laborRecords); }, [laborRecords]);
   useEffect(() => { saveToStorage('apartments', apartments); }, [apartments]);
   useEffect(() => { saveToStorage('payments', payments); }, [payments]);
   useEffect(() => { saveToStorage('documents', documents); }, [documents]);
@@ -1922,6 +1984,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logAudit('delete', 'supplier', id, old?.name || 'Supplier', `Deleted supplier`, undefined, undefined, old?.projectId);
   };
 
+  // Labor & Payroll Records
+  const addLaborRecord = (record: Omit<LaborRecord, 'id' | 'createdAt'>) => {
+    const id = 'lab-' + Date.now();
+    const newRecord: LaborRecord = {
+      ...record,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setLaborRecords(prev => [newRecord, ...prev]);
+    logAudit('create', 'expense', id, record.workerName, `ثبت معاش کارگری برای ${record.workerName}: ${record.netPayable} AFN`, undefined, undefined, record.projectId);
+  };
+
+  const deleteLaborRecord = (id: string) => {
+    const old = laborRecords.find(l => l.id === id);
+    setLaborRecords(prev => prev.filter(l => l.id !== id));
+    logAudit('delete', 'expense', id, old?.workerName || 'Labor Record', `حذف رکورد معاش کارگری`, undefined, undefined, old?.projectId);
+  };
+
   // Apartments & Sales CRUD
   const addApartment = (data: Omit<ApartmentUnit, 'id' | 'salePrice' | 'remainingBalance' | 'createdAt'> & { salePrice?: number }) => {
     const pricePerM2 = data.pricePerM2 || (data.salePrice && data.areaM2 ? Math.round(data.salePrice / data.areaM2) : 0);
@@ -2863,6 +2943,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addSupplier,
       updateSupplier,
       deleteSupplier,
+      laborRecords,
+      addLaborRecord,
+      deleteLaborRecord,
       apartments,
       addApartment,
       updateApartment,

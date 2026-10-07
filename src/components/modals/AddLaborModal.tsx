@@ -14,7 +14,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
   onClose,
   defaultWorkerName,
 }) => {
-  const { currentProject, projects, formatCurrency, t, language } = useApp();
+  const { currentProject, projects, formatCurrency, t, language, addLaborRecord } = useApp();
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
   const [workerName, setWorkerName] = useState(defaultWorkerName || '');
   const [workType, setWorkType] = useState('خشت‌کاری و دیوارچینی');
@@ -68,6 +68,22 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      addLaborRecord({
+        projectId,
+        workerName: workerName.trim(),
+        role: workType,
+        workPeriod: 'ماه جاری',
+        daysWorked: numDays,
+        dailyRate: numRate,
+        grossWage: grossAmount,
+        advanceDeduction: numAdvance,
+        netPayable: netPaid,
+        paymentStatus: 'paid',
+        paidDate: payrollDate,
+        approvedBy: approvedBy.trim(),
+        notes: notes.trim() || undefined,
+      });
+
       await backendApi.createLaborPayroll({
         projectId,
         workerOrTeamLeader: workerName.trim(),

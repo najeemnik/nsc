@@ -18,6 +18,7 @@ import { ExpensesView } from './components/views/ExpensesView';
 import { SteelView } from './components/views/SteelView';
 import { ConcreteView } from './components/views/ConcreteView';
 import { ContractorsView } from './components/views/ContractorsView';
+import { LaborView } from './components/views/LaborView';
 import { SuppliersView } from './components/views/SuppliersView';
 import { ApartmentsView } from './components/views/ApartmentsView';
 import { PaymentsView } from './components/views/PaymentsView';
@@ -234,6 +235,12 @@ function MainApp() {
                 <ContractorsView 
                   onOpenAddContractor={() => setIsAddContractorOpen(true)}
                   onOpenAddPayment={handleOpenPaymentForPayee}
+                />
+              )}
+
+              {activeTab === 'labor' && (
+                <LaborView 
+                  onOpenAddLabor={() => setIsAddLaborOpen(true)}
                 />
               )}
 
