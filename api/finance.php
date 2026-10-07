@@ -155,9 +155,9 @@ if ($method === 'POST') {
             $upAcc = $db->prepare("
                 UPDATE treasury_accounts 
                 SET current_balance = current_balance + :amt 
-                WHERE id = :id
+                WHERE id = :id AND tenant_id = :tid
             ");
-            $upAcc->execute(['amt' => $amount, 'id' => $accountId]);
+            $upAcc->execute(['amt' => $amount, 'id' => $accountId, 'tid' => $tenantId]);
 
             $db->commit();
             logAudit($db, $user['id'], $user['name'], 'create', 'income', $id, "ثبت عواید به مبلغ $amount $currency");
@@ -230,9 +230,9 @@ if ($method === 'POST') {
                 $upAcc = $db->prepare("
                     UPDATE treasury_accounts 
                     SET current_balance = current_balance - :amt 
-                    WHERE id = :id
+                    WHERE id = :id AND tenant_id = :tid
                 ");
-                $upAcc->execute(['amt' => $amount, 'id' => $accountId]);
+                $upAcc->execute(['amt' => $amount, 'id' => $accountId, 'tid' => $tenantId]);
             }
 
             $db->commit();
@@ -264,12 +264,12 @@ if ($method === 'POST') {
         try {
             $stmt = $db->prepare("
                 INSERT INTO project_transfers (
-                    id, transfer_number, from_project_id, to_project_id,
+                    id, tenant_id, transfer_number, from_project_id, to_project_id,
                     transfer_nature, amount_or_value, currency,
                     from_treasury_account_id, to_treasury_account_id,
                     transfer_date, approved_by, status, description
                 ) VALUES (
-                    :id, :tno, :from_p, :to_p,
+                    :id, :tid, :tno, :from_p, :to_p,
                     :nature, :amt, 'AFN',
                     :from_a, :to_a,
                     :dt, :appr, 'approved', :desc
@@ -277,6 +277,7 @@ if ($method === 'POST') {
             ");
             $stmt->execute([
                 'id' => $id,
+                'tid' => $tenantId,
                 'tno' => $transferNo,
                 'from_p' => $fromProj,
                 'to_p' => $toProj,
@@ -291,12 +292,12 @@ if ($method === 'POST') {
 
             // کسر از حساب مبدأ و واریز به حساب مقصد در صورت تعریف حساب‌ها
             if (!empty($fromAcc)) {
-                $db->prepare("UPDATE treasury_accounts SET current_balance = current_balance - :amt WHERE id = :id")
-                   ->execute(['amt' => $amount, 'id' => $fromAcc]);
+                $db->prepare("UPDATE treasury_accounts SET current_balance = current_balance - :amt WHERE id = :id AND tenant_id = :tid")
+                   ->execute(['amt' => $amount, 'id' => $fromAcc, 'tid' => $tenantId]);
             }
             if (!empty($toAcc)) {
-                $db->prepare("UPDATE treasury_accounts SET current_balance = current_balance + :amt WHERE id = :id")
-                   ->execute(['amt' => $amount, 'id' => $toAcc]);
+                $db->prepare("UPDATE treasury_accounts SET current_balance = current_balance + :amt WHERE id = :id AND tenant_id = :tid")
+                   ->execute(['amt' => $amount, 'id' => $toAcc, 'tid' => $tenantId]);
             }
 
             $db->commit();

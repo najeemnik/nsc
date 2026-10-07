@@ -18,8 +18,8 @@ if ($method === 'GET') {
 
     if ($projectId) {
         // دریافت مشخصات یک پروژه همراه با بودجه‌ها و مصارف واقعی
-        $stmt = $db->prepare("SELECT * FROM projects WHERE id = :id LIMIT 1");
-        $stmt->execute(['id' => $projectId]);
+        $stmt = $db->prepare("SELECT * FROM projects WHERE id = :id AND tenant_id = :tid LIMIT 1");
+        $stmt->execute(['id' => $projectId, 'tid' => $tenantId]);
         $project = $stmt->fetch();
 
         if (!$project) {
@@ -27,27 +27,27 @@ if ($method === 'GET') {
         }
 
         // بودجه‌ها
-        $bStmt = $db->prepare("SELECT * FROM project_budgets WHERE project_id = :pid");
-        $bStmt->execute(['pid' => $projectId]);
+        $bStmt = $db->prepare("SELECT * FROM project_budgets WHERE project_id = :pid AND tenant_id = :tid");
+        $bStmt->execute(['pid' => $projectId, 'tid' => $tenantId]);
         $budgets = $bStmt->fetchAll();
 
         // محاسبه مجموع مصارف واقعی پرداخت‌شده برای این پروژه
         $expStmt = $db->prepare("
             SELECT expense_category, SUM(amount_in_base_afn) as total_spent 
             FROM payment_vouchers 
-            WHERE project_id = :pid AND payment_status != 'cancelled'
+            WHERE project_id = :pid AND tenant_id = :tid AND payment_status != 'cancelled'
             GROUP BY expense_category
         ");
-        $expStmt->execute(['pid' => $projectId]);
+        $expStmt->execute(['pid' => $projectId, 'tid' => $tenantId]);
         $actualCosts = $expStmt->fetchAll();
 
         // مجموع عواید دریافتی
         $revStmt = $db->prepare("
             SELECT SUM(amount_in_base_afn) as total_revenue 
             FROM revenue_entries 
-            WHERE project_id = :pid
+            WHERE project_id = :pid AND tenant_id = :tid
         ");
-        $revStmt->execute(['pid' => $projectId]);
+        $revStmt->execute(['pid' => $projectId, 'tid' => $tenantId]);
         $revRow = $revStmt->fetch();
         $totalRevenue = (float)($revRow['total_revenue'] ?? 0);
 
@@ -59,13 +59,15 @@ if ($method === 'GET') {
         ]);
     } else {
         // لیست تمام پروژه‌ها
-        $stmt = $db->query("
+        $stmt = $db->prepare("
             SELECT p.*, 
-                   COALESCE((SELECT SUM(amount_in_base_afn) FROM payment_vouchers WHERE project_id = p.id AND payment_status != 'cancelled'), 0) as total_spent,
-                   COALESCE((SELECT SUM(amount_in_base_afn) FROM revenue_entries WHERE project_id = p.id), 0) as total_income
+                   COALESCE((SELECT SUM(amount_in_base_afn) FROM payment_vouchers WHERE project_id = p.id AND tenant_id = :tid AND payment_status != 'cancelled'), 0) as total_spent,
+                   COALESCE((SELECT SUM(amount_in_base_afn) FROM revenue_entries WHERE project_id = p.id AND tenant_id = :tid), 0) as total_income
             FROM projects p 
+            WHERE p.tenant_id = :tid
             ORDER BY p.created_at DESC
         ");
+        $stmt->execute(['tid' => $tenantId]);
         $projects = $stmt->fetchAll();
         jsonResponse(true, ['projects' => $projects]);
     }

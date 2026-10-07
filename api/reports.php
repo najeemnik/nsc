@@ -13,6 +13,7 @@ sendSecurityHeaders();
 $method = $_SERVER['REQUEST_METHOD'];
 $db = Database::getConnection();
 $user = authenticateUser(false);
+$tenantId = $user ? getTenantId($user) : 'default';
 
 $reportType = $_GET['type'] ?? 'dashboard';
 $projectId = $_GET['projectId'] ?? null;
@@ -23,42 +24,51 @@ $year = (int)($_GET['year'] ?? date('Y'));
 // -------------------------------------------------------------
 if ($reportType === 'dashboard') {
     // مجموع درآمد
-    $stmt = $db->query("SELECT COALESCE(SUM(amount_in_base_afn), 0) as total_rev FROM revenue_entries");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(amount_in_base_afn), 0) as total_rev FROM revenue_entries WHERE tenant_id = :tid");
+    $stmt->execute(['tid' => $tenantId]);
     $totalRevenue = (float)$stmt->fetch()['total_rev'];
 
     // مجموع مصارف
-    $stmt = $db->query("SELECT COALESCE(SUM(amount_in_base_afn), 0) as total_exp FROM payment_vouchers WHERE payment_status != 'cancelled'");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(amount_in_base_afn), 0) as total_exp FROM payment_vouchers WHERE tenant_id = :tid AND payment_status != 'cancelled'");
+    $stmt->execute(['tid' => $tenantId]);
     $totalExpenses = (float)$stmt->fetch()['total_exp'];
 
     // مجموع بودجه مصوب پروژه‌ها
-    $stmt = $db->query("SELECT COALESCE(SUM(approved_budget), 0) as total_bgt FROM projects WHERE status != 'archived'");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(approved_budget), 0) as total_bgt FROM projects WHERE tenant_id = :tid AND status != 'archived'");
+    $stmt->execute(['tid' => $tenantId]);
     $totalBudget = (float)$stmt->fetch()['total_bgt'];
 
     // موجودی بانک‌ها و صندوق‌ها
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT 
             COALESCE(SUM(CASE WHEN account_type = 'bank' THEN current_balance ELSE 0 END), 0) as bank_balance,
             COALESCE(SUM(CASE WHEN account_type = 'central_cash' THEN current_balance ELSE 0 END), 0) as cash_balance,
             COALESCE(SUM(CASE WHEN account_type = 'petty_cash' THEN current_balance ELSE 0 END), 0) as petty_balance
         FROM treasury_accounts
+        WHERE tenant_id = :tid
     ");
+    $stmt->execute(['tid' => $tenantId]);
     $treasury = $stmt->fetch();
 
     // مطالبات از مشتریان (Receivables)
-    $stmt = $db->query("SELECT COALESCE(SUM(outstanding_receivable), 0) as total_rec FROM clients");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(outstanding_receivable), 0) as total_rec FROM clients WHERE tenant_id = :tid");
+    $stmt->execute(['tid' => $tenantId]);
     $totalReceivables = (float)$stmt->fetch()['total_rec'];
 
     // بدهی‌ها به تأمین‌کنندگان (Payables)
-    $stmt = $db->query("SELECT COALESCE(SUM(current_payable_balance), 0) as total_pay FROM suppliers");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(current_payable_balance), 0) as total_pay FROM suppliers WHERE tenant_id = :tid");
+    $stmt->execute(['tid' => $tenantId]);
     $totalPayables = (float)$stmt->fetch()['total_pay'];
 
     // تعداد پروژه‌های فعال و تکمیل شده
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT 
             COUNT(CASE WHEN status = 'active' THEN 1 END) as active_count,
             COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
         FROM projects
+        WHERE tenant_id = :tid
     ");
+    $stmt->execute(['tid' => $tenantId]);
     $counts = $stmt->fetch();
 
     $netProfit = $totalRevenue - $totalExpenses;
@@ -86,14 +96,16 @@ if ($reportType === 'dashboard') {
 // ۲. گزارش سود و زیان جامع پروژه‌ها (Project P&L Snapshot)
 // -------------------------------------------------------------
 if ($reportType === 'project_pnl') {
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT 
             p.id, p.project_code, p.name, p.status, p.approved_budget,
-            COALESCE((SELECT SUM(amount_in_base_afn) FROM revenue_entries WHERE project_id = p.id), 0) as actual_revenue,
-            COALESCE((SELECT SUM(amount_in_base_afn) FROM payment_vouchers WHERE project_id = p.id AND payment_status != 'cancelled'), 0) as actual_cost
+            COALESCE((SELECT SUM(amount_in_base_afn) FROM revenue_entries WHERE project_id = p.id AND tenant_id = :tid), 0) as actual_revenue,
+            COALESCE((SELECT SUM(amount_in_base_afn) FROM payment_vouchers WHERE project_id = p.id AND tenant_id = :tid AND payment_status != 'cancelled'), 0) as actual_cost
         FROM projects p
+        WHERE p.tenant_id = :tid
         ORDER BY p.created_at DESC
     ");
+    $stmt->execute(['tid' => $tenantId]);
     $rows = $stmt->fetchAll();
 
     $pnlList = [];
@@ -134,18 +146,18 @@ if ($reportType === 'budget_vs_actual') {
     }
 
     // بودجه‌های سرفصل
-    $bStmt = $db->prepare("SELECT * FROM project_budgets WHERE project_id = :pid");
-    $bStmt->execute(['pid' => $projectId]);
+    $bStmt = $db->prepare("SELECT * FROM project_budgets WHERE project_id = :pid AND tenant_id = :tid");
+    $bStmt->execute(['pid' => $projectId, 'tid' => $tenantId]);
     $budgets = $bStmt->fetchAll();
 
     // مصارف تفکیک شده
     $eStmt = $db->prepare("
         SELECT expense_category, SUM(amount_in_base_afn) as actual_spent 
         FROM payment_vouchers 
-        WHERE project_id = :pid AND payment_status != 'cancelled'
+        WHERE project_id = :pid AND tenant_id = :tid AND payment_status != 'cancelled'
         GROUP BY expense_category
     ");
-    $eStmt->execute(['pid' => $projectId]);
+    $eStmt->execute(['pid' => $projectId, 'tid' => $tenantId]);
     $spentMap = [];
     foreach ($eStmt->fetchAll() as $s) {
         $spentMap[$s['expense_category']] = (float)$s['actual_spent'];
@@ -182,10 +194,10 @@ if ($reportType === 'monthly_timeline') {
             MONTH(received_date) as m, 
             SUM(amount_in_base_afn) as monthly_income
         FROM revenue_entries
-        WHERE YEAR(received_date) = :yr
+        WHERE YEAR(received_date) = :yr AND tenant_id = :tid
         GROUP BY MONTH(received_date)
     ");
-    $revStmt->execute(['yr' => $year]);
+    $revStmt->execute(['yr' => $year, 'tid' => $tenantId]);
     $revMonths = [];
     foreach ($revStmt->fetchAll() as $r) {
         $revMonths[(int)$r['m']] = (float)$r['monthly_income'];
@@ -197,10 +209,10 @@ if ($reportType === 'monthly_timeline') {
             MONTH(payment_date) as m, 
             SUM(amount_in_base_afn) as monthly_expense
         FROM payment_vouchers
-        WHERE YEAR(payment_date) = :yr AND payment_status != 'cancelled'
+        WHERE YEAR(payment_date) = :yr AND tenant_id = :tid AND payment_status != 'cancelled'
         GROUP BY MONTH(payment_date)
     ");
-    $expStmt->execute(['yr' => $year]);
+    $expStmt->execute(['yr' => $year, 'tid' => $tenantId]);
     $expMonths = [];
     foreach ($expStmt->fetchAll() as $e) {
         $expMonths[(int)$e['m']] = (float)$e['monthly_expense'];

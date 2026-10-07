@@ -126,12 +126,13 @@ if ($method === 'POST') {
                 SET total_purchases = total_purchases + :tot,
                     total_paid = total_paid + :paid_amt,
                     current_payable_balance = current_payable_balance + :remain
-                WHERE id = :sid
+                WHERE id = :sid AND tenant_id = :tid
             ")->execute([
                 'tot' => $totalPrice,
                 'paid_amt' => $isPaid ? $totalPrice : 0,
                 'remain' => $isPaid ? 0 : $totalPrice,
-                'sid' => $supplierId
+                'sid' => $supplierId,
+                'tid' => $tenantId
             ]);
         }
 
