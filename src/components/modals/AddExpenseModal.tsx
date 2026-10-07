@@ -252,7 +252,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-full sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl safe-bottom-only shadow-2xl w-full max-w-full sm:max-w-2xl max-h-[94dvh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-line bg-slate-900 text-white shrink-0">

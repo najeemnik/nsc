@@ -415,6 +415,172 @@
 }
 
 /* ------------------------------------------------------------------------
+   THEME 7 — COSMIC ORANGE (iPhone 17 Pro cover colorway)
+   Signature warm cosmic-orange over porcelain (light) / graphite (dark).
+   ------------------------------------------------------------------------ */
+.theme-cosmic-orange {
+  --canvas-base: #faf5ef;
+  --canvas: rgba(250, 245, 239, 0.55);
+  --surface: rgba(255, 252, 248, 0.88);
+  --surface-2: rgba(248, 240, 232, 0.9);
+  --line: rgba(194, 120, 70, 0.22);
+  --ink: #1c1712;
+  --ink-muted: #7a6a5c;
+  --accent: #f96b1f;
+
+  --chrome-bg: rgba(255, 250, 244, 0.82);
+  --chrome-blur: blur(18px) saturate(170%);
+  --chrome-border: rgba(223, 171, 126, 0.45);
+  --chrome-shadow: 0 4px 24px rgba(124, 64, 16, 0.08);
+
+  --card-blur: blur(12px) saturate(160%);
+  --card-shadow: 0 10px 28px rgba(124, 64, 16, 0.08);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  --deco-a: rgba(249, 107, 31, 0.20);
+  --deco-b: rgba(251, 191, 36, 0.14);
+}
+
+.theme-cosmic-orange.dark {
+  --canvas-base: #100d0b;
+  --canvas: rgba(16, 13, 11, 0.55);
+  --surface: rgba(30, 24, 20, 0.88);
+  --surface-2: rgba(44, 35, 29, 0.92);
+  --line: rgba(249, 140, 60, 0.20);
+  --ink: #f6ede6;
+  --ink-muted: #b7a496;
+  --accent: #ff8a3d;
+
+  --chrome-bg: rgba(24, 19, 16, 0.86);
+  --chrome-blur: blur(20px) saturate(170%);
+  --chrome-border: rgba(249, 140, 60, 0.16);
+  --chrome-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  --card-blur: blur(12px) saturate(150%);
+  --card-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(255, 160, 90, 0.12);
+
+  --deco-a: rgba(249, 107, 31, 0.22);
+  --deco-b: rgba(250, 204, 21, 0.08);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 8 — BLUE TITANIUM (iPhone Pro deep-blue titanium colorway)
+   Cool steel blue over arctic (light) / midnight navy titanium (dark).
+   ------------------------------------------------------------------------ */
+.theme-blue-titanium {
+  --canvas-base: #edf1f7;
+  --canvas: rgba(237, 241, 247, 0.55);
+  --surface: rgba(249, 251, 255, 0.9);
+  --surface-2: rgba(232, 238, 248, 0.92);
+  --line: rgba(74, 104, 156, 0.22);
+  --ink: #0e1626;
+  --ink-muted: #5d7089;
+  --accent: #3b6fe0;
+
+  --chrome-bg: rgba(248, 250, 254, 0.84);
+  --chrome-blur: blur(18px) saturate(165%);
+  --chrome-border: rgba(148, 170, 204, 0.4);
+  --chrome-shadow: 0 4px 24px rgba(30, 64, 135, 0.08);
+
+  --card-blur: blur(12px) saturate(155%);
+  --card-shadow: 0 10px 28px rgba(30, 64, 135, 0.09);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --deco-a: rgba(59, 111, 224, 0.16);
+  --deco-b: rgba(56, 189, 248, 0.13);
+}
+
+.theme-blue-titanium.dark {
+  --canvas-base: #080e1a;
+  --canvas: rgba(8, 14, 26, 0.55);
+  --surface: rgba(17, 26, 43, 0.9);
+  --surface-2: rgba(25, 37, 59, 0.94);
+  --line: rgba(96, 140, 205, 0.22);
+  --ink: #e9effa;
+  --ink-muted: #8fa4c4;
+  --accent: #6ea8ff;
+
+  --chrome-bg: rgba(13, 20, 34, 0.88);
+  --chrome-blur: blur(20px) saturate(165%);
+  --chrome-border: rgba(96, 140, 205, 0.18);
+  --chrome-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  --card-blur: blur(12px) saturate(150%);
+  --card-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(120, 165, 240, 0.14);
+
+  --deco-a: rgba(59, 111, 224, 0.24);
+  --deco-b: rgba(34, 211, 238, 0.1);
+}
+
+/* ------------------------------------------------------------------------
+   THEME 9 — DESERT TITANIUM (iPhone Pro desert-gold titanium colorway)
+   Warm sandy bronze over dune (light) / espresso bronze (dark).
+   ------------------------------------------------------------------------ */
+.theme-desert-titanium {
+  --canvas-base: #f6f1e8;
+  --canvas: rgba(246, 241, 232, 0.55);
+  --surface: rgba(253, 250, 244, 0.9);
+  --surface-2: rgba(243, 236, 224, 0.92);
+  --line: rgba(150, 116, 66, 0.24);
+  --ink: #201a11;
+  --ink-muted: #7c6e58;
+  --accent: #c08a3e;
+
+  --chrome-bg: rgba(252, 248, 240, 0.84);
+  --chrome-blur: blur(18px) saturate(165%);
+  --chrome-border: rgba(196, 162, 105, 0.42);
+  --chrome-shadow: 0 4px 24px rgba(122, 84, 28, 0.08);
+
+  --card-blur: blur(12px) saturate(155%);
+  --card-shadow: 0 10px 28px rgba(122, 84, 28, 0.09);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --deco-a: rgba(192, 138, 62, 0.2);
+  --deco-b: rgba(217, 119, 6, 0.12);
+}
+
+.theme-desert-titanium.dark {
+  --canvas-base: #12100c;
+  --canvas: rgba(18, 16, 12, 0.55);
+  --surface: rgba(33, 28, 21, 0.9);
+  --surface-2: rgba(47, 40, 30, 0.94);
+  --line: rgba(212, 168, 106, 0.22);
+  --ink: #f2eadd;
+  --ink-muted: #b6a88f;
+  --accent: #d4a86a;
+
+  --chrome-bg: rgba(26, 22, 16, 0.88);
+  --chrome-blur: blur(20px) saturate(165%);
+  --chrome-border: rgba(212, 168, 106, 0.18);
+  --chrome-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  --card-blur: blur(12px) saturate(150%);
+  --card-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --card-inset: inset 0 1px 0 rgba(212, 178, 120, 0.14);
+
+  --deco-a: rgba(192, 138, 62, 0.24);
+  --deco-b: rgba(245, 158, 11, 0.1);
+}
+
+/* ------------------------------------------------------------------------
+   IPHONE / MOBILE RESPONSIVE UTILITIES
+   - 100dvh fallbacks: mobile Safari URL bar no longer hides page chrome
+   - env(safe-area-inset-*): respects the Dynamic Island & home indicator
+     on every iPhone (incl. 15/16/17/18 Pro Max)
+   - momentum touch scrolling for wide tables
+   ------------------------------------------------------------------------ */
+.h-dscreen { height: 100vh; height: 100dvh; }
+.min-h-dscreen { min-height: 100vh; min-height: 100dvh; }
+.max-h-dscreen-94 { max-height: 94vh; max-height: 94dvh; }
+.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.375rem); }
+.safe-bottom-only { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.scroll-touch { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+.tap-target { min-height: 44px; min-width: 44px; }
+
+/* ------------------------------------------------------------------------
    GLOBAL PAINT — html base, decorative layer, themed surfaces
    (unlayered on purpose: these rules define the theme look and must win
    over generic utilities like shadow-sm / rounded-3xl on the same element)
@@ -498,6 +664,21 @@ body::before {
   border: 1px solid var(--line);
   color: var(--ink);
   box-shadow: var(--card-shadow);
+}
+
+/* Mobile bottom nav chrome — token-driven so every theme (incl. the iPhone
+   colorways) flows into the mobile bar exactly like the desktop sidebar */
+.mobile-nav-chrome {
+  background: var(--chrome-bg);
+  backdrop-filter: var(--chrome-blur);
+  -webkit-backdrop-filter: var(--chrome-blur);
+  border-top: 1px solid var(--chrome-border);
+  box-shadow: var(--chrome-shadow);
+  color: var(--ink);
+}
+.mobile-nav-item-active {
+  color: var(--ink);
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
 }
 
 /* ------------------------------------------------------------------------

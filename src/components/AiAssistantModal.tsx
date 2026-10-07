@@ -122,7 +122,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
         </div>
 
         {/* Quick Suggestion Chips */}
-        <div className="p-3 bg-slate-800/60 border-b border-slate-800 flex gap-2 overflow-x-auto no-scrollbar text-xs">
+        <div className="p-3 bg-slate-800/60 border-b border-slate-800 flex gap-2 overflow-x-auto scroll-touch no-scrollbar text-xs">
           {quickPrompts.map((prompt, i) => (
             <button
               key={i}

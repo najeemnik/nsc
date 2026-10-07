@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
+import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import { LoginView } from './components/LoginView';
 
 // Views
@@ -22,6 +23,8 @@ import { ApartmentsView } from './components/views/ApartmentsView';
 import { PaymentsView } from './components/views/PaymentsView';
 import { DocumentsView } from './components/views/DocumentsView';
 import { ReportsView } from './components/views/ReportsView';
+import { BudgetView } from './components/views/BudgetView';
+import { AccountingView } from './components/views/AccountingView';
 import { UsersView } from './components/views/UsersView';
 import { AuditLogView } from './components/views/AuditLogView';
 import { SettingsView } from './components/views/SettingsView';
@@ -58,6 +61,28 @@ function MainApp() {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // 🛡 دفتر هفت fast-path: master login lands DIRECTLY inside the panel (no second key)
+  const [masterDirectAccess, setMasterDirectAccess] = useState(false);
+  useEffect(() => {
+    if (!currentUser) {
+      setMasterDirectAccess(false);
+      return;
+    }
+    if (currentUser.isMasterSuperAdmin) {
+      setMasterDirectAccess(true);
+      setIsMasterAdminOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  // دفتر هفت telemetry: log every section a user opens (who, where, when)
+  const { trackFeature } = useApp();
+  useEffect(() => {
+    trackFeature(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Modal visibility states
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -89,12 +114,26 @@ function MainApp() {
 
   const isRtl = language === 'fa' || language === 'ps';
 
+  // 🛡 دفتر هفت full-screen mode: hide the ENTIRE construction app — panel is a standalone page
+  if (currentUser.isMasterSuperAdmin && isMasterAdminOpen) {
+    return (
+      <div dir={isRtl ? 'rtl' : 'ltr'} className="h-dscreen w-full overflow-hidden bg-slate-100">
+        <MasterAdminModal
+          isOpen={isMasterAdminOpen}
+          onClose={() => setIsMasterAdminOpen(false)}
+          directAccess={masterDirectAccess}
+          fullPage
+        />
+      </div>
+    );
+  }
+
   return (
     <div 
-      className="min-h-screen bg-canvas text-ink flex flex-col"
+      className="min-h-dscreen bg-canvas text-ink flex flex-col"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="flex flex-1 h-screen overflow-hidden">
+      <div className="flex flex-1 h-dscreen overflow-hidden">
         {/* Desktop / Tablet Sidebar */}
         <div className="hidden md:flex shrink-0">
           <Sidebar 
@@ -119,10 +158,11 @@ function MainApp() {
             onOpenAddApartment={() => setIsAddApartmentOpen(true)}
             onOpenAddContractor={() => setIsAddContractorOpen(true)}
             onOpenDrive={() => setIsGoogleDriveOpen(true)}
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
 
           {/* Main Tab Content */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+          <main className="flex-1 overflow-y-auto scroll-touch p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && (
                 <DashboardView 
@@ -193,6 +233,14 @@ function MainApp() {
                 />
               )}
 
+              {activeTab === 'budget' && (
+                <BudgetView />
+              )}
+
+              {activeTab === 'accounting' && (
+                <AccountingView />
+              )}
+
               {activeTab === 'documents' && (
                 <DocumentsView 
                   onOpenAddDocument={() => setIsAddDocumentOpen(true)}
@@ -224,8 +272,14 @@ function MainApp() {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden">
-        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
       </div>
+      <MobileMenuDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        activeTab={activeTab}
+        setActiveTab={(tab) => { setActiveTab(tab); setIsMobileMenuOpen(false); }}
+      />
 
       {/* Modals Container */}
       <NewProjectModal 
@@ -312,7 +366,8 @@ function MainApp() {
 
       <MasterAdminModal 
         isOpen={isMasterAdminOpen} 
-        onClose={() => setIsMasterAdminOpen(false)} 
+        onClose={() => setIsMasterAdminOpen(false)}
+        directAccess={masterDirectAccess}
       />
 
       <AiAssistantModal 

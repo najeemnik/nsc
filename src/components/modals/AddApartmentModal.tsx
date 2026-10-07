@@ -186,7 +186,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl safe-bottom-only shadow-2xl max-w-xl w-full max-h-[92dvh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
@@ -209,7 +209,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs max-h-[80dvh] overflow-y-auto">
           
           {formError && (
             <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-rose-700 text-xs flex items-center gap-2">

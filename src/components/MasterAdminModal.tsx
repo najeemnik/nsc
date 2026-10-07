@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { User } from '../types';
+import { User, UserActivityEvent } from '../types';
 import { 
   ShieldCheck, 
   Lock, 
@@ -39,15 +39,49 @@ import {
   Clock,
   Eye,
   LogIn,
-  HardHat
+  LogOut,
+  HardHat,
+  Plus,
+  Crown,
+  ChevronDown,
+  UserCog,
+  LayoutDashboard,
+  Activity,
+  TrendingUp,
+  Timer,
+  Key
 } from 'lucide-react';
 
 interface MasterAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Master logged in fresh → land straight inside (skip the second key gate) */
+  directAccess?: boolean;
+  /** دفتر هفت as a standalone full page — main app fully hidden behind */
+  fullPage?: boolean;
 }
 
-export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onClose }) => {
+/** Every clickable app section an owner/employee can be granted access to */
+const TAB_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'dashboard',   label: 'داشبورد' },
+  { id: 'projects',    label: 'پروژه‌ها' },
+  { id: 'steel',       label: 'سیخ‌گول' },
+  { id: 'concrete',    label: 'کانکریت' },
+  { id: 'expenses',    label: 'هزینه‌ها' },
+  { id: 'contractors', label: 'پیمانکاران' },
+  { id: 'suppliers',   label: 'عرضه‌کنندگان' },
+  { id: 'apartments',  label: 'پلاک‌ها' },
+  { id: 'payments',    label: 'پرداخت‌ها' },
+  { id: 'budget',      label: 'بودجه پروژه' },
+  { id: 'documents',   label: 'اسناد و بِل‌ها' },
+  { id: 'reports',     label: 'گزارشات' },
+  { id: 'accounting',  label: 'دفاتر حسابداری' },
+  { id: 'settings',    label: 'تنظیمات' },
+  { id: 'users',       label: 'مدیریت کارمندان' },
+  { id: 'audit_logs',  label: 'ثبت رویدادها' },
+];
+
+export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onClose, directAccess, fullPage }) => {
   const { 
     users, 
     projects, 
@@ -56,10 +90,18 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     toggleAiForUser, 
     updateTenantByMasterAdmin,
     impersonateTenant,
+    addUser,
+    activityEvents,
+    logout,
     t 
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Fresh master login → bypass the second key screen entirely
+  useEffect(() => {
+    if (isOpen && directAccess) setIsAuthenticated(true);
+  }, [isOpen, directAccess]);
   const [securityPassword, setSecurityPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -69,7 +111,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'locked' | 'ai'>('all');
 
   const [selectedTenant, setSelectedTenant] = useState<User | null>(null);
-  const [inspectorTab, setInspectorTab] = useState<'profile' | 'modules' | 'bill' | 'subscription'>('profile');
+  const [inspectorTab, setInspectorTab] = useState<'profile' | 'modules' | 'bill' | 'subscription' | 'access'>('profile');
 
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -111,7 +153,25 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
   const [editAiEnabled, setEditAiEnabled] = useState(true);
   const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [editAllowedTabs, setEditAllowedTabs] = useState<string[]>([]);
   const [saveSuccessNotice, setSaveSuccessNotice] = useState<string | null>(null);
+
+  // دفتر هفت — create-owner flow & owner↔employee grouping
+  const [showNewOwnerForm, setShowNewOwnerForm] = useState(false);
+  const [expandedOwnerIds, setExpandedOwnerIds] = useState<string[]>([]);
+  const emptyNewOwner = {
+    name: '', username: '', email: '', password: '', phone: '',
+    companyName: '', companyAddress: '',
+    subscriptionPlan: 'trial' as User['subscriptionPlan'],
+    expiresAt: '',
+  };
+  const [newOwner, setNewOwner] = useState(emptyNewOwner);
+
+  // دفتر هفت SaaS dashboard internals
+  const [officeTab, setOfficeTab] = useState<'dashboard' | 'owners' | 'security'>('dashboard');
+  const [newGateKey, setNewGateKey] = useState('');
+  const [newGateKeyRepeat, setNewGateKeyRepeat] = useState('');
+  const [gateKeyMsg, setGateKeyMsg] = useState<string | null>(null);
 
   const tenantUsers = users.filter(u => !u.isMasterSuperAdmin);
 
@@ -136,6 +196,13 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     return true;
   });
 
+  // 👑 دفتر هفت grouping: owners (company admins) with THEIR employees beneath them
+  const isOwner = (u: User) => u.role === 'admin' && !u.ownerAdminId;
+  const ownerList = filteredTenants.filter(isOwner);
+  const staffList = filteredTenants.filter(u => !isOwner(u));
+  const employeesOf = (ownerId: string) => staffList.filter(u => u.ownerAdminId === ownerId);
+  const ungroupedStaff = staffList.filter(u => !ownerList.some(o => o.id === u.ownerAdminId));
+
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (lockoutUntil && Date.now() < lockoutUntil) {
@@ -145,12 +212,16 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     }
 
     const cleanPwd = securityPassword.trim();
+    const customKey = localStorage.getItem('nsc_office7_key') || '';
+    const masterAccountPwd = users.find(u => u.isMasterSuperAdmin)?.password || '';
     const validMasterKeys = [
-      'nik@master2026', 
-      '0093783788278', 
+      customKey,
+      masterAccountPwd,
+      'nik@master2026',
+      '0093783788278',
       'najeemnik@2026',
       'password123'
-    ];
+    ].filter(Boolean);
 
     if (validMasterKeys.includes(cleanPwd)) {
       setIsAuthenticated(true);
@@ -202,6 +273,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
     setEditAiEnabled(user.permissions?.aiEnabled !== false);
     setEditExpiresAt(user.subscriptionExpiresAt ? user.subscriptionExpiresAt.split('T')[0] : '');
+    setEditAllowedTabs(user.permissions?.allowedTabs || TAB_OPTIONS.map(o => o.id));
     setSaveSuccessNotice(null);
   };
 
@@ -239,6 +311,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       customEnabledModules: editModules,
       aiEnabled: editAiEnabled,
       subscriptionExpiresAt: editExpiresAt ? new Date(editExpiresAt).toISOString() : undefined,
+      permissions: {
+        ...(selectedTenant.permissions || {}),
+        aiEnabled: editAiEnabled,
+        allowedTabs: editAllowedTabs,
+      },
     });
 
     if (result.success) {
@@ -265,6 +342,269 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     handleClose();
   };
 
+  const handleCreateOwner = (e: React.FormEvent) => {
+    e.preventDefault();
+    addUser({
+      username: newOwner.username.trim(),
+      email: newOwner.email.trim(),
+      password: newOwner.password,
+      name: newOwner.name.trim(),
+      phone: newOwner.phone.trim(),
+      companyName: newOwner.companyName.trim(),
+      companyAddress: newOwner.companyAddress.trim(),
+      role: 'admin',
+      active: true,
+      verified: true,
+      subscriptionPlan: newOwner.subscriptionPlan || 'trial',
+      subscriptionExpiresAt: newOwner.expiresAt ? new Date(newOwner.expiresAt).toISOString() : undefined,
+      permissions: { aiEnabled: true },
+    });
+    setSaveSuccessNotice(`مالک جدید «${newOwner.companyName || newOwner.name}» ساخته شد — حالا خودش برای کارمندانش یوزر می‌سازد.`);
+    setTimeout(() => setSaveSuccessNotice(null), 4000);
+    setNewOwner(emptyNewOwner);
+    setShowNewOwnerForm(false);
+  };
+
+  const toggleOwnerExpanded = (ownerId: string) => {
+    setExpandedOwnerIds(prev => prev.includes(ownerId) ? prev.filter(id => id !== ownerId) : [...prev, ownerId]);
+  };
+
+  const renderTenantRow = (user: User, isEmployee = false) => {
+    const isLocked = user.isLockedBySuperAdmin;
+    const isExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt).getTime() < Date.now();
+    const remainingDays = user.subscriptionExpiresAt
+      ? Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : 180;
+    return (
+      <div
+        key={user.id}
+        className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+          isEmployee
+            ? 'bg-slate-50 border-slate-200 hover:border-cyan-500/60 shadow-2xs'
+            : 'bg-white border-slate-200 hover:border-amber-500/60 shadow-sm'
+        }`}
+      >
+        <div className="flex items-start gap-3.5">
+          <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center font-bold shrink-0 ${
+            isEmployee
+              ? 'bg-cyan-50 border-cyan-200 text-cyan-600'
+              : 'bg-amber-50 border-amber-200 text-amber-600'
+          }`}>
+            {user.customLogoUrl ? (
+              <img src={user.customLogoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : isEmployee ? (
+              <UserCog className="w-6 h-6" />
+            ) : (
+              <Building2 className="w-6 h-6" />
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-sm font-black text-slate-900">{isEmployee ? user.name : (user.companyName || user.name)}</h4>
+              {!isEmployee && <span className="text-[10px] text-slate-500">({user.name})</span>}
+
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                isEmployee
+                  ? 'bg-cyan-100 text-cyan-700 border-cyan-200'
+                  : 'bg-amber-100 text-amber-700 border-amber-200'
+              }`}>
+                {isEmployee ? (user.role === 'accountant' ? 'کارمند · محاسب' : user.role === 'viewer' ? 'کارمند · ناظر' : 'کارمند') : 'مالک کمپنی'}
+              </span>
+
+              {isLocked ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                  مسدود شده
+                </span>
+              ) : isExpired ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                  منقضی شده
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                  فعال ({remainingDays} روز)
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1 font-mono">
+              <span>یوزر: {user.username}</span>
+              <span>ایمیل: {user.email}</span>
+              {user.phone && <span>تیلیفون: {user.phone}</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => handleImpersonate(user)}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors border border-slate-200"
+            title="ورود به حساب کاربری و دیدن همه‌چیز از دید ایشان"
+          >
+            <LogIn className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenTenantInspector(user)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>{isEmployee ? 'مدیریت کارمند' : 'مدیریت شرکت'}</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const handleSaveGateKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGateKey.trim() || newGateKey.trim().length < 4) {
+      setGateKeyMsg('کلید جدید باید لااقل ۴ حرف باشد.');
+      return;
+    }
+    if (newGateKey !== newGateKeyRepeat) {
+      setGateKeyMsg('تکرار کلید مطابقت ندارد.');
+      return;
+    }
+    localStorage.setItem('nsc_office7_key', newGateKey.trim());
+    setNewGateKey('');
+    setNewGateKeyRepeat('');
+    setGateKeyMsg('کلید دفتر هفت با موفقیت تغییر کرد. رمز اکانت najeemnik هم همواره مقبول باقی می‌ماند.');
+  };
+
+  // ---- دفتر هفت usage analytics (who used which option how much & when) ----
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const eventsToday = activityEvents.filter(ev => ev.timestamp.startsWith(todayStr));
+
+  const last7Days: Array<{ day: string; count: number; label: string }> = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(Date.now() - (6 - i) * 86400000);
+      const dayStr = d.toISOString().slice(0, 10);
+      return {
+        day: dayStr,
+        label: d.toLocaleDateString('fa-AF', { weekday: 'short' }),
+        count: activityEvents.filter(ev => ev.timestamp.startsWith(dayStr)).length,
+      };
+    });
+  }, [activityEvents]);
+
+  const featureUsage: Array<{ feature: string; count: number; color: string }> = useMemo(() => {
+    const counts = new Map<string, number>();
+    activityEvents.filter(ev => ev.kind === 'feature' && ev.feature).forEach(ev => {
+      counts.set(ev.feature!, (counts.get(ev.feature!) || 0) + 1);
+    });
+    const palette = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6', '#64748b'];
+    return TAB_OPTIONS.map(o => ({ feature: o.label, count: counts.get(o.id) || 0 }))
+      .filter(f => f.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 7)
+      .map((f, i) => ({ ...f, color: palette[i % palette.length] }));
+  }, [activityEvents]);
+
+  interface UserUsageStat {
+    userId: string;
+    userName: string;
+    role: string;
+    events: number;
+    approxMinutes: number;
+    lastActiveAt: string;
+    topFeature: string;
+  }
+
+  const userUsage: UserUsageStat[] = useMemo(() => {
+    const byUser = new Map<string, UserActivityEvent[]>();
+    activityEvents.forEach(ev => {
+      if (!byUser.has(ev.userId)) byUser.set(ev.userId, []);
+      byUser.get(ev.userId)!.push(ev);
+    });
+    const featureLabel = (id: string) => TAB_OPTIONS.find(o => o.id === id)?.label || id;
+    return Array.from(byUser.entries()).map(([userId, evs]) => {
+      const sorted = [...evs].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      let approxMinutes = 0;
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = (new Date(sorted[i].timestamp).getTime() - new Date(sorted[i - 1].timestamp).getTime()) / 60000;
+        approxMinutes += Math.min(gap, 15);
+      }
+      const featCounts = new Map<string, number>();
+      sorted.filter(ev => ev.kind === 'feature' && ev.feature).forEach(ev => {
+        featCounts.set(ev.feature!, (featCounts.get(ev.feature!) || 0) + 1);
+      });
+      const topFeatId = Array.from(featCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
+      return {
+        userId,
+        userName: sorted[0].userName,
+        role: sorted[0].role,
+        events: sorted.length,
+        approxMinutes: Math.round(approxMinutes),
+        lastActiveAt: sorted[sorted.length - 1].timestamp,
+        topFeature: topFeatId ? featureLabel(topFeatId) : '—',
+      };
+    }).sort((a, b) => b.events - a.events);
+  }, [activityEvents]);
+
+  const recentActivity = useMemo(
+    () => [...activityEvents].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 8),
+    [activityEvents]
+  );
+
+  /** Pure-SVG mini charts (no deps) for the دفتر هفت dashboard */
+  const MiniArea: React.FC<{ data: Array<{ label: string; count: number }> }> = ({ data }) => {
+    const W = 560, H = 150, PAD = 8;
+    const max = Math.max(...data.map(d => d.count), 1);
+    const stepX = (W - PAD * 2) / Math.max(data.length - 1, 1);
+    const pts = data.map((d, i) => ({
+      x: PAD + i * stepX,
+      y: H - PAD - (d.count / max) * (H - PAD * 2 - 14),
+    }));
+    const line = pts.map(pt => `${pt.x},${pt.y}`).join(' ');
+    const areaPath = `M ${PAD},${H - PAD} L ${pts.map(pt => `${pt.x},${pt.y}`).join(' L ')} L ${W - PAD},${H - PAD} Z`;
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+        <defs>
+          <linearGradient id="officeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#officeAreaGrad)" />
+        <polyline points={line} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {pts.map((pt, i) => (
+          <g key={i}>
+            <circle cx={pt.x} cy={pt.y} r="3.5" fill="#fff" stroke="#6366f1" strokeWidth="2" />
+            <text x={pt.x} y={H - 1} fontSize="9" textAnchor="middle" fill="#94a3b8">{data[i].label}</text>
+            <text x={pt.x} y={pt.y - 8} fontSize="9" textAnchor="middle" fill="#6366f1" fontWeight="700">{data[i].count}</text>
+          </g>
+        ))}
+      </svg>
+    );
+  };
+
+  const MiniDonut: React.FC<{ segments: Array<{ feature: string; count: number; color: string }> }> = ({ segments }) => {
+    const total = segments.reduce((sum, seg) => sum + seg.count, 0) || 1;
+    let offset = 0;
+    return (
+      <svg viewBox="0 0 42 42" className="w-36 h-36">
+        <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f1f5f9" strokeWidth="5" />
+        {segments.map((seg, i) => {
+          const pct = (seg.count / total) * 100;
+          const el = (
+            <circle
+              key={i}
+              cx="21" cy="21" r="15.9155" fill="none"
+              stroke={seg.color} strokeWidth="5"
+              strokeDasharray={`${pct} ${100 - pct}`}
+              strokeDashoffset={25 - offset}
+              strokeLinecap="butt"
+            />
+          );
+          offset += pct;
+          return el;
+        })}
+        <text x="21" y="20" textAnchor="middle" fontSize="7" fontWeight="800" fill="#0f172a">{total}</text>
+        <text x="21" y="26" textAnchor="middle" fontSize="3.2" fill="#94a3b8">رویداد</text>
+      </svg>
+    );
+  };
+
   const handleClose = () => {
     setIsAuthenticated(false);
     setSecurityPassword('');
@@ -276,104 +616,121 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-xl animate-in fade-in">
-      <div className="bg-slate-900 border-2 border-amber-500/40 rounded-3xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden text-white font-vazir">
+    <div className={fullPage
+      ? "w-full h-full overflow-hidden flex flex-col animate-in fade-in"
+      : "fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-xl animate-in fade-in"
+    }>
+      <div className={fullPage
+        ? "flex-1 w-full h-full flex flex-col overflow-hidden text-slate-900 font-vazir bg-gradient-to-br from-slate-50 via-white to-indigo-50/70"
+        : "bg-gradient-to-br from-slate-50 via-white to-indigo-50/70 border border-indigo-200/80 rounded-3xl w-full max-w-6xl max-h-[94dvh] flex flex-col shadow-2xl overflow-hidden text-slate-900 font-vazir"
+      }>
         
-        {/* Top Header */}
-        <div className="p-4 sm:p-5 border-b border-white/10 bg-slate-950/80 flex items-center justify-between">
-          <div className="flex items-center space-x-3 rtl:space-x-reverse">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-black shadow-md">
+        {/* Top Header — SaaS indigo band (distinct from the main app on purpose) */}
+        <div className="p-4 sm:p-5 bg-gradient-to-l from-indigo-600 via-indigo-700 to-violet-700 text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center shadow-lg">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black tracking-tight text-white">
-                  پورتال مدیریت ارشد احمد نجیم نیک (Super Admin Master)
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black tracking-tight">
+                  دفتر هفت (office_7)
                 </h2>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                  کنترل کل دیتابیس
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/15 border border-white/25">
+                  پورتال مدیریت ارشد
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                nik-smartcount.com - دسترسی مستقیم به شرکت‌ها، ماژول‌ها و اشتراک‌ها
+              <p className="text-[11px] text-indigo-100/90 mt-0.5">
+                نظارت کامل بر مالک‌ها و کارمندانشان — استفادهٔ هر یوزر، دقیقه‌به‌دقیقه، با تاریخ و ساعت
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleClose}
+              title="بازگشت به سیستم اصلی"
+              className="h-9 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center gap-1.5 text-[11px] font-bold transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline">بازگشت به اپ</span>
+            </button>
+            <button
+              onClick={() => { handleClose(); logout(); }}
+              title="خروج از سیستم"
+              className="h-9 px-3.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-300/30 text-white flex items-center gap-1.5 text-[11px] font-bold transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">خروج</span>
+            </button>
+          </div>
         </div>
 
         {/* SCREEN 1: Authentication Screen */}
         {!isAuthenticated ? (
-          <div className="p-8 sm:p-12 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full text-center space-y-6">
-            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-3xl shadow-xl shadow-amber-500/10">
+          <div className="p-8 sm:p-12 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full text-center space-y-6 bg-white/60">
+            <div className="w-20 h-20 rounded-3xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-200/50">
               <KeyRound className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-black text-white">ورود محرمانه به پنل ماستر</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                لطفاً کلید امنیتی اختصاصی خود (احمد نجیم نیک) را جهت احراز هویت وارد فرمایید.
+              <h3 className="text-lg font-black text-slate-900">ورود محرمانه به دفتر هفت</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                کلید امنیتی دفتر هفت یا همان رمز اکانت مالک (najeemnik) را وارد فرمایید. در صورت فراموشی، کلید پیش‌فرض سیستم نیز پذیرفته می‌شود.
               </p>
             </div>
 
             {authError && (
-              <div className="w-full p-3 bg-rose-950/60 border border-rose-700/60 rounded-xl text-rose-300 text-xs flex items-center gap-2 text-start">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+              <div className="w-full p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2 text-start">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
                 <span>{authError}</span>
               </div>
             )}
 
             <form onSubmit={handleAuthSubmit} className="w-full space-y-4">
-              <div>
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  value={securityPassword}
-                  onChange={(e) => setSecurityPassword(e.target.value)}
-                  placeholder="کلید امنیتی ماستر..."
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-center font-mono text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
+              <input
+                type="password"
+                required
+                autoFocus
+                value={securityPassword}
+                onChange={(e) => setSecurityPassword(e.target.value)}
+                placeholder="کلید امنیتی دفتر هفت..."
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-center font-mono text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-gradient-to-l from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
               >
                 <span>احراز هویت و ورود</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
-            <div className="text-[11px] text-slate-500 font-mono">
-              IP & Master Session Logged - AES-256 Protected
+            <div className="text-[11px] text-slate-400">
+              IP & Master Session Logged · AES-256 Protected
             </div>
           </div>
         ) : selectedTenant ? (
           /* SCREEN 2: Tenant Inspector Modal */
-          <div className="flex-1 flex flex-col overflow-hidden bg-slate-900/95">
-            <div className="p-4 bg-slate-950 border-b border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex-1 flex flex-col overflow-hidden bg-white/95">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedTenant(null)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-300 text-slate-600 text-xs font-bold flex items-center gap-1.5 transition-colors"
                 >
                   <ArrowRight className="w-4 h-4" />
                   <span>بازگشت به لیست</span>
                 </button>
-                <div className="border-r border-slate-700 pe-3 flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">شرکت منتخب:</span>
+                <div className="border-r border-slate-300 pe-3 flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-500">شرکت منتخب:</span>
                   <span className="text-sm font-black text-amber-400">{editCompanyName || editName}</span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+              <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
                 {[
                   { id: 'profile', label: 'مشخصات شرکت', icon: UserCheck },
+                  { id: 'access', label: 'پرمیژن و اکسس', icon: UserCog },
                   { id: 'modules', label: 'کنترل ماژول‌ها', icon: Sliders },
                   { id: 'bill', label: 'طراحی رسید و سربرگ', icon: Receipt },
                   { id: 'subscription', label: 'تمدید و قفل اشتراک', icon: Calendar },
@@ -386,8 +743,8 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       onClick={() => setInspectorTab(t.id as any)}
                       className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
                         inspectorTab === t.id 
-                          ? 'bg-amber-600 text-white shadow-xs' 
-                          : 'text-slate-400 hover:text-white'
+                          ? 'bg-amber-600 text-slate-900 shadow-xs' 
+                          : 'text-slate-500 hover:text-slate-900'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -399,7 +756,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             </div>
 
             {saveSuccessNotice && (
-              <div className="p-3 bg-emerald-950/80 border-b border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between px-6 animate-in fade-in">
+              <div className="p-3 bg-emerald-950/80 border-b border-emerald-500/40 text-emerald-600 text-xs flex items-center justify-between px-6 animate-in fade-in">
                 <span className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>{saveSuccessNotice}</span>
@@ -411,46 +768,46 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               {inspectorTab === 'profile' && (
                 <div className="space-y-6 max-w-4xl mx-auto">
-                  <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-4">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 space-y-4">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-amber-400" />
                       <span>مشخصات مدیر و شرکت</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-slate-400 font-bold mb-1">نام مدیر</label>
+                        <label className="block text-slate-500 font-bold mb-1">نام مدیر</label>
                         <input
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                          className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-slate-900"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 font-bold mb-1">نام شرکت</label>
+                        <label className="block text-slate-500 font-bold mb-1">نام شرکت</label>
                         <input
                           type="text"
                           value={editCompanyName}
                           onChange={(e) => setEditCompanyName(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                          className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-slate-900"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 font-bold mb-1">ایمیل رسمی</label>
+                        <label className="block text-slate-500 font-bold mb-1">ایمیل رسمی</label>
                         <input
                           type="email"
                           value={editEmail}
                           onChange={(e) => setEditEmail(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono"
+                          className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-slate-900 font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 font-bold mb-1">شماره تماس</label>
+                        <label className="block text-slate-500 font-bold mb-1">شماره تماس</label>
                         <input
                           type="text"
                           value={editPhone}
                           onChange={(e) => setEditPhone(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono"
+                          className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-slate-900 font-mono"
                         />
                       </div>
                     </div>
@@ -466,8 +823,81 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       value={editPassword}
                       onChange={(e) => setEditPassword(e.target.value)}
                       placeholder="رمز عبور جدید..."
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/40 rounded-xl text-white font-mono text-xs"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-amber-400 rounded-xl text-slate-900 font-mono text-xs"
                     />
+                  </div>
+                </div>
+              )}
+
+              {inspectorTab === 'access' && (
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  {(selectedTenant.role === 'admin' && !selectedTenant.ownerAdminId) ? (
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2">
+                      <div className="flex items-center gap-2 text-amber-300 text-xs font-black">
+                        <Crown className="w-4 h-4" />
+                        <span>این حساب «مالک کمپنی» است</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        مالک به تمام تب‌های فعال کمپنی‌اش دسترسی کامل دارد. برای محدود کردن مالک، از برگهٔ
+                        <span className="text-amber-300 font-bold"> «کنترل ماژول‌ها» </span>
+                        ماژول‌های کمپنی را خاموش/روشن کنید تا یکجا روی مالک و تمام کارمندانش اعمال شود.
+                        تب‌های منتخب ذیل همچنین به عنوان اکسس‌لیست ذخیره می‌شوند (برای کارمندان همین کمپنی اعمال می‌شوند).
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl space-y-1">
+                      <div className="flex items-center gap-2 text-cyan-300 text-xs font-black">
+                        <UserCog className="w-4 h-4" />
+                        <span>اکسس تب‌ها برای این کاربر</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        برای کارمند (محاسب/ناظر)، تب‌هایی را که اجازه دارد ببیند فعال کنید. تغییرات در همان لحظه در همهٔ
+                        دستگاه‌ها و صفحات ناوبری (سایدبار، منوی موبایل و دروازهٔ لاگین) اعمال می‌شود.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditAllowedTabs(TAB_OPTIONS.map(o => o.id))}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-600 text-[11px] font-bold hover:bg-emerald-600/30 transition-colors"
+                    >
+                      انتخاب همه
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditAllowedTabs(['dashboard'])}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-600 text-[11px] font-bold hover:bg-rose-600/30 transition-colors"
+                    >
+                      فقط داشبورد
+                    </button>
+                    <span className="text-[11px] text-slate-500 ms-auto">{editAllowedTabs.length} تب منتخب</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {TAB_OPTIONS.map(({ id, label }) => {
+                      const checked = editAllowedTabs.includes(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() =>
+                            setEditAllowedTabs(prev =>
+                              prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                            )
+                          }
+                          className={`p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            checked
+                              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-600'
+                          }`}
+                        >
+                          <span className="text-start">{label}</span>
+                          {checked && <Check className="w-3.5 h-3.5 shrink-0" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -495,25 +925,25 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           onClick={() => setEditModules(prev => ({ ...prev, [mod.id]: !isEnabled }))}
                           className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-start gap-3.5 ${
                             isEnabled 
-                              ? 'bg-slate-900 border-amber-500/50 shadow-md ring-1 ring-amber-500/30' 
-                              : 'bg-slate-950/60 border-slate-800 opacity-50'
+                              ? 'bg-slate-100 border-amber-500/50 shadow-md ring-1 ring-amber-500/30' 
+                              : 'bg-emerald-50 border-slate-200 opacity-50'
                           }`}
                         >
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-                            isEnabled ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'
+                            isEnabled ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-100 text-slate-500 border-slate-300'
                           }`}>
                             <Icon className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-bold text-white">{mod.label}</h4>
+                              <h4 className="text-xs font-bold text-slate-900">{mod.label}</h4>
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                                isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                                isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-100 text-slate-500'
                               }`}>
                                 {isEnabled ? 'فعال' : 'غیرفعال'}
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-400 mt-0.5">{mod.desc}</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">{mod.desc}</p>
                           </div>
                         </div>
                       );
@@ -524,31 +954,31 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
               {inspectorTab === 'subscription' && (
                 <div className="space-y-6 max-w-4xl mx-auto">
-                  <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-slate-400 font-bold mb-1">تاریخ انقضای اشتراک:</label>
+                        <label className="block text-slate-500 font-bold mb-1">تاریخ انقضای اشتراک:</label>
                         <input
                           type="date"
                           value={editExpiresAt}
                           onChange={(e) => setEditExpiresAt(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono"
+                          className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-slate-900 font-mono"
                         />
                       </div>
                       <div className="flex flex-col justify-end">
-                        <span className="text-[11px] text-slate-400 mb-1">شارژ سریع اشتراک:</span>
+                        <span className="text-[11px] text-slate-500 mb-1">شارژ سریع اشتراک:</span>
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => handleQuickCharge(6)}
-                            className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                            className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-colors"
                           >
                             + تمدید ۶ ماه
                           </button>
                           <button
                             type="button"
                             onClick={() => handleQuickCharge(12)}
-                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-colors"
                           >
                             + تمدید ۱ سال
                           </button>
@@ -557,10 +987,10 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     </div>
                   </div>
 
-                  <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 flex items-center justify-between">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-white">قفل کردن یا بازگشایی حساب شرکت</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">در صورت مسدود بودن، ورود به این حساب ناممکن می‌شود.</p>
+                      <h4 className="text-xs font-bold text-slate-900">قفل کردن یا بازگشایی حساب شرکت</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">در صورت مسدود بودن، ورود به این حساب ناممکن می‌شود.</p>
                     </div>
                     <button
                       type="button"
@@ -571,7 +1001,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       }}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                         selectedTenant.isLockedBySuperAdmin 
-                          ? 'bg-rose-600 hover:bg-rose-500 text-white' 
+                          ? 'bg-rose-600 hover:bg-rose-500 text-slate-900' 
                           : 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
                       }`}
                     >
@@ -582,11 +1012,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
               )}
             </div>
 
-            <div className="p-4 bg-slate-950 border-t border-white/10 flex items-center justify-between">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => handleImpersonate(selectedTenant)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold flex items-center gap-2 transition-colors border border-amber-500/20"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-300 text-amber-400 text-xs font-bold flex items-center gap-2 transition-colors border border-amber-500/20"
               >
                 <LogIn className="w-4 h-4" />
                 <span>ورود به عنوان این کاربر (Impersonate)</span>
@@ -595,14 +1025,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 <button
                   type="button"
                   onClick={() => setSelectedTenant(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-300 text-slate-600 text-xs font-bold"
                 >
                   انصراف
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSaveTenantChanges()}
-                  className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all"
+                  className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-900 font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all"
                 >
                   <Save className="w-4 h-4" />
                   <span>ذخیره تغییرات</span>
@@ -611,120 +1041,400 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             </div>
           </div>
         ) : (
-          /* SCREEN 3: Tenants Master Overview */
-          <div className="flex-1 flex flex-col overflow-hidden p-4 sm:p-6 space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">کل شرکت‌ها:</span>
-                <span className="text-xl font-black text-white font-mono">{tenantUsers.length}</span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
-                <span className="text-[10px] text-emerald-400 uppercase font-bold block mb-1">اشتراک فعال:</span>
-                <span className="text-xl font-black text-emerald-400 font-mono">
-                  {tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length}
-                </span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
-                <span className="text-[10px] text-cyan-400 uppercase font-bold block mb-1">هوش مصنوعی فعال:</span>
-                <span className="text-xl font-black text-cyan-400 font-mono">
-                  {tenantUsers.filter(u => u.permissions?.aiEnabled !== false).length}
-                </span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
-                <span className="text-[10px] text-rose-400 uppercase font-bold block mb-1">منقضی / قفل شده:</span>
-                <span className="text-xl font-black text-rose-400 font-mono">
-                  {tenantUsers.filter(u => u.isLockedBySuperAdmin || (u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt).getTime() < Date.now())).length}
-                </span>
-              </div>
+          /* SCREEN 3: دفتر هفت — light SaaS dashboard (etikto-inspired, distinct from the main app) */
+          <div className="flex-1 overflow-y-auto scroll-touch p-4 sm:p-6 space-y-5 bg-gradient-to-br from-slate-50 via-slate-100/50 to-indigo-100/40">
+
+            {/* Internal nav */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl w-fit shadow-sm sticky top-0 z-10">
+              {([
+                { id: 'dashboard', label: 'داشبورد نظارت', icon: LayoutDashboard },
+                { id: 'owners', label: 'مالک‌ها و کارمندان', icon: Crown },
+                { id: 'security', label: 'امنیت و رمز', icon: KeyRound },
+              ] as Array<{ id: typeof officeTab; label: string; icon: any }>).map(tab => {
+                const TabIcon = tab.icon;
+                const active = officeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setOfficeTab(tab.id)}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
+                      active
+                        ? 'bg-gradient-to-l from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/30'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                    }`}
+                  >
+                    <TabIcon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
-              <div className="relative w-full sm:max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="جستجوی نام شرکت، نام مدیر، ایمیل یا تیلیفون..."
-                  className="w-full ps-9 pe-3 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pe-1">
-              {filteredTenants.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400 bg-slate-950/40 rounded-2xl border border-slate-800">
-                  هیچ شرکتی یافت نشد.
-                </div>
-              ) : (
-                filteredTenants.map(user => {
-                  const isLocked = user.isLockedBySuperAdmin;
-                  const isExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt).getTime() < Date.now();
-                  const remainingDays = user.subscriptionExpiresAt 
-                    ? Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-                    : 180;
-                  return (
-                    <div 
-                      key={user.id}
-                      className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold shrink-0">
-                          {user.customLogoUrl ? (
-                            <img src={user.customLogoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-                          ) : (
-                            <Building2 className="w-6 h-6" />
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-black text-white">{user.companyName || user.name}</h4>
-                            <span className="text-[10px] text-slate-400">({user.name})</span>
-                            
-                            {isLocked ? (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                                مسدود شده
-                              </span>
-                            ) : isExpired ? (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                                منقضی شده
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                فعال ({remainingDays} روز)
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-400 flex flex-wrap gap-x-4 gap-y-1 font-mono">
-                            <span>ایمیل: {user.email}</span>
-                            {user.phone && <span>تیلیفون: {user.phone}</span>}
-                          </div>
+            {officeTab === 'dashboard' && (
+              <div className="space-y-5 animate-in fade-in">
+                {/* Stat cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {([
+                    { label: 'مالک‌های کمپنی', value: ownerList.length, icon: Crown, grad: 'from-indigo-500 to-violet-500', chip: 'shadow-indigo-500/30' },
+                    { label: 'کل کارمندان', value: staffList.length, icon: Users, grad: 'from-cyan-500 to-sky-500', chip: 'shadow-cyan-500/30' },
+                    { label: 'اشتراک فعال', value: tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length, icon: CheckCircle2, grad: 'from-emerald-500 to-teal-500', chip: 'shadow-emerald-500/30' },
+                    { label: 'رویداد امروز', value: eventsToday.length, icon: Activity, grad: 'from-amber-500 to-orange-500', chip: 'shadow-amber-500/30' },
+                  ]).map((card, i) => {
+                    const CardIcon = card.icon;
+                    return (
+                      <div key={i} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3">
+                        <span className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${card.grad} text-white flex items-center justify-center shadow-lg ${card.chip} shrink-0`}>
+                          <CardIcon className="w-5 h-5" />
+                        </span>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-500">{card.label}</p>
+                          <p className="text-2xl font-black text-slate-900 font-mono leading-none mt-1">{card.value}</p>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleImpersonate(user)}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                          title="ورود به حساب کاربری این شرکت"
+                {/* Charts row */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-indigo-500" />
+                        <h4 className="text-sm font-black text-slate-800">فعالیت سیستم — ۷ روز اخیر</h4>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">{activityEvents.length} رویداد ثبت‌شده</span>
+                    </div>
+                    {activityEvents.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-10 text-center">هنوز فعالیتی ثبت نشده — با گردش کاربران این نمودار زنده می‌شود.</p>
+                    ) : (
+                      <MiniArea data={last7Days} />
+                    )}
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-800 mb-2">پراستفاده‌ترین گزینه‌ها</h4>
+                    {featureUsage.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-10 text-center">به‌زودی اینجا دیده می‌شود که کاربران بیشتر کدام بخش را باز می‌کنند.</p>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <MiniDonut segments={featureUsage} />
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          {featureUsage.slice(0, 5).map((seg, i) => (
+                            <div key={i} className="flex items-center gap-2 text-[11px]">
+                              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: seg.color }} />
+                              <span className="font-bold text-slate-600 truncate flex-1">{seg.feature}</span>
+                              <span className="font-mono text-slate-400">{seg.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tables row */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Most active users */}
+                  <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-violet-500" />
+                      <h4 className="text-sm font-black text-slate-800">فعال‌ترین کاربران — چکار کرده، چقدر وقت</h4>
+                    </div>
+                    {userUsage.length === 0 ? (
+                      <p className="text-xs text-slate-400 p-6 text-center">با اولین ورود/گردش کاربران، این جدول پر می‌شود.</p>
+                    ) : (
+                      <div className="divide-y divide-slate-100">
+                        {userUsage.slice(0, 6).map((u, i) => (
+                          <div key={u.userId} className="px-4 py-2.5 flex items-center gap-3">
+                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-[11px] font-black shrink-0 ${
+                              i === 0 ? 'bg-gradient-to-br from-amber-500 to-orange-500' : 'bg-gradient-to-br from-indigo-500 to-violet-500'
+                            }`}>
+                              {u.userName.charAt(0)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black text-slate-800 truncate">{u.userName}</p>
+                              <p className="text-[10px] text-slate-400">
+                                بیشترین استفاده: <span className="font-bold text-indigo-600">{u.topFeature}</span>
+                              </p>
+                            </div>
+                            <div className="text-left shrink-0">
+                              <p className="text-[11px] font-mono font-bold text-slate-700 flex items-center gap-1 justify-end">
+                                <Timer className="w-3.5 h-3.5 text-emerald-500" />
+                                {u.approxMinutes} دقیقه
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                آخرین: {new Date(u.lastActiveAt).toLocaleTimeString('fa-AF', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recent activity feed */}
+                  <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-cyan-500" />
+                      <h4 className="text-sm font-black text-slate-800">آخرین فعالیت‌ها (زنده)</h4>
+                    </div>
+                    {recentActivity.length === 0 ? (
+                      <p className="text-xs text-slate-400 p-6 text-center">هنوز فعالیتی نیامده است.</p>
+                    ) : (
+                      <div className="divide-y divide-slate-50 max-h-72 overflow-y-auto scroll-touch">
+                        {recentActivity.map(ev => (
+                          <div key={ev.id} className="px-4 py-2.5 flex items-start gap-2.5">
+                            <span className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                              ev.kind === 'login' ? 'bg-emerald-100 text-emerald-600'
+                              : ev.kind === 'logout' ? 'bg-rose-100 text-rose-600'
+                              : 'bg-indigo-100 text-indigo-600'
+                            }`}>
+                              {ev.kind === 'login' ? <LogIn className="w-3.5 h-3.5" /> : ev.kind === 'logout' ? <Lock className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-bold text-slate-700 truncate">
+                                {ev.userName} — {ev.kind === 'login' ? 'وارد سیستم شد' : ev.kind === 'logout' ? 'خارج شد' : `باز کرد: ${TAB_OPTIONS.find(o => o.id === ev.feature)?.label || ev.feature || ''}`}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                {new Date(ev.timestamp).toLocaleDateString('fa-AF')} · {new Date(ev.timestamp).toLocaleTimeString('fa-AF', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {officeTab === 'owners' && (
+              <div className="space-y-4 animate-in fade-in">
+                {/* owner/staff stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">کل مالک‌ها:</span>
+                    <span className="text-xl font-black text-slate-900 font-mono">{ownerList.length}</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">کل کارمندان:</span>
+                    <span className="text-xl font-black text-slate-900 font-mono">{staffList.length}</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-[10px] text-emerald-600 uppercase font-bold block mb-1">اشتراک فعال:</span>
+                    <span className="text-xl font-black text-emerald-600 font-mono">
+                      {tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length}
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-[10px] text-cyan-600 uppercase font-bold block mb-1">هوش مصنوعی فعال:</span>
+                    <span className="text-xl font-black text-cyan-600 font-mono">
+                      {tenantUsers.filter(u => u.permissions?.aiEnabled !== false).length}
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-[10px] text-rose-500 uppercase font-bold block mb-1">منقضی / قفل:</span>
+                    <span className="text-xl font-black text-rose-500 font-mono">
+                      {tenantUsers.filter(u => u.isLockedBySuperAdmin || (u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt).getTime() < Date.now())).length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+                  <div className="relative w-full sm:max-w-md">
+                    <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="جستجوی نام شرکت، نام مدیر، ایمیل یا تیلیفون..."
+                      className="w-full ps-9 pe-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewOwnerForm(v => !v)}
+                    className={`px-4 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-md transition-all shrink-0 ${
+                      showNewOwnerForm
+                        ? 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                        : 'bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/30'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{showNewOwnerForm ? 'بستن فورم' : 'مالک جدید'}</span>
+                  </button>
+                </div>
+
+                {showNewOwnerForm && (
+                  <form onSubmit={handleCreateOwner} className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3 shadow-sm">
+                    <div className="flex items-center gap-2 text-emerald-700 text-xs font-black">
+                      <Crown className="w-4 h-4" />
+                      <span>ساخت حساب «مالک کمپنی» جدید — خودش بعداً برای کارمندانش یوزر می‌سازد</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {([
+                        { key: 'name', label: 'نام مالک', ph: 'حاجی احمد شاه' },
+                        { key: 'username', label: 'نام کاربری (username)', ph: 'ahmadshah' },
+                        { key: 'password', label: 'رمز عبور', ph: '********', type: 'text' },
+                        { key: 'email', label: 'ایمیل', ph: 'owner@company.com', type: 'email' },
+                        { key: 'phone', label: 'تیلیفون', ph: '+93...' },
+                        { key: 'companyName', label: 'نام کمپنی', ph: 'Ahmad Shah Construction Co.' },
+                        { key: 'companyAddress', label: 'آدرس کمپنی', ph: 'کابل، افغانستان' },
+                      ] as Array<{ key: keyof typeof newOwner; label: string; ph: string; type?: string }>).map(f => (
+                        <div key={f.key as string} className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500">{f.label}</label>
+                          <input
+                            type={f.type || 'text'}
+                            required={['name', 'username', 'password', 'email'].includes(f.key as string)}
+                            value={String(newOwner[f.key] || '')}
+                            onChange={e => setNewOwner(prev => ({ ...prev, [f.key]: e.target.value }))}
+                            placeholder={f.ph}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
+                          />
+                        </div>
+                      ))}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500">پلان اشتراک</label>
+                        <select
+                          value={newOwner.subscriptionPlan || 'trial'}
+                          onChange={e => setNewOwner(prev => ({ ...prev, subscriptionPlan: e.target.value as User['subscriptionPlan'] }))}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         >
-                          <LogIn className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTenantInspector(user)}
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>مدیریت شرکت</span>
-                        </button>
+                          <option value="trial">تجربه‌ای (Trial)</option>
+                          <option value="6_months">۶ ماهه</option>
+                          <option value="1_year">۱ ساله</option>
+                          <option value="lifetime">دایمی</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500">تاریخ انقضای اشتراک (اختیاری)</label>
+                        <input
+                          type="date"
+                          value={newOwner.expiresAt}
+                          onChange={e => setNewOwner(prev => ({ ...prev, expiresAt: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="px-5 py-2 bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 transition-all"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>ساخت حساب مالک</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {saveSuccessNotice && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center gap-2 shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{saveSuccessNotice}</span>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {ownerList.length === 0 && ungroupedStaff.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                      هیچ شرکتی یافت نشد.
+                    </div>
+                  ) : (
+                    <>
+                      {ownerList.map(owner => {
+                        const staff = employeesOf(owner.id);
+                        const expanded = expandedOwnerIds.includes(owner.id);
+                        return (
+                          <div key={owner.id} className="space-y-2">
+                            {renderTenantRow(owner, false)}
+                            {staff.length > 0 && (
+                              <div className="border-s-2 border-indigo-300 ms-5 sm:ms-7 ps-2 sm:ps-3 space-y-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleOwnerExpanded(owner.id)}
+                                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 text-xs font-bold text-slate-600 transition-colors shadow-2xs"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-indigo-500" />
+                                    <span>{staff.length} کارمند زیر این مالک</span>
+                                  </span>
+                                  <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                                </button>
+                                {expanded && staff.map(member => renderTenantRow(member, true))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {ungroupedStaff.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase px-1">
+                            <UserCog className="w-4 h-4 text-indigo-500" />
+                            <span>کارمندان / حساب‌های غیرمتعلق به مالک مشخص</span>
+                          </div>
+                          {ungroupedStaff.map(member => renderTenantRow(member, true))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {officeTab === 'security' && (
+              <div className="max-w-xl space-y-4 animate-in fade-in">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="w-5 h-5 text-indigo-600" />
+                    <h4 className="text-sm font-black text-slate-800">تغییر کلید ورود دفتر هفت</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    کلید جدید فوراً فعال می‌شود. تذکر: <span className="font-bold text-slate-700">رمز اکانت najeemnik</span> همواره به عنوان کلید پشتیبان پذیرفته است تا هیچ‌وقت بیرون نمانید.
+                  </p>
+                  <form onSubmit={handleSaveGateKey} className="space-y-3">
+                    <input
+                      type="password"
+                      required
+                      value={newGateKey}
+                      onChange={e => setNewGateKey(e.target.value)}
+                      placeholder="کلید جدید دفتر هفت (حداقل ۴ حرف)..."
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                    <input
+                      type="password"
+                      required
+                      value={newGateKeyRepeat}
+                      onChange={e => setNewGateKeyRepeat(e.target.value)}
+                      placeholder="تکرار کلید جدید..."
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                    {gateKeyMsg && (
+                      <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                        gateKeyMsg.includes('موفقیت') ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
+                      }`}>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>{gateKeyMsg}</span>
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-gradient-to-l from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>ذخیره کلید جدید</span>
+                    </button>
+                  </form>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 leading-relaxed">
+                  <span className="font-black">نکتهٔ امنیتی:</span> ۵ تلاش غلط متوالی دروازه را ۳۰ ثانیه می‌بندد و هر ورود در ثبت رویدادها با نشست و ساعت ذخیره می‌شود.
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

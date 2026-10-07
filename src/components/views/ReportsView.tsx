@@ -256,7 +256,7 @@ export const ReportsView: React.FC = () => {
           <h3 className="font-bold text-base text-ink mb-4">
             {t('contractorPayablesReport') || 'Contractor & Vendor Payables Statement'}
           </h3>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scroll-touch">
             <table className="w-full text-xs text-left">
               <thead className="bg-surface-2/60 font-bold border-b border-line text-slate-500">
                 <tr>

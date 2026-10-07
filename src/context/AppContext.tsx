@@ -22,7 +22,14 @@ import {
   GoogleDriveConfig,
   InstallmentRecord,
   InstallmentPaymentRecord,
-  SystemReminderNotification
+  SystemReminderNotification,
+  JournalEntry,
+  AccountBalance,
+  TrialBalanceRow,
+  ProjectBudget,
+  BudgetLineReport,
+  UserPermissions,
+  UserActivityEvent
 } from '../types';
 import { 
   initialUsers, 
@@ -37,12 +44,17 @@ import {
   initialDocuments, 
   initialAuditLogs,
   initialProjectPartners,
-  initialProjectInvestments
+  initialProjectInvestments,
+  initialProjectBudgets
 } from '../data/seedData';
 import { translations } from '../i18n/translations';
 import { initAuth, googleSignIn, googleSignOut, getAccessToken } from '../services/googleDriveAuth';
 import { getOrCreateFolder, uploadFileToGoogleDrive, listGoogleDriveFiles, deleteGoogleDriveFile } from '../services/googleDriveService';
 import { calculateInstallmentStatus, normalizeApartmentInstallments, generateSmartReminders } from '../utils/installmentUtils';
+import { buildJournal, computeAccountBalances, buildTrialBalance } from '../utils/journalEngine';
+import { CHART_OF_ACCOUNTS, getAccountName } from '../data/chartOfAccounts';
+import type { Account } from '../data/chartOfAccounts';
+import { computeBudgetReport } from '../utils/budgetUtils';
 
 interface AppContextType {
   language: Language;
@@ -54,6 +66,9 @@ interface AppContextType {
   switchUserRole: (role: 'admin' | 'accountant' | 'viewer') => void;
   users: User[];
   addUser: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  /** دفتر هفت: per-user usage telemetry (features visited, login/logout moments) */
+  activityEvents: UserActivityEvent[];
+  trackFeature: (feature: string, label?: string) => void;
   updateUser: (id: string, updates: Partial<User>) => void;
   deleteUser: (id: string) => void;
   toggleUserActive: (id: string) => void;
@@ -131,6 +146,8 @@ interface AppContextType {
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
     active?: boolean;
+    /** Master-level permission merge (tab access, manage flags) */
+    permissions?: Partial<UserPermissions>;
   }) => { success: boolean; error?: string };
   impersonateTenant: (user: User) => void;
   toggleDarkMode: () => void;
@@ -229,6 +246,26 @@ interface AppContextType {
   ) => void;
   currentFinancials: ProjectFinancialSummary;
   getProjectFinancials: (projectId: string) => ProjectFinancialSummary;
+  /**
+   * Accounting layer (Chart of Accounts). The double-entry journal is a
+   * pure projection derived from the business records — it is rebuilt
+   * automatically whenever expenses/steel/concrete/payments/apartments/
+   * investments change, so it can never drift out of sync with the UI data.
+   */
+  chartOfAccounts: Account[];
+  getAccountDisplayName: (code: string, lang?: Language) => string;
+  journalEntries: JournalEntry[];
+  accountBalances: AccountBalance[];
+  getAccountBalance: (accountCode: string, projectId?: string) => AccountBalance | undefined;
+  getTrialBalance: (projectId?: string) => { rows: TrialBalanceRow[]; totalDebitUSD: number; totalCreditUSD: number };
+  getProjectJournal: (projectId: string) => JournalEntry[];
+  /** Project Budget: one budget line per (project, COA account) */
+  projectBudgets: ProjectBudget[];
+  getProjectBudgets: (projectId: string) => ProjectBudget[];
+  getBudgetReport: (projectId: string) => BudgetLineReport[];
+  addProjectBudget: (budget: Omit<ProjectBudget, 'id' | 'createdAt' | 'createdBy'>) => void;
+  updateProjectBudget: (id: string, updates: Partial<ProjectBudget>) => void;
+  deleteProjectBudget: (id: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   searchResults: {
@@ -317,8 +354,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('payments', initialPayments));
   const [documents, setDocuments] = useState<DocumentRecord[]>(() => loadFromStorage('documents', initialDocuments));
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => loadFromStorage('auditLogs', initialAuditLogs));
+  const [activityEvents, setActivityEvents] = useState<UserActivityEvent[]>(() => loadFromStorage('activityEvents', []));
   const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>(() => loadFromStorage('projectPartners', initialProjectPartners));
   const [projectInvestments, setProjectInvestments] = useState<ProjectInvestment[]>(() => loadFromStorage('projectInvestments', initialProjectInvestments));
+  const [projectBudgets, setProjectBudgets] = useState<ProjectBudget[]>(() => loadFromStorage('projectBudgets', initialProjectBudgets));
 
   // Google Drive state (in-memory token cached in googleDriveAuth)
   const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState<boolean>(false);
@@ -375,8 +414,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { saveToStorage('payments', payments); }, [payments]);
   useEffect(() => { saveToStorage('documents', documents); }, [documents]);
   useEffect(() => { saveToStorage('auditLogs', auditLogs); }, [auditLogs]);
+  useEffect(() => { saveToStorage('activityEvents', activityEvents.slice(-600)); }, [activityEvents]);
   useEffect(() => { saveToStorage('projectPartners', projectPartners); }, [projectPartners]);
   useEffect(() => { saveToStorage('projectInvestments', projectInvestments); }, [projectInvestments]);
+  useEffect(() => { saveToStorage('projectBudgets', projectBudgets); }, [projectBudgets]);
 
   const isCurrentTimeDay = (): boolean => {
     const hour = new Date().getHours();
@@ -494,7 +535,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'theme-skeuomorphism',
       'theme-squirclemorphism',
       'theme-metalmorphism',
-      'theme-ar-morphism'
+      'theme-ar-morphism',
+      'theme-cosmic-orange',
+      'theme-blue-titanium',
+      'theme-desert-titanium'
     ];
     // Stored theme values map to CSS hook classes (note: 'ar_morphism' → 'theme-ar-morphism')
     const themeClassMap: Record<string, string> = {
@@ -505,6 +549,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       metalmorphism: 'theme-metalmorphism',
       ar_morphism: 'theme-ar-morphism',
       'ar-morphism': 'theme-ar-morphism',
+      cosmic_orange: 'theme-cosmic-orange',
+      blue_titanium: 'theme-blue-titanium',
+      desert_titanium: 'theme-desert-titanium',
     };
     document.documentElement.classList.remove(...morphismClasses);
     const activeClass = themeClassMap[appSettings.theme || 'glassmorphism'] || 'theme-glassmorphism';
@@ -587,10 +634,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return allowed.includes(tabId);
     }
     if (currentUser.role === 'accountant') {
-      return ['dashboard', 'projects', 'steel', 'concrete', 'expenses', 'contractors', 'suppliers', 'payments', 'documents', 'reports'].includes(tabId);
+      return ['dashboard', 'projects', 'steel', 'concrete', 'expenses', 'contractors', 'suppliers', 'payments', 'budget', 'accounting', 'documents', 'reports'].includes(tabId);
     }
     if (currentUser.role === 'viewer') {
-      return ['dashboard', 'projects', 'apartments', 'documents', 'reports'].includes(tabId);
+      return ['dashboard', 'projects', 'apartments', 'budget', 'accounting', 'documents', 'reports'].includes(tabId);
     }
     return true;
   };
@@ -707,6 +754,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
+  const recordActivity = (user: User, kind: UserActivityEvent['kind'], feature?: string, label?: string) => {
+    const ev: UserActivityEvent = {
+      id: 'act-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      userId: user.id,
+      userName: user.name,
+      role: user.role,
+      kind,
+      feature,
+      label,
+      timestamp: new Date().toISOString(),
+    };
+    setActivityEvents(prev => [...prev.slice(-599), ev]);
+  };
+
+  const trackFeature = (feature: string, label?: string) => {
+    if (!currentUser) return;
+    recordActivity(currentUser, 'feature', feature, label);
+  };
+
   const login = (
     usernameOrEmail: string, 
     password?: string, 
@@ -744,6 +810,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(prev => prev.map(u => u.id === found.id ? updatedUser : u));
     setCurrentUser(updatedUser);
     saveToStorage('currentUser', updatedUser);
+    recordActivity(updatedUser, 'login');
 
     if (found.role !== 'admin' && !found.isMasterSuperAdmin) {
       const companyProj = projects.find(p => p.companyName === found.companyName || p.userId === found.ownerAdminId);
@@ -1087,6 +1154,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
     active?: boolean;
+    /** Master-level permission merge (tab access, manage flags) */
+    permissions?: Partial<UserPermissions>;
   }): { success: boolean; error?: string } => {
     let targetFound = false;
     setUsers(prev => prev.map(u => {
@@ -1094,7 +1163,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         targetFound = true;
         const newPermissions = {
           ...(u.permissions || {}),
-          aiEnabled: updates.aiEnabled !== undefined ? updates.aiEnabled : u.permissions?.aiEnabled,
+          ...(updates.permissions || {}),
+          aiEnabled: updates.aiEnabled !== undefined ? updates.aiEnabled : (updates.permissions?.aiEnabled !== undefined ? updates.permissions.aiEnabled : u.permissions?.aiEnabled),
         };
         const uUpdated: User = {
           ...u,
@@ -1170,6 +1240,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     if (currentUser) {
+      recordActivity(currentUser, 'logout');
       logAudit('login', 'user', currentUser.id, `User ${currentUser.name} logged out`, 'Session ended');
     }
     setCurrentUser(null);
@@ -2442,6 +2513,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return getProjectFinancials(currentProjectId);
   }, [currentProjectId, expenses, steelRecords, concreteRecords, contractors, suppliers, apartments, payments]);
 
+  /* ------------------------------------------------------------------ */
+  /* Accounting layer: auto-derived double-entry journal                  */
+  /* ------------------------------------------------------------------ */
+  const journalEntries = useMemo<JournalEntry[]>(() => {
+    return buildJournal({
+      projects,
+      expenses,
+      steelRecords,
+      concreteRecords,
+      payments,
+      apartments,
+      projectInvestments,
+    });
+  }, [projects, expenses, steelRecords, concreteRecords, payments, apartments, projectInvestments]);
+
+  const accountBalances = useMemo<AccountBalance[]>(() => {
+    return computeAccountBalances(journalEntries);
+  }, [journalEntries]);
+
+  const getAccountBalance = (accountCode: string, projectId?: string): AccountBalance | undefined => {
+    if (!projectId) return accountBalances.find(b => b.accountCode === accountCode);
+    return computeAccountBalances(journalEntries, projectId).find(b => b.accountCode === accountCode);
+  };
+
+  const getTrialBalance = (projectId?: string) => buildTrialBalance(journalEntries, projectId);
+
+  const getProjectJournal = (projectId: string): JournalEntry[] =>
+    journalEntries.filter(e => e.projectId === projectId);
+
+  const getAccountDisplayName = (code: string, lang?: Language): string =>
+    getAccountName(code, lang || language);
+
+  /* ------------------------------------------------------------------ */
+  /* Project Budget (per project, per COA account)                      */
+  /* ------------------------------------------------------------------ */
+  const getProjectBudgets = (projectId: string): ProjectBudget[] =>
+    projectBudgets.filter(b => b.projectId === projectId);
+
+  const getBudgetReport = (projectId: string): BudgetLineReport[] =>
+    computeBudgetReport({
+      projectId,
+      project: projects.find(p => p.id === projectId),
+      budgets: projectBudgets,
+      expenses,
+      steelRecords,
+      concreteRecords,
+    });
+
+  const budgetWithNorm = (
+    data: { amount: number; currency: string; exchangeRate?: number; projectId: string }
+  ) => {
+    const proj = projects.find(p => p.id === data.projectId);
+    const rate = data.exchangeRate || proj?.defaultExchangeRate || 70;
+    const amountUSD = data.currency === 'USD' ? data.amount : (rate > 0 ? Number((data.amount / rate).toFixed(2)) : data.amount);
+    const amountAFN = data.currency === 'AFN' ? Math.round(data.amount) : Math.round(data.amount * rate);
+    return { exchangeRate: rate, amountUSD, amountAFN };
+  };
+
+  const addProjectBudget = (data: Omit<ProjectBudget, 'id' | 'createdAt' | 'createdBy'>) => {
+    // Standard: single budget line per (project, account). If one exists,
+    // update it instead of creating a duplicate row.
+    const existing = projectBudgets.find(b => b.projectId === data.projectId && b.accountCode === data.accountCode);
+    if (existing) {
+      updateProjectBudget(existing.id, data);
+      return;
+    }
+    const norm = budgetWithNorm(data);
+    const newBudget: ProjectBudget = {
+      ...data,
+      ...norm,
+      id: 'bdg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser?.name || 'Admin',
+    };
+    setProjectBudgets(prev => [...prev, newBudget]);
+    logAudit('create', 'expense', newBudget.id, `Budget: ${getAccountName(newBudget.accountCode, 'fa')}`, `Set budget ${newBudget.amount.toLocaleString()} ${newBudget.currency} for account ${newBudget.accountCode}`, undefined, `${newBudget.amount} ${newBudget.currency}`, newBudget.projectId);
+  };
+
+  const updateProjectBudget = (id: string, updates: Partial<ProjectBudget>) => {
+    const old = projectBudgets.find(b => b.id === id);
+    if (!old) return;
+    const merged = { ...old, ...updates };
+    const norm = budgetWithNorm({ amount: merged.amount, currency: merged.currency, exchangeRate: updates.exchangeRate, projectId: merged.projectId });
+    setProjectBudgets(prev => prev.map(b => (b.id === id ? { ...merged, ...norm, updatedAt: new Date().toISOString() } : b)));
+    logAudit('update', 'expense', id, `Budget: ${getAccountName(merged.accountCode, 'fa')}`, `Updated budget for account ${merged.accountCode}`, `${old.amount} ${old.currency}`, `${merged.amount} ${merged.currency}`, merged.projectId);
+  };
+
+  const deleteProjectBudget = (id: string) => {
+    const old = projectBudgets.find(b => b.id === id);
+    if (!old) return;
+    setProjectBudgets(prev => prev.filter(b => b.id !== id));
+    logAudit('delete', 'expense', id, `Budget: ${getAccountName(old.accountCode, 'fa')}`, `Removed budget of ${old.amount.toLocaleString()} ${old.currency} (account ${old.accountCode})`, `${old.amount} ${old.currency}`, undefined, old.projectId);
+  };
+
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) {
@@ -2622,6 +2787,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       switchUserRole,
       users,
       addUser,
+      activityEvents,
+      trackFeature,
       updateUser,
       toggleUserActive,
       createTenantCompanyOwnerBySuperAdmin,
@@ -2695,6 +2862,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logAudit,
       currentFinancials,
       getProjectFinancials,
+      chartOfAccounts: CHART_OF_ACCOUNTS,
+      getAccountDisplayName,
+      journalEntries,
+      accountBalances,
+      getAccountBalance,
+      getTrialBalance,
+      getProjectJournal,
+      projectBudgets,
+      getProjectBudgets,
+      getBudgetReport,
+      addProjectBudget,
+      updateProjectBudget,
+      deleteProjectBudget,
       searchQuery,
       setSearchQuery,
       searchResults,

@@ -99,7 +99,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
+      <div className="bg-surface rounded-t-3xl sm:rounded-3xl safe-bottom-only shadow-2xl max-w-xl w-full max-h-[92dvh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <HardHat className="w-5 h-5 text-amber-400" />

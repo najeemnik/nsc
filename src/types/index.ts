@@ -7,7 +7,10 @@ export type MorphismTheme =
   | 'skeuomorphism' 
   | 'squirclemorphism' 
   | 'metalmorphism' 
-  | 'ar_morphism';
+  | 'ar_morphism'
+  | 'cosmic_orange'
+  | 'blue_titanium'
+  | 'desert_titanium';
 
 export type AppTheme = MorphismTheme | 'slate' | 'navy' | 'emerald' | 'dark_gold';
 
@@ -67,6 +70,8 @@ export interface AppSettings {
     suppliers?: boolean;
     apartments?: boolean;
     payments?: boolean;
+    budget?: boolean;
+    accounting?: boolean;
     documents?: boolean;
     reports?: boolean;
     auditLogs?: boolean;
@@ -127,6 +132,8 @@ export interface User {
     suppliers?: boolean;
     apartments?: boolean;
     payments?: boolean;
+    budget?: boolean;
+    accounting?: boolean;
     documents?: boolean;
     reports?: boolean;
     auditLogs?: boolean;
@@ -503,6 +510,137 @@ export interface SystemReminderNotification {
   actionPayload?: any;
 }
 
+/* ------------------------------------------------------------------------ */
+/* Accounting / Chart of Accounts / Journal                                  */
+/*                                                                           */
+/* Journal entries are DERIVED from operational records (expenses, steel,    */
+/* concrete, payments, apartment sales, partner investments) by the journal  */
+/* engine (`src/utils/journalEngine.ts`). They are a pure projection — never */
+/* edited directly, never out of sync with the underlying business data.     */
+/* ------------------------------------------------------------------------ */
+
+export type JournalSourceType =
+  | 'expense'
+  | 'steel'
+  | 'concrete'
+  | 'payment'
+  | 'apartment_sale'
+  | 'investment'
+  | 'adjustment';
+
+export interface JournalLine {
+  /** 4-digit account code from the Chart of Accounts */
+  accountCode: string;
+  /**
+   * Phase 3 (WIP): when a construction cost line is capitalized into 1500
+   * WIP, this field preserves the natural cost classification (e.g. '5100'
+   * Steel) so cost-detail reports stay possible alongside the functional
+   * WIP/COGS presentation.
+   */
+  costAccountCode?: string;
+  /** Amounts in the entry's original currency */
+  debit: number;
+  credit: number;
+  /** Normalized amounts (entry exchange rate) for cross-currency reporting */
+  debitUSD: number;
+  creditUSD: number;
+  debitAFN: number;
+  creditAFN: number;
+  memo?: string;
+}
+
+export interface JournalEntry {
+  /** Deterministic id: `je-{sourceType}-{sourceId}` (+ suffix when needed) */
+  id: string;
+  /** YYYY-MM-DD */
+  date: string;
+  time?: string;
+  projectId?: string;
+  description: string;
+  sourceType: JournalSourceType;
+  /** Id of the business record this entry was derived from */
+  sourceId: string;
+  currency: string;
+  exchangeRate: number;
+  lines: JournalLine[];
+  /** Sum of line debits/credits (normalized) — used for balance checks */
+  totalDebitUSD: number;
+  totalCreditUSD: number;
+}
+
+export interface AccountBalance {
+  accountCode: string;
+  nameEn: string;
+  nameFa: string;
+  namePs: string;
+  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+  isHeader: boolean;
+  /** Total debits minus credits, in account-normal sign convention */
+  balanceUSD: number;
+  balanceAFN: number;
+  debitUSD: number;
+  creditUSD: number;
+  debitAFN: number;
+  creditAFN: number;
+  entryCount: number;
+}
+
+export interface TrialBalanceRow {
+  accountCode: string;
+  nameEn: string;
+  nameFa: string;
+  namePs: string;
+  debitUSD: number;
+  creditUSD: number;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Project Budget (per-project, per-account)                                 */
+/*                                                                           */
+/* One budget line per (projectId, accountCode). The accountCode links the   */
+/* budget directly into the Chart of Accounts — no parallel/duplicate        */
+/* category system. Actual spending is derived live from purchases           */
+/* (expenses / steel / concrete) via the same category→account mapping the   */
+/* journal engine uses, so Budget vs Actual can never disagree by mapping.   */
+/* ------------------------------------------------------------------------ */
+
+export interface ProjectBudget {
+  id: string;
+  projectId: string;
+  /** 4-digit COA code (normally a 5xxx project-cost account) */
+  accountCode: string;
+  amount: number;
+  currency: string;
+  exchangeRate?: number;
+  amountUSD?: number;
+  amountAFN?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
+
+export type BudgetStatus = 'normal' | 'warning' | 'over' | 'unbudgeted';
+
+export interface BudgetLineReport {
+  accountCode: string;
+  nameEn: string;
+  nameFa: string;
+  namePs: string;
+  /** Whether an explicit budget exists for this account on this project */
+  hasBudget: boolean;
+  budgetUSD: number;
+  /** Committed cost = purchases recorded (accrual basis) */
+  committedUSD: number;
+  /** Portion of the committed cost actually settled in cash */
+  paidUSD: number;
+  payableUSD: number;
+  remainingUSD: number;
+  /** committed/budget*100 — null when no budget exists */
+  usagePct: number | null;
+  status: BudgetStatus;
+}
+
 export type Apartment = ApartmentUnit;
 
 export type PaymentMethod = 'Cash' | 'Bank Transfer' | 'Hawala / Sarafi' | 'Hawala / Sarrafi' | 'Cheque';
@@ -582,6 +720,19 @@ export interface DocumentRecord {
 }
 
 export type DocumentAttachment = DocumentRecord;
+
+/** دفتر هفت usage telemetry: what each user touched and when */
+export interface UserActivityEvent {
+  id: string;
+  userId: string;
+  userName: string;
+  role: UserRole;
+  kind: 'login' | 'logout' | 'feature';
+  /** tab/section id for 'feature' kind */
+  feature?: string;
+  label?: string;
+  timestamp: string; // ISO
+}
 
 export interface AuditLog {
   id: string;

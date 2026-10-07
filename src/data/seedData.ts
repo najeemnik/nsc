@@ -1,4 +1,4 @@
-import { Project, Expense, SteelRecord, ConcreteRecord, Contractor, Supplier, ApartmentUnit, Payment, DocumentRecord, AuditLog, User, ProjectPartner, ProjectInvestment } from '../types';
+import { Project, Expense, SteelRecord, ConcreteRecord, Contractor, Supplier, ApartmentUnit, Payment, DocumentRecord, AuditLog, User, ProjectPartner, ProjectInvestment, ProjectBudget } from '../types';
 
 export const initialUsers: User[] = [
   {
@@ -1064,4 +1064,59 @@ export const initialProjectInvestments: ProjectInvestment[] = [
     notes: 'تحویل نقدی در دفتر پروژه',
     createdAt: '2024-03-10T11:00:00Z',
   }
+];
+
+export const initialProjectBudgets: ProjectBudget[] = [
+  {
+    id: 'bdg-1',
+    projectId: 'proj-kabul-plaza',
+    accountCode: '5100',
+    amount: 180000,
+    currency: 'USD',
+    exchangeRate: 70,
+    amountUSD: 180000,
+    amountAFN: 12600000,
+    notes: 'بودجه تآییدشده فولاد ساختمان (فاز اسکلت تا پایان طبقه ۱۸)',
+    createdAt: '2024-02-15T09:00:00Z',
+    createdBy: 'Haji Ahmad Shah',
+  },
+  {
+    id: 'bdg-2',
+    projectId: 'proj-kabul-plaza',
+    accountCode: '5200',
+    amount: 120000,
+    currency: 'USD',
+    exchangeRate: 70,
+    amountUSD: 120000,
+    amountAFN: 8400000,
+    notes: 'بودجه کانکریت آماده شامل کرایه پمپ',
+    createdAt: '2024-02-15T09:05:00Z',
+    createdBy: 'Haji Ahmad Shah',
+  },
+  {
+    id: 'bdg-3',
+    projectId: 'proj-kabul-plaza',
+    accountCode: '5910',
+    amount: 70000,
+    currency: 'USD',
+    exchangeRate: 70,
+    amountUSD: 70000,
+    amountAFN: 4900000,
+    notes: 'بودجه قالب‌بندی بر اساس قرارداد فرم‌بندی طبقات',
+    createdAt: '2024-02-15T09:10:00Z',
+    createdBy: 'Haji Ahmad Shah',
+  },
+  {
+    id: 'bdg-4',
+    projectId: 'proj-kabul-plaza',
+    accountCode: '5600',
+    amount: 15000,
+    currency: 'USD',
+    exchangeRate: 70,
+    amountUSD: 15000,
+    amountAFN: 1050000,
+    notes: 'مزد کارگران روزمزد و تغذیه ساحه',
+    createdAt: '2024-02-15T09:15:00Z',
+    createdBy: 'Haji Ahmad Shah',
+  },
 ];
