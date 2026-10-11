@@ -43,6 +43,27 @@ export interface EmployeeAccessData {
   readOnlyModules: string[];
 }
 
+export type WorkspaceReportType = 'financial' | 'materials' | 'contractors' | 'sales' | 'monthly_pnl';
+
+export interface GeneratedWorkspaceReport {
+  reportType: WorkspaceReportType;
+  projectId: string;
+  year: number;
+  workspaceRevision: number;
+  project: {
+    id: string;
+    name?: string;
+    code?: string;
+    projectCode?: string;
+    status?: string;
+    [key: string]: unknown;
+  };
+  data: Partial<Record<
+    'expenses' | 'payments' | 'steelRecords' | 'concreteRecords' | 'contractors' | 'apartments',
+    any[]
+  >>;
+}
+
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const prefix = `${name}=`;
@@ -214,8 +235,11 @@ class BackendApiService {
     return this.request('payroll.php', { method: 'POST', body: JSON.stringify(payload) });
   }
 
-  public async getDashboardMetrics() {
-    return this.request<any>('reports.php?type=dashboard');
+  public async generateReport(reportType: WorkspaceReportType, projectId: string, year: number) {
+    return this.request<GeneratedWorkspaceReport>('reports.php?action=generate', {
+      method: 'POST',
+      body: JSON.stringify({ reportType, projectId, year }),
+    });
   }
 
   public async getSubcontractors(projectId?: string) {

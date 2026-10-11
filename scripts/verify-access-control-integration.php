@@ -252,6 +252,26 @@ try {
             ['id' => 'expense-b', 'projectId' => 'project-b', 'amount' => 20, 'description' => 'Hidden expense'],
             ['id' => 'expense-archived', 'projectId' => 'project-archived', 'amount' => 30, 'description' => 'Archived expense'],
         ],
+        'payments' => [
+            ['id' => 'payment-a', 'projectId' => 'project-a', 'amountUSD' => 5, 'description' => 'Visible payment'],
+            ['id' => 'payment-b', 'projectId' => 'project-b', 'amountUSD' => 15, 'description' => 'Hidden payment'],
+        ],
+        'steelRecords' => [
+            ['id' => 'steel-a', 'projectId' => 'project-a', 'totalKg' => 100],
+            ['id' => 'steel-b', 'projectId' => 'project-b', 'totalKg' => 900],
+        ],
+        'concreteRecords' => [
+            ['id' => 'concrete-a', 'projectId' => 'project-a', 'volumeM3' => 2],
+            ['id' => 'concrete-b', 'projectId' => 'project-b', 'volumeM3' => 9],
+        ],
+        'contractors' => [
+            ['id' => 'contractor-a', 'projectId' => 'project-a', 'name' => 'Visible contractor'],
+            ['id' => 'contractor-b', 'projectId' => 'project-b', 'name' => 'Hidden contractor'],
+        ],
+        'apartments' => [
+            ['id' => 'apartment-a', 'projectId' => 'project-a', 'totalPriceUSD' => 500],
+            ['id' => 'apartment-b', 'projectId' => 'project-b', 'totalPriceUSD' => 900],
+        ],
         'suppliers' => [['id' => 'shared-supplier', 'name' => 'Owner-only shared supplier']],
     ];
     $snapshot = $db->prepare(
@@ -262,6 +282,15 @@ try {
         'tenant_id' => $ownerA,
         'workspace_json' => json_encode($ownerWorkspace, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
         'updated_by' => $ownerA,
+    ]);
+    $foreignTenantWorkspace = [
+        'projects' => [['id' => 'tenant-b-project', 'name' => 'Tenant B Confidential', 'status' => 'active']],
+        'expenses' => [['id' => 'tenant-b-expense', 'projectId' => 'tenant-b-project', 'amount' => 99000, 'description' => 'Cross-tenant secret']],
+    ];
+    $snapshot->execute([
+        'tenant_id' => $ownerB,
+        'workspace_json' => json_encode($foreignTenantWorkspace, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        'updated_by' => $ownerB,
     ]);
 
     $ownerSession = nscIntegrationNewSession($db, $ownerA);
@@ -306,12 +335,112 @@ try {
         str_contains((string)($disabledResponse['body']['error'] ?? ''), 'disabled'),
         'Disabled employee response explains the fail-closed state'
     );
+    $disabledReportSession = nscIntegrationNewSession($db, $employeeA);
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/reports.php?action=generate',
+            $disabledReportSession,
+            ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+        ),
+        403,
+        'Employee report endpoint remains closed while the server feature flag is false'
+    );
+    $ownerReportWhileEmployeesDisabled = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $ownerSession,
+        ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+    );
+    nscIntegrationExpect(
+        $ownerReportWhileEmployeesDisabled,
+        200,
+        'Owner report remains tenant-scoped and available while employee access stays disabled'
+    );
+    nscIntegrationAssert(
+        array_column($ownerReportWhileEmployeesDisabled['body']['data']['data']['expenses'] ?? [], 'id') === ['expense-a'],
+        'Owner report response is still limited to the requested project'
+    );
     nscIntegrationStopServer($server);
 
     // The flag is enabled only for this isolated test server and disposable database.
     $activeEmployeeSession = nscIntegrationNewSession($db, $employeeA);
     $server = nscIntegrationStartServer(true);
     $serverLogs[] = $server['logPath'];
+
+    $missingReportGrant = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $activeEmployeeSession,
+        ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+    );
+    nscIntegrationExpect($missingReportGrant, 403, 'Employee report generation is denied when the reports-module grant is missing');
+
+    $missingDataReportGrantPayload = [
+        'userId' => $employeeA,
+        'grants' => [
+            ['projectId' => 'project-a', 'module' => 'reports', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'expenses', 'actions' => ['read', 'update']],
+            ['projectId' => 'project-a', 'module' => 'payments', 'actions' => ['read', 'report']],
+        ],
+    ];
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/permissions.php?action=save_grants',
+            $ownerSession,
+            $missingDataReportGrantPayload
+        ),
+        200,
+        'Owner can assign report-module access without granting expense report rights'
+    );
+    $missingDataReportRight = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $activeEmployeeSession,
+        ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+    );
+    nscIntegrationExpect($missingDataReportRight, 403, 'Report is denied when any underlying data module lacks report rights');
+
+    $reportGrantPayload = [
+        'userId' => $employeeA,
+        'grants' => [
+            ['projectId' => 'project-a', 'module' => 'reports', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'expenses', 'actions' => ['read', 'update', 'report']],
+            ['projectId' => 'project-a', 'module' => 'payments', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'steel', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'concrete', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'contractors', 'actions' => ['read', 'report']],
+            ['projectId' => 'project-a', 'module' => 'apartments', 'actions' => ['read', 'report']],
+        ],
+    ];
+    $reportGrantsSaved = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/permissions.php?action=save_grants',
+        $ownerSession,
+        $reportGrantPayload
+    );
+    nscIntegrationExpect($reportGrantsSaved, 200, 'Owner can assign explicit report rights to the reports and data modules');
+
+    $foreignTenantReport = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $activeEmployeeSession,
+        ['reportType' => 'financial', 'projectId' => 'tenant-b-project', 'year' => 2026]
+    );
+    nscIntegrationExpect($foreignTenantReport, 404, 'Employee cannot generate a report for a project in another tenant');
+    nscIntegrationAssert(
+        !str_contains((string)($foreignTenantReport['raw'] ?? ''), 'Cross-tenant secret'),
+        'Cross-tenant report denial does not disclose foreign workspace data'
+    );
+
     $readResponse = nscIntegrationRequest($server['baseUrl'], 'GET', '/workspace.php', $activeEmployeeSession);
     nscIntegrationExpect($readResponse, 200, 'Authorized employee can read the scoped workspace');
     $visibleWorkspace = $readResponse['body']['data']['workspace'] ?? null;
@@ -325,10 +454,108 @@ try {
         'Employee sees no records from hidden or archived projects'
     );
     nscIntegrationAssert(
+        count($visibleWorkspace['payments'] ?? []) === 1 && ($visibleWorkspace['payments'][0]['id'] ?? '') === 'payment-a',
+        'Employee workspace read filters payments to the granted project'
+    );
+    nscIntegrationAssert(
         !array_key_exists('appSettings', $visibleWorkspace)
             && !array_key_exists('contractValue', $visibleWorkspace['projects'][0] ?? []),
         'Owner-only settings and project financial fields are not exposed'
     );
+
+    $generatedReport = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $activeEmployeeSession,
+        ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+    );
+    nscIntegrationExpect($generatedReport, 200, 'Employee can generate an explicitly authorized server-side report');
+    $generatedReportData = $generatedReport['body']['data'] ?? null;
+    nscIntegrationAssert(
+        is_array($generatedReportData)
+            && ($generatedReportData['reportType'] ?? '') === 'financial'
+            && ($generatedReportData['projectId'] ?? '') === 'project-a'
+            && (int)($generatedReportData['workspaceRevision'] ?? 0) === 1,
+        'Generated report identifies its type, project, and immutable workspace revision'
+    );
+    nscIntegrationAssert(
+        array_column($generatedReportData['data']['expenses'] ?? [], 'id') === ['expense-a']
+            && array_column($generatedReportData['data']['payments'] ?? [], 'id') === ['payment-a'],
+        'Generated report contains only records from the authorized project and modules'
+    );
+    nscIntegrationAssert(
+        !str_contains((string)($generatedReport['raw'] ?? ''), 'Hidden expense')
+            && !str_contains((string)($generatedReport['raw'] ?? ''), 'Hidden payment'),
+        'Generated report omits records from other projects in the same tenant'
+    );
+
+    $otherReportExpectations = [
+        'materials' => ['steelRecords' => 'steel-a', 'concreteRecords' => 'concrete-a'],
+        'contractors' => ['contractors' => 'contractor-a', 'expenses' => 'expense-a', 'payments' => 'payment-a'],
+        'sales' => ['apartments' => 'apartment-a', 'payments' => 'payment-a'],
+        'monthly_pnl' => ['expenses' => 'expense-a', 'payments' => 'payment-a', 'apartments' => 'apartment-a'],
+    ];
+    foreach ($otherReportExpectations as $reportType => $expectedCollections) {
+        $response = nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/reports.php?action=generate',
+            $activeEmployeeSession,
+            ['reportType' => $reportType, 'projectId' => 'project-a', 'year' => 2026]
+        );
+        nscIntegrationExpect($response, 200, 'Employee can generate the authorized ' . $reportType . ' report');
+        $reportBody = $response['body']['data'] ?? [];
+        $actualCollections = array_keys($reportBody['data'] ?? []);
+        $expectedCollectionKeys = array_keys($expectedCollections);
+        sort($actualCollections, SORT_STRING);
+        sort($expectedCollectionKeys, SORT_STRING);
+        $onlyExpectedRows = ($reportBody['reportType'] ?? '') === $reportType
+            && ($reportBody['projectId'] ?? '') === 'project-a'
+            && $actualCollections === $expectedCollectionKeys;
+        foreach ($expectedCollections as $collection => $recordId) {
+            $onlyExpectedRows = $onlyExpectedRows
+                && array_column($reportBody['data'][$collection] ?? [], 'id') === [$recordId];
+        }
+        nscIntegrationAssert(
+            $onlyExpectedRows,
+            ucfirst(str_replace('_', ' ', $reportType)) . ' report contains only its authorized project/module collections'
+        );
+    }
+
+    $reportAudit = $db->prepare(
+        "SELECT COUNT(*) FROM system_audit_logs
+         WHERE user_id = :user_id AND action = 'export' AND module = 'reports' AND record_id = :project_id"
+    );
+    $reportAudit->execute(['user_id' => $employeeA, 'project_id' => 'project-a']);
+    nscIntegrationAssert((int)$reportAudit->fetchColumn() > 0, 'Report generation writes a server-side export audit event');
+
+    $invalidReportType = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/reports.php?action=generate',
+        $activeEmployeeSession,
+        ['reportType' => 'tenant_dump', 'projectId' => 'project-a', 'year' => 2026]
+    );
+    nscIntegrationExpect($invalidReportType, 400, 'Unsupported report types are rejected');
+
+    $lockedUser = $db->prepare('UPDATE users SET is_locked = 1 WHERE id = :user_id');
+    $lockedUser->execute(['user_id' => $employeeA]);
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/reports.php?action=generate',
+            $activeEmployeeSession,
+            ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026]
+        ),
+        401,
+        'Locked employee account cannot generate reports'
+    );
+    $unlockedUser = $db->prepare('UPDATE users SET is_locked = 0 WHERE id = :user_id');
+    $unlockedUser->execute(['user_id' => $employeeA]);
+    // The locked-session probe revokes its session, so issue a fresh one after unlocking.
+    $activeEmployeeSession = nscIntegrationNewSession($db, $employeeA);
 
     $allowedUpdate = [
         'tenantId' => $ownerA,
@@ -418,7 +645,7 @@ try {
     $afterWriteRace = nscIntegrationStoredWorkspace($db, $ownerA);
     nscIntegrationAssert($afterWriteRace['revision'] === 3, 'Concurrent write race advances the revision exactly once');
 
-    // Race grant revocation against an in-flight employee write using matching DB lock order.
+    // Race grant revocation against both an in-flight employee write and report using matching DB lock order.
     $revokePayload = ['userId' => $employeeA, 'grants' => []];
     $revocationRace = nscIntegrationConcurrentRequests([
         [
@@ -439,12 +666,35 @@ try {
                 ]]],
             ],
         ],
+        [
+            'url' => $server['baseUrl'] . '/reports.php?action=generate',
+            'method' => 'POST',
+            'session' => $activeEmployeeSession,
+            'payload' => ['reportType' => 'financial', 'projectId' => 'project-a', 'year' => 2026],
+        ],
     ]);
-    nscIntegrationAssert((int)$revocationRace[0]['status'] === 200, 'Owner grant revocation succeeds during the concurrent request');
+    nscIntegrationAssert((int)$revocationRace[0]['status'] === 200, 'Owner grant revocation succeeds during the concurrent requests');
     nscIntegrationAssert(
         in_array((int)$revocationRace[1]['status'], [200, 403], true),
         'Concurrent employee write either commits before revocation or is denied after it'
     );
+    nscIntegrationAssert(
+        in_array((int)$revocationRace[2]['status'], [200, 403], true),
+        'Concurrent report either completes before grant revocation or is denied after it'
+    );
+    if ((int)$revocationRace[2]['status'] === 200) {
+        $raceReport = $revocationRace[2]['body']['data'] ?? [];
+        nscIntegrationAssert(
+            ($raceReport['projectId'] ?? '') === 'project-a'
+                && array_column($raceReport['data']['expenses'] ?? [], 'projectId') === ['project-a'],
+            'A report winning the revocation race still contains only authorized project data'
+        );
+    } else {
+        nscIntegrationAssert(
+            !isset($revocationRace[2]['body']['data']),
+            'A report losing the revocation race returns no protected data'
+        );
+    }
     $remainingGrant = $db->prepare('SELECT COUNT(*) FROM nsc_user_project_permissions WHERE tenant_id = :tenant_id AND user_id = :user_id');
     $remainingGrant->execute(['tenant_id' => $ownerA, 'user_id' => $employeeA]);
     nscIntegrationAssert((int)$remainingGrant->fetchColumn() === 0, 'Revoked grants are absent after both concurrent requests finish');

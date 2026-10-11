@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { localizeText } from '../../i18n/localize';
+import { backendApi, type GeneratedWorkspaceReport, type WorkspaceReportType } from '../../services/backendApi';
 import { 
   BarChart3, 
   Printer, 
@@ -29,9 +30,20 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 
+const REPORT_DATA_KEYS: Record<WorkspaceReportType, (keyof GeneratedWorkspaceReport['data'])[]> = {
+  financial: ['expenses', 'payments'],
+  materials: ['steelRecords', 'concreteRecords'],
+  contractors: ['contractors', 'expenses', 'payments'],
+  sales: ['apartments', 'payments'],
+  monthly_pnl: ['expenses', 'payments', 'apartments'],
+};
+
 export const ReportsView: React.FC = () => {
   const { 
-    currentProject, 
+    currentProject,
+    currentUser,
+    workspaceReady,
+    workspaceSaving,
     expenses, 
     payments, 
     steelRecords, 
@@ -48,17 +60,63 @@ export const ReportsView: React.FC = () => {
   } = useApp();
   const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
-  const [reportType, setReportType] = useState<'financial' | 'materials' | 'contractors' | 'sales' | 'monthly_pnl'>('financial');
+  const [reportType, setReportType] = useState<WorkspaceReportType>('financial');
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [pnlCurrency, setPnlCurrency] = useState<'USD' | 'AFN'>('USD');
   const [pnlViewMode, setPnlViewMode] = useState<'all' | 'cash' | 'accrual'>('all');
+  const [generatedReport, setGeneratedReport] = useState<{ report: GeneratedWorkspaceReport; userId: string } | null>(null);
+  const [isPreparingReport, setIsPreparingReport] = useState(false);
+  const [reportGenerationFailed, setReportGenerationFailed] = useState(false);
+  const [printWhenReady, setPrintWhenReady] = useState(false);
+  const canGenerateReport = Boolean(currentUser && !currentUser.isMasterSuperAdmin);
+  const reportSelectionRef = useRef({
+    projectId: currentProject?.id,
+    userId: currentUser?.id,
+    reportType,
+    year: selectedYear,
+  });
+  reportSelectionRef.current = {
+    projectId: currentProject?.id,
+    userId: currentUser?.id,
+    reportType,
+    year: selectedYear,
+  };
+  const activeServerReport = generatedReport?.userId === currentUser?.id
+    && generatedReport?.report.projectId === currentProject?.id
+    && generatedReport?.report.reportType === reportType
+    && generatedReport?.report.year === selectedYear
+    ? generatedReport.report
+    : null;
 
-  // Metrics for current project
-  const projectExpenses = expenses.filter(e => e.projectId === currentProject?.id);
-  const projectPayments = payments.filter(p => p.projectId === currentProject?.id);
-  const projectSteel = steelRecords.filter(s => s.projectId === currentProject?.id);
-  const projectConcrete = concreteRecords.filter(c => c.projectId === currentProject?.id);
-  const projectApartments = apartments.filter(a => a.projectId === currentProject?.id);
+  useEffect(() => {
+    setGeneratedReport(null);
+    setReportGenerationFailed(false);
+    setPrintWhenReady(false);
+  }, [currentProject?.id, currentUser?.id, reportType, selectedYear]);
+
+  useEffect(() => {
+    if (!printWhenReady || !activeServerReport) return;
+    const printTimer = window.setTimeout(() => {
+      window.print();
+      setPrintWhenReady(false);
+    }, 0);
+    return () => window.clearTimeout(printTimer);
+  }, [activeServerReport, printWhenReady]);
+
+  const reportExpenses = activeServerReport ? activeServerReport.data.expenses ?? [] : expenses;
+  const reportPayments = activeServerReport ? activeServerReport.data.payments ?? [] : payments;
+  const reportSteelRecords = activeServerReport ? activeServerReport.data.steelRecords ?? [] : steelRecords;
+  const reportConcreteRecords = activeServerReport ? activeServerReport.data.concreteRecords ?? [] : concreteRecords;
+  const reportApartments = activeServerReport ? activeServerReport.data.apartments ?? [] : apartments;
+  const reportContractors = activeServerReport ? activeServerReport.data.contractors ?? [] : contractors;
+
+  // Metrics for the selected project. Print/export always uses the matching server-authorized
+  // snapshot before opening the browser print dialog.
+  const projectExpenses = reportExpenses.filter(e => e.projectId === currentProject?.id);
+  const projectPayments = reportPayments.filter(p => p.projectId === currentProject?.id);
+  const projectSteel = reportSteelRecords.filter(s => s.projectId === currentProject?.id);
+  const projectConcrete = reportConcreteRecords.filter(c => c.projectId === currentProject?.id);
+  const projectApartments = reportApartments.filter(a => a.projectId === currentProject?.id);
 
   const totalExpenseUSD = projectExpenses.reduce((sum, e) => sum + (e.totalAmountUSD || 0), 0);
   const totalPaidUSD = projectPayments.reduce((sum, p) => sum + (p.amountUSD || 0), 0);
@@ -172,12 +230,59 @@ export const ReportsView: React.FC = () => {
   const yearEndingCash = monthlyTimeline[11]?.cumulativeCash || 0;
   const totalVarianceProfitVsCash = yearTotalAccrualProfit - yearNetCashMovement;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setReportGenerationFailed(false);
+    if (!currentUser || currentUser.isMasterSuperAdmin || !workspaceReady || workspaceSaving || !currentProject?.id) {
+      setReportGenerationFailed(true);
+      return;
+    }
+
+    const requestSelection = {
+      projectId: currentProject.id,
+      userId: currentUser.id,
+      reportType,
+      year: selectedYear,
+    };
+    setIsPreparingReport(true);
+    setGeneratedReport(null);
+    const result = await backendApi.generateReport(
+      requestSelection.reportType,
+      requestSelection.projectId,
+      requestSelection.year,
+    );
+    setIsPreparingReport(false);
+
+    const currentSelection = reportSelectionRef.current;
+    if (currentSelection.projectId !== requestSelection.projectId
+      || currentSelection.userId !== requestSelection.userId
+      || currentSelection.reportType !== requestSelection.reportType
+      || currentSelection.year !== requestSelection.year) {
+      setPrintWhenReady(false);
+      return;
+    }
+
+    const report = result.data;
+    const hasExpectedCollections = report
+      ? REPORT_DATA_KEYS[requestSelection.reportType].every(collection => Array.isArray(report.data?.[collection]))
+      : false;
+    if (!result.success || !report
+      || report.reportType !== requestSelection.reportType
+      || report.projectId !== requestSelection.projectId
+      || report.year !== requestSelection.year
+      || report.project?.id !== requestSelection.projectId
+      || !Number.isSafeInteger(report.workspaceRevision)
+      || report.workspaceRevision < 0
+      || !hasExpectedCollections) {
+      setReportGenerationFailed(true);
+      return;
+    }
+
+    setGeneratedReport({ report, userId: requestSelection.userId });
+    setPrintWhenReady(true);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in print:p-0">
+    <div className={`space-y-6 animate-fade-in print:p-0 ${activeServerReport ? '' : 'print:hidden'}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
@@ -192,17 +297,38 @@ export const ReportsView: React.FC = () => {
 
         <button
           onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-purple-500/25 transition active:scale-95"
+          disabled={isPreparingReport || !canGenerateReport || !workspaceReady || workspaceSaving}
+          aria-busy={isPreparingReport || workspaceSaving}
+          className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 disabled:cursor-wait text-white rounded-2xl font-bold text-xs shadow-lg shadow-purple-500/25 transition active:scale-95"
         >
           <Printer className="w-4 h-4" />
-          <span>{t('printExecutiveReport') || 'Print / Export Official Statement'}</span>
+          <span>{isPreparingReport
+            ? tx('Preparing report…', 'در حال آماده‌سازی گزارش…', 'راپور چمتو کېږي…')
+            : (t('printExecutiveReport') || tx('Print / Export Official Statement', 'چاپ / صدور گزارش رسمی', 'د رسمي راپور چاپ / صادرول'))}</span>
         </button>
       </div>
+
+      {reportGenerationFailed && (
+        <div role="alert" className="print:hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+          {tx(
+            'The report could not be generated. Verify this project’s data access; staff need both read and report grants for every included module, then try again.',
+            'گزارش تولید نشد. دسترسی به داده‌های این پروژه را بررسی کنید؛ کارمند برای هر بخشِ شامل گزارش به مجوز خواندن و گزارش‌گیری نیاز دارد، سپس دوباره تلاش کنید.',
+            'راپور جوړ نه شو. دې پروژې ته د معلوماتو لاسرسی وګورئ؛ کارکوونکي د هرې شاملې برخې لپاره د لوستلو او راپور دواړو اجازو ته اړتیا لري، بیا هڅه وکړئ.',
+          )}
+        </div>
+      )}
 
       {/* Printable Report Header */}
       <div className="hidden print:block text-center border-b pb-4 mb-6">
         <h1 className="text-2xl font-black text-slate-900">{tx('NIK SMART COUNT - EXECUTIVE AUDIT REPORT', 'نیک اسمارت کانت - گزارش حسابرسی اجرایی', 'نیک سمارټ کاونټ - د اجرائیوي پلټنې راپور')}</h1>
-        <p className="text-sm font-bold text-slate-700 mt-1">{currentProject?.name} ({currentProject?.code})</p>
+        <p className="text-sm font-bold text-slate-700 mt-1">
+          {activeServerReport?.project.name ?? currentProject?.name} ({activeServerReport?.project.projectCode ?? activeServerReport?.project.code ?? currentProject?.code})
+        </p>
+        {activeServerReport && (
+          <p className="text-xs text-slate-500">
+            {tx('Server snapshot revision:', 'نسخهٔ تصویر ثبت‌شده در سرور:', 'د سرور د ثبت شوې بڼې نسخه:')} {activeServerReport.workspaceRevision}
+          </p>
+        )}
         <p className="text-xs text-slate-500">{new Date().toLocaleDateString()}</p>
       </div>
 
@@ -385,7 +511,7 @@ export const ReportsView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {contractors.map(c => {
+                {reportContractors.map(c => {
                   const cExpenses = projectExpenses.filter(e => e.recipientId === c.id);
                   const cPayments = projectPayments.filter(p => p.recipientId === c.id);
                   const totalWork = cExpenses.reduce((s, e) => s + (e.totalAmountUSD || 0), 0);

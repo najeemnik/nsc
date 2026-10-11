@@ -22,7 +22,6 @@ const legacyEndpoints = new Set([
   'materials.php',
   'payroll.php',
   'projects.php',
-  'reports.php',
   'subcontractors.php',
   'suppliers.php',
 ]);
@@ -30,6 +29,7 @@ const activeEndpoints = new Set([
   'auth.php',
   'office7.php',
   'permissions.php',
+  'reports.php',
   'workspace.php',
 ]);
 const classifiedFiles = new Set([...helperFiles, ...legacyEndpoints, ...activeEndpoints]);
@@ -103,6 +103,32 @@ for (const fragment of [
   '$db->commit()',
 ]) {
   if (!permissions.includes(fragment)) errors.push(`permissions.php: expected owner/grant/audit control is missing (${fragment}).`);
+}
+
+const reports = sources.get('reports.php') || '';
+for (const fragment of [
+  "($_GET['action'] ?? '') !== 'generate'",
+  'NSC_REPORT_COLLECTIONS_BY_TYPE',
+  'nscAclLockEmployeeTenant(',
+  'nscAclLoadGrants(',
+  "nscAclRequireProjectAction($grants, $projectId, $module, 'report')",
+  "nscAclWriteAudit(\n        $db,\n        $user,\n        'export',\n        'reports'",
+  'workspaceRevision',
+  'nscReportsContainsSecretField($reportData)',
+]) {
+  if (!reports.includes(fragment)) errors.push(`reports.php: expected scoped report/export control is missing (${fragment}).`);
+}
+if (reports.includes('legacy_endpoint_guard.php') || reports.includes('nscBlockLegacyRelationalEndpoint()')) {
+  errors.push('reports.php: active report endpoint must not retain the legacy fail-closed route guard.');
+}
+const reportsView = await readFile(path.join(repositoryRoot, 'src/components/views/ReportsView.tsx'), 'utf8');
+for (const fragment of [
+  'backendApi.generateReport(\n      requestSelection.reportType,\n      requestSelection.projectId,\n      requestSelection.year,',
+  'setGeneratedReport({ report, userId: requestSelection.userId })',
+  'setPrintWhenReady(true)',
+  "activeServerReport ? '' : 'print:hidden'",
+]) {
+  if (!reportsView.includes(fragment)) errors.push(`ReportsView.tsx: server-authorized report/print flow is missing (${fragment}).`);
 }
 
 const workspace = sources.get('workspace.php') || '';
