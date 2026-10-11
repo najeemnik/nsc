@@ -302,6 +302,19 @@ try {
     $server = nscIntegrationStartServer(false);
     $serverLogs[] = $server['logPath'];
 
+    // Wave 3 starts from an explicit negative boundary: no legacy relational route may leak data.
+    $failClosedLegacyEndpoints = [
+        '/apartments.php', '/assets.php', '/finance.php', '/journal.php', '/materials.php',
+        '/payroll.php', '/projects.php', '/subcontractors.php', '/suppliers.php',
+    ];
+    foreach ($failClosedLegacyEndpoints as $legacyPath) {
+        nscIntegrationExpect(
+            nscIntegrationRequest($server['baseUrl'], 'GET', $legacyPath, $ownerSession),
+            410,
+            'Unmigrated relational endpoint stays fail-closed: ' . basename($legacyPath)
+        );
+    }
+
     // Owner-only lifecycle operations run while employee sign-in is still disabled.
     $lifecyclePassword = 'ci-lifecycle-password-2026';
     $lifecycleCreatePayload = [
