@@ -294,12 +294,320 @@ try {
     ]);
 
     $ownerSession = nscIntegrationNewSession($db, $ownerA);
+    $ownerBSession = nscIntegrationNewSession($db, $ownerB);
     $disabledEmployeeSession = nscIntegrationNewSession($db, $employeeA);
     $db->commit();
 
     // Owner grant-management route: success, malformed-action rejection, and cross-tenant denial.
     $server = nscIntegrationStartServer(false);
     $serverLogs[] = $server['logPath'];
+
+    // Owner-only lifecycle operations run while employee sign-in is still disabled.
+    $lifecyclePassword = 'ci-lifecycle-password-2026';
+    $lifecycleCreatePayload = [
+        'name' => 'Lifecycle CI Employee',
+        'username' => 'ci_lifecycle_' . $run,
+        'email' => 'ci-lifecycle-' . $run . '@example.test',
+        'phone' => '+93 700 000 001',
+        'password' => $lifecyclePassword,
+        'role' => 'procurement',
+    ];
+    $createdEmployeeResponse = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/employees.php?action=create',
+        $ownerSession,
+        $lifecycleCreatePayload
+    );
+    nscIntegrationExpect($createdEmployeeResponse, 200, 'Owner can create a server-managed employee account while sign-in is disabled');
+    $createdEmployee = $createdEmployeeResponse['body']['data']['employee'] ?? null;
+    nscIntegrationAssert(is_array($createdEmployee), 'Employee creation returns a public profile');
+    $lifecycleEmployeeId = (string)($createdEmployee['id'] ?? '');
+    nscIntegrationAssert(
+        $lifecycleEmployeeId !== ''
+            && ($createdEmployee['isLocked'] ?? false) === true
+            && ($createdEmployee['role'] ?? '') === 'procurement',
+        'New employee profile is assigned the requested role and starts locked'
+    );
+    nscIntegrationAssert(
+        !array_key_exists('password', $createdEmployee) && !array_key_exists('password_hash', $createdEmployee),
+        'Employee creation response never exposes the password or password hash'
+    );
+    $employeeAccessList = nscIntegrationRequest($server['baseUrl'], 'GET', '/permissions.php?action=employees', $ownerSession);
+    nscIntegrationExpect($employeeAccessList, 200, 'Owner can retrieve the employee account and grant-management list');
+    $listedLifecycleAccount = null;
+    foreach ($employeeAccessList['body']['data']['employees'] ?? [] as $listedEmployee) {
+        if (($listedEmployee['id'] ?? '') === $lifecycleEmployeeId) $listedLifecycleAccount = $listedEmployee;
+    }
+    nscIntegrationAssert(
+        is_array($listedLifecycleAccount)
+            && ($listedLifecycleAccount['isLocked'] ?? false) === true
+            && ($listedLifecycleAccount['grants'] ?? null) === [],
+        'Access-management listing exposes the new account as locked with no implicit grants'
+    );
+    $storedLifecycleEmployee = $db->prepare(
+        'SELECT owner_admin_id, password_hash, is_locked FROM users WHERE id = :employee_id'
+    );
+    $storedLifecycleEmployee->execute(['employee_id' => $lifecycleEmployeeId]);
+    $storedLifecycleAccount = $storedLifecycleEmployee->fetch();
+    nscIntegrationAssert(
+        is_array($storedLifecycleAccount)
+            && (string)$storedLifecycleAccount['owner_admin_id'] === $ownerA
+            && (int)$storedLifecycleAccount['is_locked'] === 1
+            && password_verify($lifecyclePassword, (string)$storedLifecycleAccount['password_hash'])
+            && !hash_equals($lifecyclePassword, (string)$storedLifecycleAccount['password_hash']),
+        'Employee credentials are password-hashed and the account is tenant-bound and locked in MySQL'
+    );
+
+    $shortPasswordPayload = $lifecycleCreatePayload;
+    $shortPasswordPayload['username'] = 'ci_short_' . $run;
+    $shortPasswordPayload['email'] = 'ci-short-' . $run . '@example.test';
+    $shortPasswordPayload['password'] = 'too-short';
+    nscIntegrationExpect(
+        nscIntegrationRequest($server['baseUrl'], 'POST', '/employees.php?action=create', $ownerSession, $shortPasswordPayload),
+        400,
+        'Employee creation rejects passwords below the server minimum'
+    );
+    $shortAccountCount = $db->prepare('SELECT COUNT(*) FROM users WHERE username = :username');
+    $shortAccountCount->execute(['username' => $shortPasswordPayload['username']]);
+    nscIntegrationAssert((int)$shortAccountCount->fetchColumn() === 0, 'Rejected employee creation makes no partial database account');
+
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=update',
+            $ownerBSession,
+            ['employeeId' => $lifecycleEmployeeId, 'name' => 'Cross-tenant overwrite']
+        ),
+        404,
+        'A different tenant owner cannot update the employee account'
+    );
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=update',
+            $ownerSession,
+            ['employeeId' => $lifecycleEmployeeId, 'isLocked' => false]
+        ),
+        400,
+        'Employee profile updates reject client-supplied lock and ownership fields'
+    );
+    $unlockWithoutGrant = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/employees.php?action=set_lock',
+        $ownerSession,
+        ['employeeId' => $lifecycleEmployeeId, 'isLocked' => false]
+    );
+    nscIntegrationExpect($unlockWithoutGrant, 409, 'Owner cannot unlock a new employee before granting project read access');
+    $stillLocked = $db->prepare('SELECT is_locked FROM users WHERE id = :employee_id');
+    $stillLocked->execute(['employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$stillLocked->fetchColumn() === 1, 'Rejected unlock leaves the employee locked');
+
+    $lifecycleGrant = [
+        'userId' => $lifecycleEmployeeId,
+        'grants' => [['projectId' => 'project-a', 'module' => 'expenses', 'actions' => ['read']]],
+    ];
+    nscIntegrationExpect(
+        nscIntegrationRequest($server['baseUrl'], 'POST', '/permissions.php?action=save_grants', $ownerSession, $lifecycleGrant),
+        200,
+        'Owner can assign a tenant project read grant to a newly provisioned employee'
+    );
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=set_lock',
+            $ownerSession,
+            ['employeeId' => $lifecycleEmployeeId, 'isLocked' => false]
+        ),
+        200,
+        'Owner can unlock an employee after a project/module read grant is saved'
+    );
+    $unlockedLifecycleAccount = $db->prepare('SELECT is_locked FROM users WHERE id = :employee_id');
+    $unlockedLifecycleAccount->execute(['employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$unlockedLifecycleAccount->fetchColumn() === 0, 'Successful owner unlock is persisted in MySQL');
+
+    $disabledLifecycleLogin = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/auth.php?action=login',
+        null,
+        ['username' => $lifecycleCreatePayload['username'], 'password' => $lifecyclePassword]
+    );
+    nscIntegrationExpect($disabledLifecycleLogin, 403, 'Provisioned employee cannot sign in while the production-default feature flag is false');
+
+    $profileChangeSession = nscIntegrationNewSession($db, $lifecycleEmployeeId);
+    $updatedPassword = 'ci-lifecycle-password-updated-2026';
+    $profileUpdateResponse = nscIntegrationRequest(
+        $server['baseUrl'],
+        'POST',
+        '/employees.php?action=update',
+        $ownerSession,
+        [
+            'employeeId' => $lifecycleEmployeeId,
+            'name' => 'Lifecycle CI Employee Updated',
+            'email' => 'ci-lifecycle-updated-' . $run . '@example.test',
+            'phone' => '+93 700 000 002',
+            'password' => $updatedPassword,
+            'role' => 'project_manager',
+        ]
+    );
+    nscIntegrationExpect($profileUpdateResponse, 200, 'Owner can update employee profile, role, and password');
+    $updatedLifecycleProfile = $profileUpdateResponse['body']['data']['employee'] ?? [];
+    nscIntegrationAssert(
+        ($updatedLifecycleProfile['name'] ?? '') === 'Lifecycle CI Employee Updated'
+            && ($updatedLifecycleProfile['role'] ?? '') === 'project_manager'
+            && !array_key_exists('password', $updatedLifecycleProfile)
+            && !array_key_exists('password_hash', $updatedLifecycleProfile),
+        'Profile update returns only the updated public employee fields'
+    );
+    $revokedOnProfileChange = $db->prepare(
+        'SELECT revoked_at FROM nsc_auth_sessions WHERE session_hash = :session_hash'
+    );
+    $revokedOnProfileChange->execute(['session_hash' => hash('sha256', $profileChangeSession['session'])]);
+    $profileRevokedAt = $revokedOnProfileChange->fetchColumn();
+    nscIntegrationAssert($profileRevokedAt !== false && $profileRevokedAt !== null, 'Password, email, or role changes revoke existing employee sessions');
+    $updatedPasswordRow = $db->prepare('SELECT password_hash, role, email FROM users WHERE id = :employee_id');
+    $updatedPasswordRow->execute(['employee_id' => $lifecycleEmployeeId]);
+    $updatedStoredAccount = $updatedPasswordRow->fetch();
+    nscIntegrationAssert(
+        is_array($updatedStoredAccount)
+            && password_verify($updatedPassword, (string)$updatedStoredAccount['password_hash'])
+            && !password_verify($lifecyclePassword, (string)$updatedStoredAccount['password_hash'])
+            && (string)$updatedStoredAccount['role'] === 'project_manager',
+        'Profile update stores only the replacement password hash and the new role'
+    );
+
+    $lockChangeSession = nscIntegrationNewSession($db, $lifecycleEmployeeId);
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=set_lock',
+            $ownerSession,
+            ['employeeId' => $lifecycleEmployeeId, 'isLocked' => true]
+        ),
+        200,
+        'Owner can lock an employee account'
+    );
+    $revokedOnLock = $db->prepare('SELECT revoked_at FROM nsc_auth_sessions WHERE session_hash = :session_hash');
+    $revokedOnLock->execute(['session_hash' => hash('sha256', $lockChangeSession['session'])]);
+    $lockRevokedAt = $revokedOnLock->fetchColumn();
+    nscIntegrationAssert($lockRevokedAt !== false && $lockRevokedAt !== null, 'Locking an employee revokes all active sessions');
+
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/permissions.php?action=save_grants',
+            $ownerSession,
+            ['userId' => $lifecycleEmployeeId, 'grants' => []]
+        ),
+        200,
+        'Owner can revoke all grants before deleting the employee'
+    );
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=set_lock',
+            $ownerSession,
+            ['employeeId' => $lifecycleEmployeeId, 'isLocked' => false]
+        ),
+        409,
+        'Owner cannot unlock an employee after all project read grants are revoked'
+    );
+    $stillLockedAfterRevoke = $db->prepare('SELECT is_locked FROM users WHERE id = :employee_id');
+    $stillLockedAfterRevoke->execute(['employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$stillLockedAfterRevoke->fetchColumn() === 1, 'Unlock without a read grant leaves the account locked');
+
+    nscIntegrationExpect(
+        nscIntegrationRequest($server['baseUrl'], 'POST', '/permissions.php?action=save_grants', $ownerSession, $lifecycleGrant),
+        200,
+        'Owner can restore a read grant for lifecycle deletion verification'
+    );
+    $db->prepare('UPDATE nsc_workspace_snapshots SET updated_by = :employee_id WHERE tenant_id = :tenant_id')
+        ->execute(['employee_id' => $lifecycleEmployeeId, 'tenant_id' => $ownerA]);
+    $db->prepare(
+        'INSERT INTO nsc_tenant_settings (tenant_id, default_language, settings_json, revision, updated_by)
+         VALUES (:tenant_id, \'en\', \'{}\', 1, :employee_id)'
+    )->execute(['tenant_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
+    $db->prepare(
+        'UPDATE nsc_user_project_permissions SET granted_by = :employee_id
+         WHERE tenant_id = :tenant_id AND user_id = :employee_id'
+    )->execute(['employee_id' => $lifecycleEmployeeId, 'tenant_id' => $ownerA]);
+
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=delete',
+            $ownerBSession,
+            ['employeeId' => $lifecycleEmployeeId]
+        ),
+        404,
+        'A different tenant owner cannot delete the employee account'
+    );
+    nscIntegrationExpect(
+        nscIntegrationRequest(
+            $server['baseUrl'],
+            'POST',
+            '/employees.php?action=delete',
+            $ownerSession,
+            ['employeeId' => $lifecycleEmployeeId]
+        ),
+        200,
+        'Owner can delete an employee account with historical attribution and grant relationships'
+    );
+    $deletedEmployeeCount = $db->prepare('SELECT COUNT(*) FROM users WHERE id = :employee_id');
+    $deletedEmployeeCount->execute(['employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$deletedEmployeeCount->fetchColumn() === 0, 'Employee user row is removed after successful deletion');
+    $attributionRows = $db->prepare(
+        'SELECT (SELECT updated_by FROM nsc_workspace_snapshots WHERE tenant_id = :snapshot_tenant) AS snapshot_actor,
+                (SELECT updated_by FROM nsc_tenant_settings WHERE tenant_id = :settings_tenant) AS settings_actor'
+    );
+    $attributionRows->execute(['snapshot_tenant' => $ownerA, 'settings_tenant' => $ownerA]);
+    $transferredAttribution = $attributionRows->fetch();
+    nscIntegrationAssert(
+        is_array($transferredAttribution)
+            && (string)$transferredAttribution['snapshot_actor'] === $ownerA
+            && (string)$transferredAttribution['settings_actor'] === $ownerA,
+        'Snapshot and tenant-settings attribution is transferred to the owner before employee deletion'
+    );
+    $deletedEmployeeGrants = $db->prepare('SELECT COUNT(*) FROM nsc_user_project_permissions WHERE tenant_id = :tenant_id AND user_id = :employee_id');
+    $deletedEmployeeGrants->execute(['tenant_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$deletedEmployeeGrants->fetchColumn() === 0, 'Employee project grants are removed during deletion');
+    $deletedEmployeeSessions = $db->prepare('SELECT COUNT(*) FROM nsc_auth_sessions WHERE user_id = :employee_id');
+    $deletedEmployeeSessions->execute(['employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$deletedEmployeeSessions->fetchColumn() === 0, 'Employee sessions are removed during deletion');
+    $employeeDeleteAudit = $db->prepare(
+        "SELECT COUNT(*) FROM system_audit_logs
+         WHERE user_id = :owner_id AND action = 'delete' AND module = 'employees' AND record_id = :employee_id"
+    );
+    $employeeDeleteAudit->execute(['owner_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
+    nscIntegrationAssert((int)$employeeDeleteAudit->fetchColumn() > 0, 'Employee deletion writes a server-side owner audit event');
+    $lifecycleAuditRows = $db->prepare(
+        'SELECT action, COUNT(*) AS event_count FROM system_audit_logs
+         WHERE user_id = :owner_id AND module = \'employees\' AND record_id = :employee_id
+         GROUP BY action'
+    );
+    $lifecycleAuditRows->execute(['owner_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
+    $lifecycleAuditCounts = [];
+    foreach ($lifecycleAuditRows->fetchAll() as $auditRow) {
+        $lifecycleAuditCounts[(string)$auditRow['action']] = (int)$auditRow['event_count'];
+    }
+    nscIntegrationAssert(
+        ($lifecycleAuditCounts['create'] ?? 0) >= 1
+            && ($lifecycleAuditCounts['update'] ?? 0) >= 1
+            && ($lifecycleAuditCounts['unlock'] ?? 0) >= 1
+            && ($lifecycleAuditCounts['lock'] ?? 0) >= 1
+            && ($lifecycleAuditCounts['delete'] ?? 0) >= 1,
+        'Create, profile update, lock, unlock, and delete each retain server-side audit events'
+    );
+
     $grantPayload = [
         'userId' => $employeeA,
         'grants' => [['projectId' => 'project-a', 'module' => 'expenses', 'actions' => ['read', 'update']]],

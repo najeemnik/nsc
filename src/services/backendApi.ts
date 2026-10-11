@@ -17,15 +17,37 @@ export interface EmployeeProjectGrant {
   actions: EmployeePermissionAction[];
 }
 
-export interface EmployeeAccessEmployee {
+export type EmployeeRole = 'project_manager' | 'accountant' | 'procurement' | 'viewer';
+
+export interface EmployeeAccountProfile {
   id: string;
   name: string;
   username: string;
   email: string;
   phone?: string | null;
-  role: string;
+  role: EmployeeRole;
   isLocked: boolean;
+}
+
+export interface EmployeeAccessEmployee extends EmployeeAccountProfile {
   grants: EmployeeProjectGrant[];
+}
+
+export interface CreateEmployeeAccountInput {
+  name: string;
+  username: string;
+  email: string;
+  phone?: string | null;
+  password: string;
+  role: EmployeeRole;
+}
+
+export interface UpdateEmployeeAccountInput {
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  password?: string;
+  role?: EmployeeRole;
 }
 
 export interface EmployeeAccessProject {
@@ -169,6 +191,34 @@ class BackendApiService {
     return this.request<{ userId: string; grants: EmployeeProjectGrant[] }>('permissions.php?action=save_grants', {
       method: 'POST',
       body: JSON.stringify({ userId, grants }),
+    });
+  }
+
+  public async createEmployeeAccount(employee: CreateEmployeeAccountInput) {
+    return this.request<{ employee: EmployeeAccountProfile }>('employees.php?action=create', {
+      method: 'POST',
+      body: JSON.stringify(employee),
+    });
+  }
+
+  public async updateEmployeeAccount(employeeId: string, updates: UpdateEmployeeAccountInput) {
+    return this.request<{ employee: EmployeeAccountProfile }>('employees.php?action=update', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId, ...updates }),
+    });
+  }
+
+  public async setEmployeeAccountLocked(employeeId: string, isLocked: boolean) {
+    return this.request<{ employeeId: string; isLocked: boolean }>('employees.php?action=set_lock', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId, isLocked }),
+    });
+  }
+
+  public async deleteEmployeeAccount(employeeId: string) {
+    return this.request<{ employeeId: string; deleted: boolean }>('employees.php?action=delete', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId }),
     });
   }
 

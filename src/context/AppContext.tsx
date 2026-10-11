@@ -46,7 +46,12 @@ import { buildJournal, computeAccountBalances, buildTrialBalance } from '../util
 import { CHART_OF_ACCOUNTS, getAccountName } from '../data/chartOfAccounts';
 import type { Account } from '../data/chartOfAccounts';
 import { computeBudgetReport } from '../utils/budgetUtils';
-import { backendApi } from '../services/backendApi';
+import {
+  backendApi,
+  type CreateEmployeeAccountInput,
+  type EmployeeAccountProfile,
+  type UpdateEmployeeAccountInput,
+} from '../services/backendApi';
 
 interface AppContextType {
   language: Language;
@@ -92,24 +97,10 @@ interface AppContextType {
     subscriptionMonths?: number;
     initialProjectName?: string;
   }) => { success: boolean; user?: User; error?: string };
-  createEmployeeAccount: (employee: {
-    name: string;
-    username: string;
-    email: string;
-    password: string;
-    phone?: string;
-    role: 'accountant' | 'viewer';
-    permissions: User['permissions'];
-  }) => { success: boolean; error?: string };
-  updateEmployeeAccount: (employeeId: string, updates: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    password?: string;
-    permissions?: User['permissions'];
-    active?: boolean;
-  }) => { success: boolean; error?: string };
-  deleteEmployeeAccount: (employeeId: string) => void;
+  createEmployeeAccount: (employee: CreateEmployeeAccountInput) => Promise<{ success: boolean; employee?: EmployeeAccountProfile; error?: string }>;
+  updateEmployeeAccount: (employeeId: string, updates: UpdateEmployeeAccountInput) => Promise<{ success: boolean; employee?: EmployeeAccountProfile; error?: string }>;
+  setEmployeeAccountLocked: (employeeId: string, isLocked: boolean) => Promise<{ success: boolean; isLocked?: boolean; error?: string }>;
+  deleteEmployeeAccount: (employeeId: string) => Promise<{ success: boolean; error?: string }>;
   toggleAiForUser: (userId: string, enabled: boolean) => void;
   updateTenantByMasterAdmin: (userId: string, updates: {
     name?: string;
@@ -1079,33 +1070,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, isLocked };
   };
 
-  const createEmployeeAccount = (_employee: {
-    name: string;
-    username: string;
-    email: string;
-    password: string;
-    phone?: string;
-    role: 'accountant' | 'viewer';
-    permissions: User['permissions'];
-  }): { success: boolean; error?: string } => ({
-    success: false,
-    error: 'Employee account provisioning remains disabled; the server-side account lifecycle API and PHP/MySQL verification are not implemented yet.',
-  });
+  const canManageEmployeeAccounts = () => currentUser?.role === 'admin'
+    && !currentUser.ownerAdminId
+    && !currentUser.isMasterSuperAdmin;
 
-  const updateEmployeeAccount = (_employeeId: string, _updates: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    password?: string;
-    permissions?: User['permissions'];
-    active?: boolean;
-  }): { success: boolean; error?: string } => ({
-    success: false,
-    error: 'Employee account changes remain disabled until a server-side account lifecycle API is implemented and verified.',
-  });
+  const createEmployeeAccount = async (employee: CreateEmployeeAccountInput): Promise<{
+    success: boolean;
+    employee?: EmployeeAccountProfile;
+    error?: string;
+  }> => {
+    if (!canManageEmployeeAccounts()) return { success: false, error: 'Company owner access required.' };
+    const result = await backendApi.createEmployeeAccount(employee);
+    if (!result.success || !result.data?.employee) {
+      return { success: false, error: result.error || 'Employee account could not be created.' };
+    }
+    return { success: true, employee: result.data.employee };
+  };
 
-  const deleteEmployeeAccount = (_employeeId: string) => {
-    console.warn('Employee removal remains disabled until server-side employee management is integrated and tested.');
+  const updateEmployeeAccount = async (employeeId: string, updates: UpdateEmployeeAccountInput): Promise<{
+    success: boolean;
+    employee?: EmployeeAccountProfile;
+    error?: string;
+  }> => {
+    if (!canManageEmployeeAccounts()) return { success: false, error: 'Company owner access required.' };
+    const result = await backendApi.updateEmployeeAccount(employeeId, updates);
+    if (!result.success || !result.data?.employee) {
+      return { success: false, error: result.error || 'Employee account could not be updated.' };
+    }
+    return { success: true, employee: result.data.employee };
+  };
+
+  const setEmployeeAccountLocked = async (employeeId: string, isLocked: boolean): Promise<{
+    success: boolean;
+    isLocked?: boolean;
+    error?: string;
+  }> => {
+    if (!canManageEmployeeAccounts()) return { success: false, error: 'Company owner access required.' };
+    const result = await backendApi.setEmployeeAccountLocked(employeeId, isLocked);
+    if (!result.success || !result.data) {
+      return { success: false, error: result.error || 'Employee account status could not be changed.' };
+    }
+    return { success: true, isLocked: result.data.isLocked };
+  };
+
+  const deleteEmployeeAccount = async (employeeId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!canManageEmployeeAccounts()) return { success: false, error: 'Company owner access required.' };
+    const result = await backendApi.deleteEmployeeAccount(employeeId);
+    if (!result.success || !result.data?.deleted) {
+      return { success: false, error: result.error || 'Employee account could not be deleted.' };
+    }
+    return { success: true };
   };
 
   const toggleAiForUser = (_userId: string, _enabled: boolean) => {
@@ -3154,6 +3168,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toggleLockUserBySuperAdmin,
       createEmployeeAccount,
       updateEmployeeAccount,
+      setEmployeeAccountLocked,
       deleteEmployeeAccount,
       toggleAiForUser,
       updateTenantByMasterAdmin,

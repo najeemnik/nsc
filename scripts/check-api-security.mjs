@@ -27,6 +27,7 @@ const legacyEndpoints = new Set([
 ]);
 const activeEndpoints = new Set([
   'auth.php',
+  'employees.php',
   'office7.php',
   'permissions.php',
   'reports.php',
@@ -86,6 +87,24 @@ for (const fragment of [
   'authenticateUser(false, true)',
 ]) {
   if (!auth.includes(fragment)) errors.push(`auth.php: expected employee/session control is missing (${fragment}).`);
+}
+
+const employees = sources.get('employees.php') || '';
+for (const fragment of [
+  'requireTenantOwner($currentUser)',
+  'nscAclIsOwner($currentUser)',
+  'nscEmployeesLockOwner(',
+  'nscEmployeesLockTarget(',
+  'NSC_EMPLOYEE_ACCOUNT_ROLES',
+  'password_hash($value, PASSWORD_DEFAULT)',
+  'nscEmployeesRevokeSessions(',
+  'nscAclWriteAudit(',
+  'nscAclReadableProjectIds($grants)',
+  'UPDATE nsc_workspace_snapshots SET updated_by = :owner_id',
+  'UPDATE nsc_tenant_settings SET updated_by = :owner_id',
+  'UPDATE nsc_user_project_permissions SET granted_by = :owner_id',
+]) {
+  if (!employees.includes(fragment)) errors.push(`employees.php: expected owner-scoped lifecycle control is missing (${fragment}).`);
 }
 
 const office7 = sources.get('office7.php') || '';
