@@ -536,9 +536,9 @@ try {
          VALUES (:tenant_id, \'en\', \'{}\', 1, :employee_id)'
     )->execute(['tenant_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
     $db->prepare(
-        'UPDATE nsc_user_project_permissions SET granted_by = :employee_id
+        'UPDATE nsc_user_project_permissions SET granted_by = :grantor_id
          WHERE tenant_id = :tenant_id AND user_id = :employee_id'
-    )->execute(['employee_id' => $lifecycleEmployeeId, 'tenant_id' => $ownerA]);
+    )->execute(['grantor_id' => $lifecycleEmployeeId, 'tenant_id' => $ownerA, 'employee_id' => $lifecycleEmployeeId]);
 
     nscIntegrationExpect(
         nscIntegrationRequest(
