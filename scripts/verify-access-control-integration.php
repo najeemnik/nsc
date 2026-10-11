@@ -238,6 +238,100 @@ try {
     nscIntegrationInsertUser($db, $ownerB, null, 'admin', 'owner-b-' . $run);
     nscIntegrationInsertUser($db, $employeeB, $ownerB, 'viewer', 'employee-b-' . $run);
 
+    $legacyProjectStmt = $db->prepare('SELECT tenant_id, project_code, name, approved_budget FROM projects WHERE id = :id');
+    $legacyProjectStmt->execute(['id' => 'nsc-ci-legacy-project']);
+    $legacyProject = $legacyProjectStmt->fetch();
+    nscIntegrationAssert(
+        is_array($legacyProject)
+            && $legacyProject['tenant_id'] === null
+            && $legacyProject['project_code'] === 'NSC-CI-LEGACY'
+            && $legacyProject['name'] === 'CI legacy project'
+            && (float)$legacyProject['approved_budget'] === 321.0,
+        'Migration preserves legacy projects without guessing tenant ownership'
+    );
+    $legacyBudgetStmt = $db->prepare('SELECT tenant_id, project_id, budgeted_amount FROM project_budgets WHERE id = :id');
+    $legacyBudgetStmt->execute(['id' => 'nsc-ci-legacy-budget']);
+    $legacyBudget = $legacyBudgetStmt->fetch();
+    nscIntegrationAssert(
+        is_array($legacyBudget)
+            && $legacyBudget['tenant_id'] === null
+            && $legacyBudget['project_id'] === 'nsc-ci-legacy-project'
+            && (float)$legacyBudget['budgeted_amount'] === 123.45,
+        'Migration preserves unscoped legacy budgets until their project is explicitly mapped'
+    );
+    $mappedBudgetStmt = $db->prepare(
+        'SELECT project.tenant_id AS project_tenant_id, budget.tenant_id AS budget_tenant_id, budget.project_id
+         FROM projects AS project
+         INNER JOIN project_budgets AS budget ON budget.project_id = project.id
+         WHERE project.id = :project_id AND budget.id = :budget_id'
+    );
+    $mappedBudgetStmt->execute(['project_id' => 'nsc-ci-mapped-project', 'budget_id' => 'nsc-ci-mapped-budget']);
+    $mappedBudget = $mappedBudgetStmt->fetch();
+    nscIntegrationAssert(
+        is_array($mappedBudget)
+            && $mappedBudget['project_tenant_id'] === 'nsc-ci-mapped-owner'
+            && $mappedBudget['budget_tenant_id'] === 'nsc-ci-mapped-owner'
+            && $mappedBudget['project_id'] === 'nsc-ci-mapped-project',
+        'Migration derives a budget tenant only from an explicitly mapped project'
+    );
+
+    $projectInsert = $db->prepare(
+        'INSERT INTO projects (id, tenant_id, project_code, name, created_by)
+         VALUES (:id, :tenant_id, :project_code, :name, :created_by)'
+    );
+    $projectA = 'ci-project-a-' . $run;
+    $projectB = 'ci-project-b-' . $run;
+    $projectInsert->execute([
+        'id' => $projectA,
+        'tenant_id' => $ownerA,
+        'project_code' => 'CI-A-' . $run,
+        'name' => 'Tenant A relational project',
+        'created_by' => $ownerA,
+    ]);
+    $projectInsert->execute([
+        'id' => $projectB,
+        'tenant_id' => $ownerB,
+        'project_code' => 'CI-B-' . $run,
+        'name' => 'Tenant B relational project',
+        'created_by' => $ownerB,
+    ]);
+    $budgetInsert = $db->prepare(
+        'INSERT INTO project_budgets (id, project_id, tenant_id, category_code, category_name, budgeted_amount)
+         VALUES (:id, :project_id, :tenant_id, :category_code, :category_name, :amount)'
+    );
+    $budgetInsert->execute([
+        'id' => 'ci-budget-a-' . $run,
+        'project_id' => $projectA,
+        'tenant_id' => $ownerA,
+        'category_code' => 'ci-a',
+        'category_name' => 'Tenant A test budget',
+        'amount' => 100,
+    ]);
+    $budgetInsert->execute([
+        'id' => 'ci-budget-b-' . $run,
+        'project_id' => $projectB,
+        'tenant_id' => $ownerB,
+        'category_code' => 'ci-b',
+        'category_name' => 'Tenant B test budget',
+        'amount' => 200,
+    ]);
+    nscIntegrationAssert(true, 'Project and budget rows accept matching tenant ownership');
+    $crossTenantBudgetRejected = false;
+    try {
+        $budgetInsert->execute([
+            'id' => 'ci-budget-cross-' . $run,
+            'project_id' => $projectA,
+            'tenant_id' => $ownerB,
+            'category_code' => 'ci-cross',
+            'category_name' => 'Must be rejected',
+            'amount' => 999,
+        ]);
+    } catch (PDOException $error) {
+        if ((string)($error->errorInfo[0] ?? '') !== '23000') throw $error;
+        $crossTenantBudgetRejected = true;
+    }
+    nscIntegrationAssert($crossTenantBudgetRejected, 'Composite project-budget foreign key rejects cross-tenant attribution');
+
     $ownerWorkspace = [
         'projects' => [
             ['id' => 'project-a', 'name' => 'Project A', 'projectCode' => 'A', 'status' => 'active', 'contractValue' => 1000],
