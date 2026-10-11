@@ -53,7 +53,7 @@ jobs:
       NSC_EMPLOYEE_ACCESS_ENABLED: "false"
     steps:
       - name: Check out source
-        uses: actions/checkout@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
@@ -63,7 +63,7 @@ jobs:
           coverage: none
 
       - name: Set up Node.js
-        uses: actions/setup-node@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: "22"
           cache: npm
