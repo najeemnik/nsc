@@ -1028,7 +1028,12 @@ try {
 
     fwrite(STDOUT, "All PHP/MySQL access-control HTTP integration checks passed.\n");
 } catch (Throwable $error) {
-    fwrite(STDERR, $error->getMessage() . "\n");
+    $failureMessage = $error->getMessage();
+    fwrite(STDERR, $failureMessage . "\n");
+    if (getenv('GITHUB_ACTIONS') === 'true') {
+        $annotationMessage = preg_replace('/[\r\n]+/', ' ', $failureMessage) ?? 'Integration check failed.';
+        fwrite(STDERR, '::error title=Disposable PHP-MySQL integration failure::' . substr($annotationMessage, 0, 1200) . "\n");
+    }
     if ($server !== null && is_file($server['logPath'])) {
         fwrite(STDERR, "--- PHP server log ---\n" . (string)file_get_contents($server['logPath']) . "\n--- end server log ---\n");
     }
