@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { isCurrentLanguage, localizeText } from '../../i18n/localize';
 import { 
   Sliders, 
   DollarSign, 
@@ -10,7 +11,6 @@ import {
   Download, 
   RefreshCw, 
   Save, 
-  CheckCircle2, 
   Moon, 
   Sun, 
   SunMoon,
@@ -19,7 +19,7 @@ import {
   HardDrive,
   Globe 
 } from 'lucide-react';
-import { AppTheme } from '../../types';
+import { AppTheme, NotificationCategory } from '../../types';
 import { backendApi } from '../../services/backendApi';
 
 const THEME_OPTIONS: { id: AppTheme; labelKey: string; swatch: string }[] = [
@@ -31,7 +31,16 @@ const THEME_OPTIONS: { id: AppTheme; labelKey: string; swatch: string }[] = [
   { id: 'ar_morphism',     labelKey: 'themeArmorphism',      swatch: 'linear-gradient(135deg, #0e7490, #22d3ee)' },
   { id: 'cosmic_orange',   labelKey: 'themeCosmicOrange',    swatch: 'linear-gradient(135deg, #fff7ed, #f96b1f)' },
   { id: 'blue_titanium',   labelKey: 'themeBlueTitanium',    swatch: 'linear-gradient(135deg, #eaf1fb, #3b6fe0)' },
-  { id: 'desert_titanium', labelKey: 'themeDesertTitanium',  swatch: 'linear-gradient(135deg, #faf3e3, #c08a3e)' },
+  { id: 'desert_titanium', labelKey: 'themeDesertTitanium', swatch: 'linear-gradient(135deg, #faf3e3, #c08a3e)' },
+];
+
+const NOTIFICATION_OPTIONS: Array<{ key: NotificationCategory; en: string; fa: string; ps: string }> = [
+  { key: 'installments', en: 'Apartment installment reminders', fa: 'یادآوری اقساط اپارتمان‌ها', ps: 'د اپارتمانونو د قسطونو یادونې' },
+  { key: 'purchases', en: 'Unpaid purchase alerts', fa: 'هشدار خریدهای پرداخت‌نشده', ps: 'د نه‌ورکړل شوو پېرودونو خبرتیاوې' },
+  { key: 'debts', en: 'Outstanding debt notices', fa: 'یادآوری بدهی‌های باقی‌مانده', ps: 'د پاتې پورونو خبرتیاوې' },
+  { key: 'documents', en: 'Missing document alerts', fa: 'هشدار اسناد ناقص', ps: 'د نیمګړو اسنادو خبرتیاوې' },
+  { key: 'projects', en: 'Project inactivity reminders', fa: 'یادآوری بی‌فعالیتی پروژه', ps: 'د پروژې د نه‌فعالیت یادونې' },
+  { key: 'financial', en: 'General financial notices', fa: 'هشدارهای عمومی مالی', ps: 'عمومي مالي خبرتیاوې' },
 ];
 
 interface SettingsViewProps {
@@ -55,6 +64,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
     themeSchedule,
     setThemeSchedule
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [usdRate, setUsdRate] = useState((appSettings.exchangeRateUSDToAFN || 70.5).toString());
   const [companyName, setCompanyName] = useState(appSettings.companyName || 'NIK SMART COUNT');
@@ -62,6 +72,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [testingDb, setTestingDb] = useState(false);
   const [dbStatus, setDbStatus] = useState<{ checked: boolean; ok: boolean; message: string } | null>(null);
+  const notificationPreferences = {
+    installments: true,
+    purchases: true,
+    debts: true,
+    documents: true,
+    projects: true,
+    financial: true,
+    ...appSettings.notificationPreferences,
+  };
+
+  const toggleNotificationPreference = (key: NotificationCategory, enabled: boolean) => {
+    updateAppSettings({
+      notificationPreferences: { ...notificationPreferences, [key]: enabled },
+    });
+  };
 
   const handleTestDatabaseConnection = async () => {
     setTestingDb(true);
@@ -72,20 +97,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
         setDbStatus({
           checked: true,
           ok: true,
-          message: language === 'fa' ? 'ارتباط با هاست Shahhost و پایگاه داده MySQL برقرار است.' : 'Connected to Shahhost MySQL Server.'
+          message: tx('Connected to Shahhost MySQL Server.', 'ارتباط با هاست Shahhost و پایگاه داده MySQL برقرار است.', 'د Shahhost کوربه او MySQL ډیټابېس سره اړیکه ټینګه ده.')
         });
       } else {
         setDbStatus({
           checked: true,
           ok: false,
-          message: res.error || (language === 'fa' ? 'سرور هنوز کانفیگ نشده است یا برنامه در حالت لوکال کش کار می‌کند.' : 'Server offline, running in local cached mode.')
+          message: tx('The server could not be reached; check the server configuration.', 'سرور در دسترس نیست؛ تنظیمات سرور را بررسی کنید.', 'سرور ته لاسرسی نشته؛ د سرور امستنې وګورئ.')
         });
       }
-    } catch (e: any) {
+    } catch {
       setDbStatus({
         checked: true,
         ok: false,
-        message: e.message || 'خطا در برقراری تماس با هاست.'
+        message: tx('Could not contact the server.', 'تماس با سرور برقرار نشد.', 'له سرور سره اړیکه ټینګه نه شوه.')
       });
     } finally {
       setTestingDb(false);
@@ -115,10 +140,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
       reader.onload = (event) => {
         try {
           const json = JSON.parse(event.target?.result as string);
-          importBackupJSON(json);
-          alert('Database restored successfully from local file!');
-        } catch (err: any) {
-          alert('Failed to parse backup file: ' + err.message);
+          const result = importBackupJSON(json);
+          if (!result.success) throw new Error('invalid-backup');
+          alert(tx('Backup validated and queued for server save. Check the database status banner before leaving this page.', 'پشتیبان بررسی شد و برای ذخیره در سرور فرستاده شد. پیش از ترک صفحه، وضعیت پایگاه داده را ببینید.', 'بیک‌اپ تایید شو او سرور ته د خوندي کولو لپاره ولېږل شو. له پاڼې وتلو مخکې د ډیټابېس حالت وګورئ.'));
+        } catch {
+          alert(tx('The backup file could not be read or validated.', 'خواندن یا بررسی فایل پشتیبان ممکن نشد.', 'د بیک‌اپ فایل لوستل یا تاییدول ممکن نه شول.'));
         }
       };
       reader.readAsText(file);
@@ -131,7 +157,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
       <div>
         <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
           <Sliders className="w-6 h-6 text-amber-500" />
-          <span>{t('companySettings') || 'Company & System Settings'}</span>
+          <span>{t('companySettings') || t("companySettings")}</span>
         </h1>
         <p className="text-xs text-ink-muted mt-1">
           {t('settingsDesc') || 'Configure currency exchange rates, cloud storage, themes and backup policies'}
@@ -139,9 +165,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
       </div>
 
       {savedSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{t('settingsSavedSuccess') || 'Settings saved successfully!'}</span>
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+          <Save className="w-4 h-4" />
+          <span>
+            {tx('Settings update queued for server autosave; check the database status banner.', 'تغییرات تنظیمات برای ذخیرهٔ خودکار در سرور فرستاده شد؛ وضعیت پایگاه داده را بررسی کنید.', 'د ترتیباتو بدلونونه سرور ته د اتومات خوندي کولو لپاره ولېږل شول؛ د ډیټابېس حالت وګورئ.')}
+          </span>
         </div>
       )}
 
@@ -188,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
 
         {/* Day / Night schedule */}
         <div>
-          <p className="text-xs font-black text-ink mb-2">{t('darkModeToggle') || 'Dark / Light Mode'}</p>
+          <p className="text-xs font-black text-ink mb-2">{t('darkModeToggle') || t("darkModeToggle")}</p>
           <div className="flex flex-wrap gap-2">
             {([
               { id: 'auto' as const, label: t('autoMode') || 'Auto', icon: <SunMoon className="w-3.5 h-3.5" /> },
@@ -259,8 +287,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
               onChange={e => setDefaultCurrency(e.target.value)}
               className="w-full px-4 py-2.5 bg-surface-2 border border-line rounded-xl text-xs"
             >
-              <option value="USD">USD ($ - US Dollar)</option>
-              <option value="AFN">AFN (؋ - Afghan Afghani)</option>
+              <option value="USD">USD ($ - {tx('US Dollar', 'دالر آمریکایی', 'امریکايي ډالر')})</option>
+              <option value="AFN">AFN (؋ - {tx('Afghan Afghani', 'افغانی', 'افغانۍ')})</option>
             </select>
           </div>
 
@@ -274,28 +302,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
                 type="button"
                 onClick={() => setLanguage('fa')}
                 className={`flex-1 py-2 text-xs rounded-xl font-bold transition ${
-                  language === 'fa' ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
+                  isCurrentLanguage(language, 'fa') ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
                 }`}
               >
-                دری (Farsi)
+                {tx('Afghan Dari', 'دری افغانستان', 'افغان دری')}
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage('ps')}
                 className={`flex-1 py-2 text-xs rounded-xl font-bold transition ${
-                  language === 'ps' ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
+                  isCurrentLanguage(language, 'ps') ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
                 }`}
               >
-                پښتو (Pashto)
+                {tx('Pashto', 'پشتو', 'پښتو')}
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
                 className={`flex-1 py-2 text-xs rounded-xl font-bold transition ${
-                  language === 'en' ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
+                  isCurrentLanguage(language, 'en') ? 'bg-blue-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'
                 }`}
               >
-                English
+                {tx('English', 'انگلیسی', 'انګلیسي')}
               </button>
             </div>
           </div>
@@ -311,6 +339,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
           </button>
         </div>
       </form>
+
+      {/* Persisted notification category preferences */}
+      <section className="p-6 rounded-3xl bg-surface border border-line shadow-sm space-y-4">
+        <div>
+          <h2 className="text-sm font-black text-ink">
+            {tx('Notification preferences', 'ترجیحات اعلان‌ها', 'د خبرتیاوو غوره‌توبونه')}
+          </h2>
+          <p className="text-xs text-ink-muted mt-1">
+            {tx('Choose which business categories may generate reminders.', 'انتخاب کنید برای کدام بخش‌های کاری یادآوری ایجاد شود.', 'وټاکئ چې د کومو کاري برخو لپاره یادونې جوړې شي.')}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {NOTIFICATION_OPTIONS.map(option => (
+            <label key={option.key} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-2 border border-line cursor-pointer">
+              <span className="text-xs font-semibold text-ink">
+                {localizeText(language, { en: option.en, fa: option.fa, ps: option.ps })}
+              </span>
+              <input
+                type="checkbox"
+                checked={notificationPreferences[option.key] !== false}
+                onChange={event => toggleNotificationPreference(option.key, event.target.checked)}
+                className="w-4 h-4 accent-amber-600 shrink-0"
+              />
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] text-ink-muted">
+          {tx('Changes are queued for the owner workspace autosave; verify the database status banner above.', 'تغییرات برای ذخیرهٔ خودکار فضای کاری مالک فرستاده می‌شود؛ وضعیت پایگاه داده را در نوار بالا بررسی کنید.', 'بدلونونه د مالک د کاري ځای د اتومات خوندي کولو لپاره لېږل کېږي؛ پورته د ډیټابېس حالت وګورئ.')}
+        </p>
+      </section>
 
       {/* Cloud & Backup Section */}
       <div className="p-6 rounded-3xl bg-surface border border-line shadow-sm space-y-4">
@@ -358,31 +416,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
             </div>
             <div>
               <h3 className="font-bold text-base text-ink">
-                {language === 'fa' ? 'پایگاه داده آنلاین Shahhost (SSD Silver)' : 'Shahhost MySQL Cloud Database'}
+                {tx('Shahhost MySQL Cloud Database', 'پایگاه دادهٔ آنلاین Shahhost (SSD Silver)', 'د Shahhost MySQL کلاوډ ډیټابېس')}
               </h3>
               <p className="text-xs text-ink-muted">
-                {language === 'fa' ? 'پایگاه داده ۲۸ جدولی MySQL با ظرفیت نامحدود و همگام‌سازی ابری' : '28-Table Relational MySQL Architecture with Unlimited Storage'}
+                {tx('Relational MySQL database with cloud synchronization', 'پایگاه دادهٔ رابطه‌ای MySQL با همگام‌سازی ابری', 'اړیکه‌لرونکی MySQL ډیټابېس له کلاوډ همغږۍ سره')}
               </p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            {language === 'fa' ? 'پشتیبانی کامل MySQL & PHP' : 'MySQL & PHP Ready'}
+            {tx('MySQL & PHP support', 'پشتیبانی MySQL و PHP', 'د MySQL او PHP ملاتړ')}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
           <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
-            <span className="text-slate-400 font-medium">{language === 'fa' ? 'نوع هاست و پکیج:' : 'Hosting Tier:'}</span>
+            <span className="text-slate-400 font-medium">{tx('Hosting plan:', 'نوع هاست:', 'د کوربه‌توب بسته:')}</span>
             <p className="font-bold text-ink mt-0.5">Shahhost NVMe SSD Silver</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
-            <span className="text-slate-400 font-medium">{language === 'fa' ? 'جداول فعال پایگاه‌داده:' : 'Database Tables:'}</span>
-            <p className="font-bold text-ink mt-0.5">{language === 'fa' ? '۲۸ جدول یکپارچه (پوشش ۲۳ شیت اکسل)' : '28 Tables (All 23 Sheets)'}</p>
+            <span className="text-slate-400 font-medium">{tx('Database tables:', 'جدول‌های پایگاه داده:', 'د ډیټابېس جدولونه:')}</span>
+            <p className="font-bold text-ink mt-0.5">{tx('Database schema status varies by installation', 'وضعیت ساختار پایگاه داده به نصب بستگی دارد', 'د ډیټابېس جوړښت د نصب له ډول سره بدلېږي')}</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-surface-2 border border-line">
-            <span className="text-slate-400 font-medium">{language === 'fa' ? 'امنیت و کنترل:' : 'Security & Master Gate:'}</span>
-            <p className="font-bold text-ink mt-0.5">{language === 'fa' ? 'دفتر هفت (office_7) فعال' : 'Office 7 Master Active'}</p>
+            <span className="text-slate-400 font-medium">{tx('Security and administration:', 'امنیت و مدیریت:', 'امنیت او اداره:')}</span>
+            <p className="font-bold text-ink mt-0.5">{tx('Office 7 administration', 'مدیریت دفتر هفت', 'د دفتر اووه اداره')}</p>
           </div>
         </div>
 
@@ -394,7 +452,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenGoogleDrive })
             className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${testingDb ? 'animate-spin' : ''}`} />
-            <span>{language === 'fa' ? 'بررسی وضعیت اتصال سرور' : 'Test Server Connectivity'}</span>
+            <span>{tx('Test server connection', 'آزمایش اتصال سرور', 'د سرور اړیکه وازمویئ')}</span>
           </button>
         </div>
 

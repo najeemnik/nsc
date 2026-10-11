@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Labor Wages & Payroll Management API
  * Solves Excel Flaw #3: Labor Directly Connected to Project Actual Costs & P&L

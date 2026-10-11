@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Building2, X, Check, Trash2, AlertCircle } from 'lucide-react';
 import { Project, ProjectStatus } from '../../types';
 
@@ -10,7 +11,8 @@ interface EditProjectModalProps {
 }
 
 export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, project }) => {
-  const { projects, updateProject, deleteProject, t, currentUser } = useApp();
+  const { projects, updateProject, deleteProject, t, currentUser, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [address, setAddress] = useState('');
@@ -51,7 +53,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
     setFormError(null);
 
     if (!name.trim()) {
-      setFormError('نام پروژه الزامی است.');
+      setFormError(tx('Project name is required.', 'نام پروژه الزامی است.', 'د پروژې نوم اړین دی.'));
       return;
     }
 
@@ -59,18 +61,18 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
       p => p.id !== project.id && p.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
     if (isDuplicate) {
-      setFormError(`پروژه‌ای با نام "${name.trim()}" قبلاً وجود دارد.`);
+      setFormError(tx(`A project named ${name.trim()} already exists.`, `پروژه‌ای با نام «${name.trim()}» پیش‌تر وجود دارد.`, `د ${name.trim()} په نوم پروژه مخکې شته.`));
       return;
     }
 
     const parsedFloors = parseInt(floors);
     if (isNaN(parsedFloors) || parsedFloors <= 0) {
-      setFormError('تعداد منازل نامعتبر است.');
+      setFormError(tx('The number of floors is invalid.', 'تعداد منزل‌ها نامعتبر است.', 'د پوړونو شمېر ناسم دی.'));
       return;
     }
 
     if (isNaN(exchangeRate) || exchangeRate <= 0) {
-      setFormError('نرخ اسعار نامعتبر است.');
+      setFormError(tx('The exchange rate is invalid.', 'نرخ اسعار نامعتبر است.', 'د تبادلې نرخ ناسم دی.'));
       return;
     }
 
@@ -94,7 +96,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
   };
 
   const handleDelete = () => {
-    if (window.confirm(t.confirmDeleteProject || 'آیا از حذف دایمی این پروژه اطمینان دارید؟')) {
+    if (window.confirm(t.confirmDeleteProject || tx('Are you sure you want to permanently delete this project?', 'آیا از حذف دایمی این پروژه اطمینان دارید؟', 'ایا ډاډه یاست چې دا پروژه د تل لپاره ړنګول غواړئ؟'))) {
       deleteProject(project.id);
       onClose();
     }
@@ -111,7 +113,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm">{t.editProject || 'ویرایش مشخصات پروژه'}</h3>
+              <h3 className="font-extrabold text-sm">{tx('Edit project details', 'ویرایش مشخصات پروژه', 'د پروژې معلومات سم کړئ')}</h3>
               <p className="text-[11px] text-slate-400">{project.name}</p>
             </div>
           </div>
@@ -137,7 +139,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                {t.projectName || 'نام پروژه'} <span className="text-rose-500">*</span>
+                {t.projectName || tx('Project name', 'نام پروژه', 'د پروژې نوم')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -149,7 +151,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                {t.projectCode || 'کد پروژه'}
+                {t.projectCode || tx('Project code', 'کد پروژه', 'د پروژې کوډ')}
               </label>
               <input
                 type="text"
@@ -163,7 +165,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                {t.city || 'شهر'}
+                {t.city || tx('City', 'شهر', 'ښار')}
               </label>
               <input
                 type="text"
@@ -175,24 +177,24 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                {t.status || 'مرحله کار'}
+                {t.status || tx('Project status', 'مرحلهٔ کار', 'د پروژې حالت')}
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProjectStatus)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
               >
-                <option value="planning">{t.statusPlanning || 'پلان‌گذاری'}</option>
-                <option value="in_construction">{t.statusInConstruction || 'در حال اعمار'}</option>
-                <option value="finishing">{t.statusFinishing || 'نازک‌کاری'}</option>
-                <option value="completed">{t.statusCompleted || 'تکمیل شده'}</option>
+                <option value="planning">{t.statusPlanning || tx('Planning', 'پلان‌گذاری', 'پلان جوړونه')}</option>
+                <option value="in_construction">{t.statusInConstruction || tx('Under construction', 'در حال اعمار', 'د جوړېدو په حال کې')}</option>
+                <option value="finishing">{t.statusFinishing || tx('Finishing', 'نازک‌کاری', 'بشپړکاري')}</option>
+                <option value="completed">{t.statusCompleted || tx('Completed', 'تکمیل‌شده', 'بشپړه شوې')}</option>
               </select>
             </div>
           </div>
 
           <div>
             <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-              {t.address || 'آدرس'}
+              {t.address || tx('Address', 'آدرس', 'پته')}
             </label>
             <input
               type="text"
@@ -205,7 +207,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.floors || 'منازل'}</label>
+              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.floors || tx('Floors', 'منزل‌ها', 'پوړونه')}</label>
               <input
                 type="number"
                 min="1"
@@ -216,7 +218,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.units || 'واحدها'}</label>
+              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.units || tx('Units', 'واحدها', 'واحدونه')}</label>
               <input
                 type="number"
                 min="1"
@@ -227,7 +229,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.areaM2 || 'مساحت زیربنا'}</label>
+              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.areaM2 || tx('Building area (m²)', 'مساحت زیربنا (m²)', 'د ودانۍ مساحت (m²)')}</label>
               <input
                 type="number"
                 step="any"
@@ -240,10 +242,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
 
           {/* Currency and exchange rate */}
           <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-line rounded-2xl space-y-2">
-            <span className="font-bold text-slate-800 dark:text-slate-200 block">واحد اسعار و نرخ صرافی:</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 block">{tx('Project currency and exchange rate:', 'واحد پول و نرخ تبادلهٔ پروژه:', 'د پروژې پولي واحد او د تبادلې نرخ:')}</span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">اسعار پروژه</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">{tx('Project currency', 'واحد پول پروژه', 'د پروژې پولي واحد')}</label>
                 <div className="flex gap-1">
                   <button
                     type="button"
@@ -252,7 +254,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                       currency === 'USD' ? 'bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    دالر ($)
+                    {tx('US dollars ($)', 'دالر ($)', 'امریکايي ډالر ($)')}
                   </button>
                   <button
                     type="button"
@@ -261,12 +263,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                       currency === 'AFN' ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    افغانی
+                    {tx('Afghan afghani', 'افغانی', 'افغانۍ')}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">نرخ برابری (۱ دالر به افغانی)</label>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">{tx('Exchange rate (1 USD to AFN)', 'نرخ تبادله (۱ دالر به افغانی)', 'د تبادلې نرخ (۱ ډالر پر افغانۍ)')}</label>
                 <input
                   type="number"
                   step="any"
@@ -279,7 +281,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.landInfo || 'مشخصات زمین'}</label>
+            <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.landInfo || tx('Land details', 'مشخصات زمین', 'د ځمکې معلومات')}</label>
             <input
               type="text"
               value={landInfo}
@@ -289,7 +291,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.description || 'توضیحات'}</label>
+            <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.description || tx('Description', 'توضیحات', 'تشریح')}</label>
             <textarea
               rows={2}
               value={description}
@@ -307,7 +309,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 className="px-3.5 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-bold flex items-center gap-1.5 transition-colors border border-rose-200 dark:border-rose-900"
               >
                 <Trash2 className="w-4 h-4 text-rose-600" />
-                <span>{t.deleteProject || 'حذف پروژه'}</span>
+                <span>{t.deleteProject || tx('Delete project', 'حذف پروژه', 'پروژه ړنګول')}</span>
               </button>
             ) : <div />}
             
@@ -325,7 +327,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onCl
                 className="px-6 py-2 bg-slate-900 dark:bg-amber-600 hover:bg-slate-800 text-amber-400 dark:text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                <span>{isSubmitting ? 'در حال ثبت...' : t.save}</span>
+                <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : t.save}</span>
               </button>
             </div>
           </div>

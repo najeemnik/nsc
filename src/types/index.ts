@@ -29,7 +29,7 @@ export interface ReportCustomization {
 }
 
 export interface SectionProtectionSettings {
-  passwords: Record<string, string>;
+  /** Legacy presentation flags only; authorization must be enforced by the server. */
   enabled: Record<string, boolean>;
 }
 
@@ -40,6 +40,9 @@ export interface GoogleDriveConfig {
   folderName?: string;
   lastBackupDate?: string;
 }
+
+export type NotificationCategory = 'installments' | 'purchases' | 'debts' | 'documents' | 'projects' | 'financial';
+export type NotificationPreferences = Partial<Record<NotificationCategory, boolean>>;
 
 export interface AppSettings {
   companyName: string;
@@ -64,6 +67,7 @@ export interface AppSettings {
   googleDrive?: GoogleDriveConfig;
   exchangeRateUSDToAFN?: number;
   defaultCurrency?: string;
+  notificationPreferences?: NotificationPreferences;
   enabledModules?: {
     steel?: boolean;
     concrete?: boolean;
@@ -93,6 +97,59 @@ export interface AppSettings {
 
 export type SettlementMode = 'cash' | 'credit' | 'partial';
 
+export interface IncomeRecord {
+  id: string;
+  projectId: string;
+  receivedFrom: string;
+  incomeType: string;
+  amount: number;
+  currency: string;
+  exchangeRate: number;
+  paymentMethod: string;
+  targetAccountId: string;
+  referenceDocumentNo?: string;
+  receivedDate: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface MaterialProcurementRecord {
+  id: string;
+  projectId: string;
+  materialName: string;
+  materialCategory: string;
+  quantity: number;
+  unitOfMeasure: string;
+  unitPrice: number;
+  totalCost: number;
+  currency: string;
+  exchangeRate?: number;
+  /** Server-derived from materialCategory; client values are never trusted. */
+  accountCode?: string;
+  supplierName: string;
+  supplierId?: string;
+  isPaid: boolean;
+  invoiceNo?: string;
+  purchaseDate: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface InterProjectTransferRecord {
+  id: string;
+  fromProjectId: string;
+  toProjectId: string;
+  transferNature: 'funds' | 'materials' | 'equipment';
+  amount: number;
+  currency: string;
+  fromAccount: string;
+  toAccount: string;
+  transferDate: string;
+  approvedBy: string;
+  description?: string;
+  createdAt: string;
+}
+
 export interface UserPermissions {
   allowedTabs?: string[];
   canManageSales?: boolean;
@@ -113,42 +170,60 @@ export interface UserPermissions {
 
 export interface CustomActionButton {
   id: string;
+  actionKey?: string;
   label: string;
+  labelEn?: string;
+  labelFa?: string;
+  labelPs?: string;
   enabled: boolean;
-  color: 'blue' | 'emerald' | 'amber' | 'rose' | 'purple' | 'slate' | 'indigo' | 'orange';
-  shape: 'pill' | 'rounded-xl' | 'rounded-md';
+  isEnabled?: boolean;
+  color: 'blue' | 'emerald' | 'amber' | 'rose' | 'purple' | 'slate' | 'indigo' | 'orange' | 'primary' | 'success' | 'danger' | 'warning' | 'info';
+  shape: 'pill' | 'rounded-xl' | 'rounded-md' | 'rounded' | 'square';
   order: number;
 }
 
 export const DEFAULT_ACTION_BUTTONS: CustomActionButton[] = [
-  { id: 'addExpense', label: 'ثبت مصارف', enabled: true, color: 'blue', shape: 'rounded-xl', order: 1 },
-  { id: 'addPayment', label: 'پرداخت وجه', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 2 },
-  { id: 'addIncome', label: 'دریافت عواید', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 3 },
-  { id: 'addMaterial', label: 'خرید مصالح', enabled: true, color: 'amber', shape: 'rounded-xl', order: 4 },
-  { id: 'addLabor', label: 'معاشات کارگران', enabled: true, color: 'purple', shape: 'rounded-xl', order: 5 },
-  { id: 'addSteel', label: 'سیخ‌گول', enabled: true, color: 'amber', shape: 'rounded-xl', order: 6 },
-  { id: 'addConcrete', label: 'کانکریت', enabled: true, color: 'blue', shape: 'rounded-xl', order: 7 },
-  { id: 'addApartment', label: 'فروش پلاک', enabled: true, color: 'indigo', shape: 'rounded-xl', order: 8 },
-  { id: 'addContractor', label: 'قراردادی جدید', enabled: true, color: 'orange', shape: 'rounded-xl', order: 9 },
-  { id: 'addTransfer', label: 'حواله پروژه‌ای', enabled: true, color: 'purple', shape: 'rounded-xl', order: 10 },
-  { id: 'addPettyCash', label: 'تنخواه کارگاه', enabled: true, color: 'slate', shape: 'rounded-xl', order: 11 },
-  { id: 'addAsset', label: 'ثبت ماشین‌آلات', enabled: true, color: 'amber', shape: 'rounded-xl', order: 12 },
+  { id: 'addExpense', label: 'ثبت مصارف', labelEn: 'Add expense', labelFa: 'ثبت مصارف', labelPs: 'لګښت ثبت کړئ', enabled: true, color: 'blue', shape: 'rounded-xl', order: 1 },
+  { id: 'addPayment', label: 'پرداخت وجه', labelEn: 'Record payment', labelFa: 'پرداخت وجه', labelPs: 'تادیه ثبت کړئ', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 2 },
+  { id: 'addIncome', label: 'دریافت عواید', labelEn: 'Record income', labelFa: 'دریافت عواید', labelPs: 'عاید ثبت کړئ', enabled: true, color: 'emerald', shape: 'rounded-xl', order: 3 },
+  { id: 'addMaterial', label: 'خرید مصالح', labelEn: 'Procure materials', labelFa: 'خرید مصالح', labelPs: 'توکي واخلئ', enabled: true, color: 'amber', shape: 'rounded-xl', order: 4 },
+  { id: 'addLabor', label: 'معاشات کارگران', labelEn: 'Record labor', labelFa: 'معاشات کارگران', labelPs: 'د کارګرانو مزد ثبت کړئ', enabled: true, color: 'purple', shape: 'rounded-xl', order: 5 },
+  { id: 'addSteel', label: 'سیخ‌گول', labelEn: 'Add rebar', labelFa: 'سیخ‌گول', labelPs: 'سیخ‌ګول زیات کړئ', enabled: true, color: 'amber', shape: 'rounded-xl', order: 6 },
+  { id: 'addConcrete', label: 'کانکریت', labelEn: 'Add concrete', labelFa: 'کانکریت', labelPs: 'کانکریټ زیات کړئ', enabled: true, color: 'blue', shape: 'rounded-xl', order: 7 },
+  { id: 'addApartment', label: 'فروش پلاک', labelEn: 'Add apartment sale', labelFa: 'فروش پلاک', labelPs: 'د اپارتمان پلور ثبت کړئ', enabled: true, color: 'indigo', shape: 'rounded-xl', order: 8 },
+  { id: 'addContractor', label: 'قراردادی جدید', labelEn: 'Add contractor', labelFa: 'قراردادی جدید', labelPs: 'قراردادي زیات کړئ', enabled: true, color: 'orange', shape: 'rounded-xl', order: 9 },
+  { id: 'addTransfer', label: 'حواله پروژه‌ای', labelEn: 'Transfer between projects', labelFa: 'حواله پروژه‌ای', labelPs: 'د پروژو ترمنځ لېږد', enabled: true, color: 'purple', shape: 'rounded-xl', order: 10 },
+  { id: 'addPettyCash', label: 'تنخواه کارگاه', labelEn: 'Record petty cash', labelFa: 'تنخواه کارگاه', labelPs: 'کوچني نغدي لګښتونه ثبت کړئ', enabled: true, color: 'slate', shape: 'rounded-xl', order: 11 },
+  { id: 'addAsset', label: 'ثبت ماشین‌آلات', labelEn: 'Add asset', labelFa: 'ثبت ماشین‌آلات', labelPs: 'شتمني ثبت کړئ', enabled: true, color: 'amber', shape: 'rounded-xl', order: 12 },
 ];
 
 export interface CustomBillDesign {
   receiptTitle?: string;
   receiptHeader?: string;
+  receiptSubheader?: string;
   receiptSubtitle?: string;
   receiptFooter?: string;
   receiptContact?: string;
   taxNumber?: string;
   watermarkText?: string;
   themeColor?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  logoPosition?: 'left' | 'center' | 'right' | string;
+  borderStyle?: 'solid' | 'double' | 'dashed' | 'none' | string;
+  termsAndConditions?: string;
+  customNote?: string;
   showStampArea?: boolean;
+  showStampSignature?: boolean;
   showQrCode?: boolean;
+  showWatermark?: boolean;
   showWithholdingTax?: boolean;
   showRetention?: boolean;
-  paperSize?: 'A4' | 'A5' | 'thermal';
+  showRetentionBox?: boolean;
+  paperSize?: 'A4' | 'A5' | 'Letter' | 'thermal' | 'Thermal80mm';
   customNotesHtml?: string;
 }
 
@@ -619,14 +694,15 @@ export interface FixedAsset {
 /* ------------------------------------------------------------------------ */
 /* Accounting / Chart of Accounts / Journal                                  */
 /*                                                                           */
-/* Journal entries are DERIVED from operational records (expenses, steel,    */
-/* concrete, payments, apartment sales, partner investments) by the journal  */
+/* Journal entries are DERIVED from operational records (expenses, materials, */
+/* steel, concrete, payments, apartment sales, partner investments) by the engine */
 /* engine (`src/utils/journalEngine.ts`). They are a pure projection — never */
 /* edited directly, never out of sync with the underlying business data.     */
 /* ------------------------------------------------------------------------ */
 
 export type JournalSourceType =
   | 'expense'
+  | 'material'
   | 'steel'
   | 'concrete'
   | 'payment'
@@ -635,12 +711,12 @@ export type JournalSourceType =
   | 'adjustment';
 
 export interface JournalLine {
-  /** 4-digit account code from the Chart of Accounts */
+  /** COA account code (legacy four-digit or detailed five-digit) */
   accountCode: string;
   /**
    * Phase 3 (WIP): when a construction cost line is capitalized into 1500
-   * WIP, this field preserves the natural cost classification (e.g. '5100'
-   * Steel) so cost-detail reports stay possible alongside the functional
+   * WIP, this field preserves the natural cost classification (e.g. '51001'
+   * Rebar) so cost-detail reports stay possible alongside the functional
    * WIP/COGS presentation.
    */
   costAccountCode?: string;
@@ -706,14 +782,14 @@ export interface TrialBalanceRow {
 /* One budget line per (projectId, accountCode). The accountCode links the   */
 /* budget directly into the Chart of Accounts — no parallel/duplicate        */
 /* category system. Actual spending is derived live from purchases           */
-/* (expenses / steel / concrete) via the same category→account mapping the   */
+/* (expenses / materials / steel / concrete) via the same category mapping  */
 /* journal engine uses, so Budget vs Actual can never disagree by mapping.   */
 /* ------------------------------------------------------------------------ */
 
 export interface ProjectBudget {
   id: string;
   projectId: string;
-  /** 4-digit COA code (normally a 5xxx project-cost account) */
+  /** COA code (four-digit parent or five-digit posting detail account) */
   accountCode: string;
   amount: number;
   currency: string;

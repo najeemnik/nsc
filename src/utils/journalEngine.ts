@@ -18,15 +18,12 @@
  * the journal can never drift out of sync with the UI data.
  *
  * Posting conventions (documented — do not change silently):
- *  - Purchases (expense/steel/concrete) post FULLY on credit: the purchase
- *    entry debits the Work-in-Progress asset (1500) — Phase 3 developer
- *    model — and credits the payable account for the full amount. The
- *    natural cost classification (5100 Steel, 5200 Concrete...) is kept on
- *    the Dr line as `costAccountCode` for detail reporting. All settlements
- *    (including the amount paid at purchase time, which the app
- *    materializes as a Payment record) post as Dr payable / Cr cash. The
- *    payable balance therefore always equals the outstanding debt shown in
- *    the UI.
+ *  - Construction purchases (expenses, steel, concrete and materials) debit
+ *    the Work-in-Progress asset (1500) and retain their natural cost account
+ *    on the WIP line as `costAccountCode` for detail reporting. Expense,
+ *    steel and concrete settlements are separate Payment records; material
+ *    procurements use their `isPaid` flag to credit cash or supplier payables
+ *    directly. This keeps the journal aligned with each source's data model.
  *  - WIP → COGS (Phase 3): when a unit is SOLD, its area-proportional
  *    share of the project's cost pool is relieved with a reclass entry
  *    `Dr 5050 Cost of Units Sold / Cr 1500 WIP`. WIP's remaining balance
@@ -51,6 +48,7 @@ import {
   Expense,
   SteelRecord,
   ConcreteRecord,
+  MaterialProcurementRecord,
   Payment,
   ApartmentUnit,
   ProjectInvestment,
@@ -67,6 +65,7 @@ import {
   getAccount,
   getAncestorCodes,
   resolveExpenseAccount,
+  resolveMaterialAccount,
 } from '../data/chartOfAccounts';
 import { computeProjectCostPoolUSD, computeSellableAreaM2, allocateUnitCostUSD } from './wipAllocation';
 
@@ -216,6 +215,7 @@ export interface JournalBuildInput {
   expenses: Expense[];
   steelRecords: SteelRecord[];
   concreteRecords: ConcreteRecord[];
+  materialProcurements?: MaterialProcurementRecord[];
   payments: Payment[];
   apartments: ApartmentUnit[];
   projectInvestments: ProjectInvestment[];
@@ -380,7 +380,35 @@ export function buildJournal(input: JournalBuildInput): JournalEntry[] {
     }
   }
 
-  /* ------------------- 4. Standalone settlements (payments) ------------------- */
+  /* ------------------- 4. Material procurements ------------------- */
+  for (const rec of input.materialProcurements || []) {
+    const currency = rec.currency || 'USD';
+    const rate = rateOf(rec.projectId, rec.exchangeRate);
+    const quantityCost = Number(rec.quantity || 0) * Number(rec.unitPrice || 0);
+    const amount = round2(Number(rec.totalCost || 0) || quantityCost);
+    if (amount <= 0) continue;
+
+    const costAccount = resolveMaterialAccount(rec.materialCategory);
+    const settlementAccount = rec.isPaid
+      ? getCashAccountCode(undefined, currency)
+      : ACC.SUPPLIER_PAYABLES;
+    entries.push(makeEntry({
+      sourceType: 'material',
+      sourceId: rec.id,
+      date: rec.purchaseDate,
+      projectId: rec.projectId,
+      description: `خرید مصالح: ${rec.materialName}`,
+      currency,
+      exchangeRate: rate,
+      idSuffix: 'purchase',
+      lines: [
+        { accountCode: ACC.WIP, costAccountCode: costAccount, debit: amount, memo: rec.materialName },
+        { accountCode: settlementAccount, credit: amount, memo: rec.supplierName || undefined },
+      ],
+    }));
+  }
+
+  /* ------------------- 5. Standalone settlements (payments) ------------------- */
   const purchaseIds = {
     expense: new Set(input.expenses.map(e => e.id)),
     steel: new Set(input.steelRecords.map(s => s.id)),
@@ -491,7 +519,7 @@ export function buildJournal(input: JournalBuildInput): JournalEntry[] {
     void purchaseIds;
   }
 
-  /* ------------------- 5. Apartment sales & receipts ------------------- */
+  /* ------------------- 6. Apartment sales & receipts ------------------- */
   // Phase 3: per-project WIP cost pool + total sellable area, used to
   // relieve sold units' area-proportional cost share from WIP to COGS.
   const wipContext = new Map<string, { poolUSD: number; sellableAreaM2: number }>();
@@ -507,6 +535,7 @@ export function buildJournal(input: JournalBuildInput): JournalEntry[] {
           expenses: input.expenses,
           steelRecords: input.steelRecords,
           concreteRecords: input.concreteRecords,
+          materialProcurements: input.materialProcurements,
         }),
         sellableAreaM2: computeSellableAreaM2(projectUnits, proj),
       });
@@ -612,7 +641,7 @@ export function buildJournal(input: JournalBuildInput): JournalEntry[] {
     }
   }
 
-  /* ------------------- 6. Partner investments ------------------- */
+  /* ------------------- 7. Partner investments ------------------- */
   for (const inv of input.projectInvestments) {
     const currency = inv.currency || 'AFN';
     const rate = rateOf(inv.projectId, inv.exchangeRate);

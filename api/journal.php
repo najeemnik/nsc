@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Double-Entry General Journal & Adjustments API
  * Solves Excel Flaw #5: Strict Balanced Journal System (Total Debits == Total Credits)

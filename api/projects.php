@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Project Master & Budget API
  * Manages Projects, Budgets, and Cost Allocation

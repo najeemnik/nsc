@@ -1,3 +1,7 @@
+-- SAFE BASE SCHEMA: create-only, no DROP/TRUNCATE statements, no demo users or sample financial records.
+-- Re-running this file will not delete existing rows. Existing table changes must be applied
+-- through versioned files under database/migrations/ after a verified backup.
+-- Runtime credentials and initial owner accounts are provisioned outside this SQL file.
 -- =====================================================================
 -- NSC ERP & CONSTRUCTION FINANCE DATABASE SCHEMA
 -- نظام یکپارچه مالی، کنترول مصارف پروژه و مدیریت ساختمانی
@@ -5,17 +9,16 @@
 -- Character Set: utf8mb4 (Full Dari / Pashto / Persian Unicode Support)
 -- =====================================================================
 
-SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 -- ---------------------------------------------------------------------
 -- 1. جدول مشخصات شرکت و تنظیمات عمومی (Company Setup)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `company_profiles`;
-CREATE TABLE `company_profiles` (
+CREATE TABLE IF NOT EXISTS `company_profiles` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `company_name` VARCHAR(255) NOT NULL,
+  `default_language` ENUM('en', 'fa', 'ps') NOT NULL DEFAULT 'en',
   `registration_no` VARCHAR(100) NULL,
   `tax_tin_number` VARCHAR(100) NULL,
   `primary_currency` VARCHAR(10) NOT NULL DEFAULT 'AFN',
@@ -35,8 +38,7 @@ CREATE TABLE `company_profiles` (
 -- 2. جدول کاربران و سطوح امنیتی (Users, Authentication & Roles)
 -- حل اساسی نقایص امنیتی: کلمات عبور بصورت هش رمزگذاری شده (bcrypt)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `users`;
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `owner_admin_id` VARCHAR(36) NULL COMMENT 'ارتباط کارمند با مالک اصلی شرکت',
   `name` VARCHAR(150) NOT NULL,
@@ -66,8 +68,7 @@ CREATE TABLE `users` (
 -- 3. جدول پیکربندی دفتر هفت (Office 7 Master Control)
 -- مدیریت اختصاصی پرمیژن‌ها، سرویس‌ها، ماژول‌ها و امنیت مالک کل سیستم
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `office7_tenant_configs`;
-CREATE TABLE `office7_tenant_configs` (
+CREATE TABLE IF NOT EXISTS `office7_tenant_configs` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `tenant_user_id` VARCHAR(36) NOT NULL UNIQUE,
   `gate_key_hash` VARCHAR(255) NULL COMMENT 'کلید اختصاصی دروازه امنیتی دفتر هفت',
@@ -86,8 +87,7 @@ CREATE TABLE `office7_tenant_configs` (
 -- 4. دوره‌های مالی و سال حسابداری (Fiscal Periods)
 -- حل مشکل شماره ۱ اکسل: تفکیک دقیق سال + ماه مالی و جلوگیری از خلط اطلاعات
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `fiscal_periods`;
-CREATE TABLE `fiscal_periods` (
+CREATE TABLE IF NOT EXISTS `fiscal_periods` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `fiscal_year` INT NOT NULL,
   `period_month` INT NOT NULL,
@@ -103,8 +103,7 @@ CREATE TABLE `fiscal_periods` (
 -- ---------------------------------------------------------------------
 -- 5. شناسنامه و اطلاعات اصلی پروژه‌ها (Project Master)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `projects`;
-CREATE TABLE `projects` (
+CREATE TABLE IF NOT EXISTS `projects` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_code` VARCHAR(50) NOT NULL UNIQUE,
   `name` VARCHAR(255) NOT NULL,
@@ -131,8 +130,7 @@ CREATE TABLE `projects` (
 -- 6. بودجه‌بندی تفصیلی پروژه‌ها بر اساس سرفصل (Project Budgets)
 -- مقایسه بودجه پیش‌بینی‌شده با هزینه واقعی (Budget vs Actual)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `project_budgets`;
-CREATE TABLE `project_budgets` (
+CREATE TABLE IF NOT EXISTS `project_budgets` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_id` VARCHAR(36) NOT NULL,
   `category_code` VARCHAR(60) NOT NULL,
@@ -149,25 +147,36 @@ CREATE TABLE `project_budgets` (
 -- 7. درختواره و کدینگ حساب‌ها (Chart of Accounts)
 -- حل مشکل شماره ۵ اکسل: ساختار واقعی حسابداری دوطرفه
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `chart_of_accounts`;
-CREATE TABLE `chart_of_accounts` (
+CREATE TABLE IF NOT EXISTS `chart_of_accounts` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `account_code` VARCHAR(50) NOT NULL UNIQUE,
   `account_name` VARCHAR(200) NOT NULL,
   `account_type` ENUM('asset', 'liability', 'equity', 'revenue', 'expense') NOT NULL,
   `parent_account_id` VARCHAR(36) NULL,
   `is_system_locked` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_header` TINYINT(1) NOT NULL DEFAULT 0,
   `normal_balance` ENUM('debit', 'credit') NOT NULL,
   `current_balance` DECIMAL(16, 2) NOT NULL DEFAULT 0.00,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_coa_type` (`account_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Stable procurement category identifiers map to COA codes; free-text product
+-- names, brands and package sizes are deliberately not separate GL accounts.
+CREATE TABLE IF NOT EXISTS `material_category_account_map` (
+  `category_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+  `account_code` VARCHAR(50) NOT NULL,
+  `is_legacy` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_material_category_account`
+    FOREIGN KEY (`account_code`) REFERENCES `chart_of_accounts` (`account_code`) ON DELETE RESTRICT,
+  INDEX `idx_material_category_account_code` (`account_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------------
 -- 8. حساب‌های بانکی، صندوق مرکزی و تنخواه‌گردان (Treasury, Bank & Cash)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `treasury_accounts`;
-CREATE TABLE `treasury_accounts` (
+CREATE TABLE IF NOT EXISTS `treasury_accounts` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `account_type` ENUM('bank', 'central_cash', 'petty_cash') NOT NULL,
   `account_name` VARCHAR(150) NOT NULL,
@@ -186,8 +195,7 @@ CREATE TABLE `treasury_accounts` (
 -- 9. تأمین‌کنندگان و فروشندگان مصالح (Suppliers)
 -- حل مشکل شماره ۴ اکسل: محاسبه خودکار صورت‌حساب و مانده بدهی/طلب
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `suppliers`;
-CREATE TABLE `suppliers` (
+CREATE TABLE IF NOT EXISTS `suppliers` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `supplier_name` VARCHAR(200) NOT NULL,
   `contact_person` VARCHAR(150) NULL,
@@ -207,8 +215,7 @@ CREATE TABLE `suppliers` (
 -- ---------------------------------------------------------------------
 -- 10. مقاطعه‌کاران و پیمانکاران فرعی (Subcontractors)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `subcontractors`;
-CREATE TABLE `subcontractors` (
+CREATE TABLE IF NOT EXISTS `subcontractors` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `contractor_name` VARCHAR(200) NOT NULL,
   `trade_specialty` VARCHAR(150) NOT NULL,
@@ -229,8 +236,7 @@ CREATE TABLE `subcontractors` (
 -- 11. مشتریان و خریداران پلاک‌ها/واحدها (Clients & Unit Sales)
 -- مدیریت مطالبات شرکت (Customer Register & Receivables)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `clients`;
-CREATE TABLE `clients` (
+CREATE TABLE IF NOT EXISTS `clients` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `client_name` VARCHAR(200) NOT NULL,
   `phone` VARCHAR(50) NOT NULL,
@@ -247,8 +253,7 @@ CREATE TABLE `clients` (
 -- 12. واحدها، اپارتمان‌ها و دکان‌های تجاری (Apartment & Commercial Units)
 -- ادغام تخصصی ماژول پیش‌فروش‌های NSC
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `apartment_units`;
-CREATE TABLE `apartment_units` (
+CREATE TABLE IF NOT EXISTS `apartment_units` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_id` VARCHAR(36) NOT NULL,
   `unit_number` VARCHAR(50) NOT NULL,
@@ -271,8 +276,7 @@ CREATE TABLE `apartment_units` (
 -- 13. دفتر پرداخت‌ها و مصارف پروژه (Payment Register & Actual Costs)
 -- ستون فقرات محاسبه مصارف واقعی پروژه در سود و زیان
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `payment_vouchers`;
-CREATE TABLE `payment_vouchers` (
+CREATE TABLE IF NOT EXISTS `payment_vouchers` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `voucher_no` VARCHAR(50) NOT NULL UNIQUE,
   `project_id` VARCHAR(36) NOT NULL,
@@ -305,14 +309,14 @@ CREATE TABLE `payment_vouchers` (
 -- 14. تدارکات و خرید مصالح ساختمانی (Material Purchases)
 -- حل مشکل شماره ۲ اکسل: اتصال مستقیم به جدول مصارف و تأمین‌کننده
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `material_procurements`;
-CREATE TABLE `material_procurements` (
+CREATE TABLE IF NOT EXISTS `material_procurements` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `procurement_code` VARCHAR(50) NOT NULL UNIQUE,
   `project_id` VARCHAR(36) NOT NULL,
   `supplier_id` VARCHAR(36) NULL,
   `supplier_name` VARCHAR(200) NOT NULL,
   `material_category` VARCHAR(100) NOT NULL,
+  `account_code` VARCHAR(50) NULL COMMENT 'Resolved from the stable material category by the server',
   `item_description` VARCHAR(255) NOT NULL,
   `quantity` DECIMAL(14, 3) NOT NULL,
   `unit_of_measure` VARCHAR(50) NOT NULL,
@@ -329,15 +333,15 @@ CREATE TABLE `material_procurements` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT `fk_material_proj` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE RESTRICT,
   INDEX `idx_mat_project` (`project_id`),
-  INDEX `idx_mat_supplier` (`supplier_id`)
+  INDEX `idx_mat_supplier` (`supplier_id`),
+  INDEX `idx_mat_account_code` (`account_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- 15. کارکرد و دستمزد کارگران (Labor Wages & Payroll)
 -- حل مشکل شماره ۳ اکسل: اتصال خودکار به پرداخت‌ها و سود و زیان
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `labor_payroll`;
-CREATE TABLE `labor_payroll` (
+CREATE TABLE IF NOT EXISTS `labor_payroll` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `payroll_number` VARCHAR(50) NOT NULL UNIQUE,
   `project_id` VARCHAR(36) NOT NULL,
@@ -363,8 +367,7 @@ CREATE TABLE `labor_payroll` (
 -- 16. دفتر عواید و دریافت‌های مالی (Income Register & Revenue)
 -- منبع محاسبه عواید پروژه و سود/زیان (Project P&L)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `revenue_entries`;
-CREATE TABLE `revenue_entries` (
+CREATE TABLE IF NOT EXISTS `revenue_entries` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `receipt_number` VARCHAR(50) NOT NULL UNIQUE,
   `project_id` VARCHAR(36) NOT NULL,
@@ -389,8 +392,7 @@ CREATE TABLE `revenue_entries` (
 -- ---------------------------------------------------------------------
 -- 17. تراکنش‌های بانکی و صندوق مرکزی (Bank & Cash Transactions Ledger)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `treasury_transactions`;
-CREATE TABLE `treasury_transactions` (
+CREATE TABLE IF NOT EXISTS `treasury_transactions` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `transaction_code` VARCHAR(50) NOT NULL UNIQUE,
   `account_id` VARCHAR(36) NOT NULL,
@@ -412,8 +414,7 @@ CREATE TABLE `treasury_transactions` (
 -- ---------------------------------------------------------------------
 -- 18. تنخواه‌گردان و مصارف خرد کارگاهی (Petty Cash Register)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `petty_cash_expenses`;
-CREATE TABLE `petty_cash_expenses` (
+CREATE TABLE IF NOT EXISTS `petty_cash_expenses` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `voucher_no` VARCHAR(50) NOT NULL UNIQUE,
   `project_id` VARCHAR(36) NOT NULL,
@@ -434,8 +435,7 @@ CREATE TABLE `petty_cash_expenses` (
 -- 19. دارایی‌ها، تجهیزات و ماشین‌آلات (Assets & Equipment Register)
 -- محاسبه استهلاک و رهگیری دارایی‌های کارگاه
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `assets_machinery`;
-CREATE TABLE `assets_machinery` (
+CREATE TABLE IF NOT EXISTS `assets_machinery` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `asset_tag_code` VARCHAR(50) NOT NULL UNIQUE,
   `asset_name` VARCHAR(200) NOT NULL,
@@ -457,8 +457,7 @@ CREATE TABLE `assets_machinery` (
 -- 20. حواله‌ها و انتقالات بین پروژه‌ها (Inter-Project Transfers)
 -- حل مشکل شماره ۶ اکسل: اتصال کامل انتقالات به بیلان پروژه‌ها و حساب‌ها
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `project_transfers`;
-CREATE TABLE `project_transfers` (
+CREATE TABLE IF NOT EXISTS `project_transfers` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `transfer_number` VARCHAR(50) NOT NULL UNIQUE,
   `from_project_id` VARCHAR(36) NOT NULL,
@@ -482,8 +481,7 @@ CREATE TABLE `project_transfers` (
 -- 21. سند روزنامچه و اسناد تعدیلات حسابداری (General Journal & Adjustments)
 -- حل مشکل شماره ۵ اکسل: ساختار سند دوبل حسابداری (Debit = Credit)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `journal_entries`;
-CREATE TABLE `journal_entries` (
+CREATE TABLE IF NOT EXISTS `journal_entries` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `voucher_number` VARCHAR(50) NOT NULL UNIQUE,
   `entry_date` DATE NOT NULL,
@@ -499,8 +497,7 @@ CREATE TABLE `journal_entries` (
   INDEX `idx_journal_date` (`entry_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS `journal_lines`;
-CREATE TABLE `journal_lines` (
+CREATE TABLE IF NOT EXISTS `journal_lines` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `journal_entry_id` VARCHAR(36) NOT NULL,
   `account_id` VARCHAR(36) NOT NULL,
@@ -514,8 +511,7 @@ CREATE TABLE `journal_lines` (
 -- ---------------------------------------------------------------------
 -- 22. جدول تخصصی سیخ‌گول (Steel / Rebar Tracking - NSC Core)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `steel_procurements`;
-CREATE TABLE `steel_procurements` (
+CREATE TABLE IF NOT EXISTS `steel_procurements` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_id` VARCHAR(36) NOT NULL,
   `date` DATE NOT NULL,
@@ -535,8 +531,7 @@ CREATE TABLE `steel_procurements` (
 -- ---------------------------------------------------------------------
 -- 23. جدول تخصصی کانکریت‌ریزی (Concrete Casting - NSC Core)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `concrete_castings`;
-CREATE TABLE `concrete_castings` (
+CREATE TABLE IF NOT EXISTS `concrete_castings` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_id` VARCHAR(36) NOT NULL,
   `date` DATE NOT NULL,
@@ -556,8 +551,7 @@ CREATE TABLE `concrete_castings` (
 -- ---------------------------------------------------------------------
 -- 24. شرکا و سرمایه‌گذاران پروژه (Project Partners & Equity)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `project_partners`;
-CREATE TABLE `project_partners` (
+CREATE TABLE IF NOT EXISTS `project_partners` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `project_id` VARCHAR(36) NOT NULL,
   `partner_name` VARCHAR(200) NOT NULL,
@@ -569,8 +563,7 @@ CREATE TABLE `project_partners` (
   CONSTRAINT `fk_partner_proj` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS `partner_investments`;
-CREATE TABLE `partner_investments` (
+CREATE TABLE IF NOT EXISTS `partner_investments` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `partner_id` VARCHAR(36) NOT NULL,
   `project_id` VARCHAR(36) NOT NULL,
@@ -586,8 +579,7 @@ CREATE TABLE `partner_investments` (
 -- ---------------------------------------------------------------------
 -- 25. مدیریت اسناد، فاکتورها و تصاویر بل‌ها (Document Archives)
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `project_documents`;
-CREATE TABLE `project_documents` (
+CREATE TABLE IF NOT EXISTS `project_documents` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `document_title` VARCHAR(255) NOT NULL,
   `category` VARCHAR(100) NOT NULL,
@@ -605,8 +597,7 @@ CREATE TABLE `project_documents` (
 -- 26. ردپای سیستم و لاگ امنیت (System Security & Audit Trail)
 -- حل مشکلات شماره ۷ و ۸ اکسل: ثبت چه کسی، چه کاری، چه زمانی و از چه آی‌پی انجام داد
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `system_audit_logs`;
-CREATE TABLE `system_audit_logs` (
+CREATE TABLE IF NOT EXISTS `system_audit_logs` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `user_id` VARCHAR(36) NULL,
   `user_name` VARCHAR(150) NOT NULL,
@@ -622,139 +613,3 @@ CREATE TABLE `system_audit_logs` (
   INDEX `idx_audit_module` (`module`),
   INDEX `idx_audit_time` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- =====================================================================
--- داده‌های پایه و پیش‌فرض (SEED DATA)
--- شامل کابل پلازا، کاربران، حساب‌های اولیه و درختواره حساب‌ها
--- =====================================================================
-
--- ۱. مشخصات شرکت کابل پلازا
-INSERT INTO `company_profiles` (`id`, `company_name`, `registration_no`, `tax_tin_number`, `primary_currency`, `secondary_currency`, `usd_to_afn_rate`, `office_phone`, `contact_email`, `official_address`, `invoice_header_note`, `invoice_footer_terms`)
-VALUES (
-  'company-001',
-  'شرکت ساختمانی و توسعه کابل پلازا',
-  'KP-CONST-2026',
-  '9004829102',
-  'AFN',
-  'USD',
-  70.0000,
-  '+93 78 378 8278',
-  'info@kabulplaza.af',
-  'چهارراهی شهید، کابل، افغانستان',
-  'سیستم مدیریت مالی، کنترل مصارف و حسابداری پروژه‌های ساختمانی',
-  'تمام حساب‌ها طبق اسناد تصدیق‌شده مالی معتبر می‌باشد.'
-);
-
--- ۲. کاربران اولیه سیستم (شامل مدیر ارشد، دفتر هفت و پرسونل)
--- پسورد پیش‌فرض هش‌شده برای 'admin123' و 'password123' با الگوریتم امن Bcrypt
-INSERT INTO `users` (`id`, `owner_admin_id`, `name`, `username`, `email`, `password_hash`, `role`, `phone`, `company_name`, `subscription_plan`, `is_locked`, `is_master`, `allowed_modules_json`, `allowed_tabs_json`)
-VALUES
-(
-  'usr-master-001',
-  NULL,
-  'مالک و مدیر عالی (دفتر هفت)',
-  'office7',
-  'master@kabulplaza.af',
-  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password
-  'master',
-  '+93783788278',
-  'کابل پلازا',
-  'lifetime',
-  0,
-  1,
-  '{"steel":true,"concrete":true,"expenses":true,"contractors":true,"suppliers":true,"apartments":true,"payments":true,"documents":true,"reports":true,"auditLogs":true,"income":true,"materials":true,"labor":true,"treasury":true,"assets":true,"transfers":true,"journal":true}',
-  '["dashboard","projects","steel","concrete","expenses","contractors","suppliers","apartments","payments","budget","documents","reports","accounting","settings","users","audit_logs","income","materials","labor","treasury","assets","transfers","journal"]'
-),
-(
-  'usr-admin-002',
-  'usr-master-001',
-  'مدیر مالی و پروژه',
-  'admin',
-  'finance@kabulplaza.af',
-  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password
-  'admin',
-  '+93799112233',
-  'کابل پلازا',
-  'pro',
-  0,
-  0,
-  '{"steel":true,"concrete":true,"expenses":true,"contractors":true,"suppliers":true,"apartments":true,"payments":true,"documents":true,"reports":true,"auditLogs":true,"income":true,"materials":true,"labor":true,"treasury":true,"assets":true,"transfers":true,"journal":true}',
-  '["dashboard","projects","steel","concrete","expenses","contractors","suppliers","apartments","payments","budget","documents","reports","accounting","settings","users","audit_logs"]'
-);
-
--- ۳. تنظیمات اولیه دفتر هفت برای کاربر مالک
-INSERT INTO `office7_tenant_configs` (`id`, `tenant_user_id`, `gate_key_hash`, `ai_assistant_enabled`, `cloud_sync_enabled`, `max_allowed_projects`, `max_allowed_staff`, `active_modules_json`, `accessible_tabs_json`)
-VALUES (
-  'cfg-office7-001',
-  'usr-master-001',
-  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-  1,
-  1,
-  100,
-  50,
-  '{"steel":true,"concrete":true,"expenses":true,"contractors":true,"suppliers":true,"apartments":true,"payments":true,"documents":true,"reports":true,"auditLogs":true,"income":true,"materials":true,"labor":true,"treasury":true,"assets":true,"transfers":true,"journal":true}',
-  '["dashboard","projects","steel","concrete","expenses","contractors","suppliers","apartments","payments","budget","documents","reports","accounting","settings","users","audit_logs"]'
-);
-
--- ۴. پروژه نمونه کابل پلازا (Project Master P-001)
-INSERT INTO `projects` (`id`, `project_code`, `name`, `client_name`, `contract_value`, `approved_budget`, `currency`, `location`, `start_date`, `expected_finish`, `status`, `project_manager`, `total_area_sqm`, `floors_count`, `notes`)
-VALUES (
-  'proj-001',
-  'P-001',
-  'برج تجاری و رهایشی کابل پلازا',
-  'شرکت سرمایه‌گذاری کابل پلازا',
-  100000000.00,
-  80000000.00,
-  'AFN',
-  'کابل، چهارراهی شهید، سرک میدان هوایی',
-  '2025-01-01',
-  '2027-12-30',
-  'active',
-  'انجنیر احسان‌الله',
-  18500.00,
-  18,
-  'پروژه شامل ۵ طبقه تجاری، ۱۲ طبقه رهایشی و پارکینگ زیرزمینی مدرن'
-);
-
--- ۵. بودجه‌های سرفصل پروژه کابل پلازا (Project Budgets)
-INSERT INTO `project_budgets` (`id`, `project_id`, `category_code`, `category_name`, `budgeted_amount`, `currency`)
-VALUES
-  ('bgt-001', 'proj-001', 'materials', 'مواد و مصالح ساختمانی (سیمان، ریگ، خشت و غیره)', 28000000.00, 'AFN'),
-  ('bgt-002', 'proj-001', 'steel', 'سیخ‌گول و آهن‌آلات سازه', 20000000.00, 'AFN'),
-  ('bgt-003', 'proj-001', 'concrete', 'کانکریت آماده و پمپاژ', 14000000.00, 'AFN'),
-  ('bgt-004', 'proj-001', 'labor', 'معاشات و دستمزد کارگران و استادکاران', 10000000.00, 'AFN'),
-  ('bgt-005', 'proj-001', 'subcontractor', 'قراردادهای فرعی (برق، پایپ‌دوانی، نما، لفت)', 5000000.00, 'AFN'),
-  ('bgt-006', 'proj-001', 'equipment', 'کرایه ماشین‌آلات و تجهیزات سنگین', 2000000.00, 'AFN'),
-  ('bgt-007', 'proj-001', 'overhead', 'مصارف اداری، جوازها و احتیاطی', 1000000.00, 'AFN');
-
--- ۶. حساب‌های خزانه‌داری اولیه (صندوق و بانک)
-INSERT INTO `treasury_accounts` (`id`, `account_type`, `account_name`, `bank_name`, `account_number`, `currency`, `opening_balance`, `current_balance`, `custodian_name`)
-VALUES
-  ('acc-001', 'central_cash', 'صندوق مرکزی کارگاه کابل پلازا', NULL, NULL, 'AFN', 500000.00, 500000.00, 'احمد مسعود'),
-  ('acc-002', 'bank', 'حساب جاری د افغانستان بانک', 'د افغانستان بانک', 'AFN-90281-01', 'AFN', 15000000.00, 15000000.00, 'حسابداری مرکزی'),
-  ('acc-003', 'petty_cash', 'صندوق خُرد (تنخواه‌گردان ساحه)', NULL, NULL, 'AFN', 100000.00, 100000.00, 'نجیب‌الله ناظر');
-
--- ۷. کدینگ حساب‌های پیش‌فرض (Chart of Accounts)
-INSERT INTO `chart_of_accounts` (`id`, `account_code`, `account_name`, `account_type`, `normal_balance`, `current_balance`, `is_system_locked`)
-VALUES
-  ('coa-101', '1010', 'موجودی نقد و صندوق', 'asset', 'debit', 500000.00, 1),
-  ('coa-102', '1020', 'موجودی حساب‌های بانکی', 'asset', 'debit', 15000000.00, 1),
-  ('coa-103', '1030', 'حساب‌های دریافتنی از مشتریان', 'asset', 'debit', 0.00, 1),
-  ('coa-104', '1040', 'پیش‌پرداخت‌ها به تأمین‌کنندگان', 'asset', 'debit', 0.00, 1),
-  ('coa-105', '1050', 'ماشین‌آلات و تجهیزات کارگاه', 'asset', 'debit', 4500000.00, 1),
-  ('coa-201', '2010', 'حساب‌های پرداختنی (تأمین‌کنندگان)', 'liability', 'credit', 0.00, 1),
-  ('coa-202', '2020', 'اسناد پرداختنی به مقاطعه‌کاران', 'liability', 'credit', 0.00, 1),
-  ('coa-203', '2030', 'ودایع و تضمین حسن انجام کار (Retention)', 'liability', 'credit', 0.00, 1),
-  ('coa-301', '3010', 'سرمایه شرکا و مالکین', 'equity', 'credit', 20000000.00, 1),
-  ('coa-401', '4010', 'عواید حاصل از قرارداد و فروش واحدها', 'revenue', 'credit', 0.00, 1),
-  ('coa-501', '5010', 'هزینه مصالح ساختمانی مصرفی', 'expense', 'debit', 0.00, 1),
-  ('coa-502', '5020', 'هزینه دستمزد و کارکرد پرسونل', 'expense', 'debit', 0.00, 1),
-  ('coa-503', '5030', 'هزینه مقاطعه‌کاران فرعی', 'expense', 'debit', 0.00, 1),
-  ('coa-504', '5040', 'هزینه کرایه تجهیزات و ماشین‌آلات', 'expense', 'debit', 0.00, 1),
-  ('coa-505', '5050', 'مصارف اداری و عمومی ساحه', 'expense', 'debit', 0.00, 1);
-
--- ۸. ثبت اولین لاگ امنیتی سیستم
-INSERT INTO `system_audit_logs` (`user_id`, `user_name`, `action`, `module`, `record_id`, `ip_address`, `details`)
-VALUES ('usr-master-001', 'مالک کل (دفتر هفت)', 'create', 'system', 'init', '127.0.0.1', 'راه‌اندازی موفقانه دیتابیس MySQL سیستم جامع مالی و مهندسی NSC روی هاست Shahhost');

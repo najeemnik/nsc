@@ -1,3 +1,6 @@
+import type { Language } from '../types';
+import { intlLocaleFor, localizeText } from '../i18n/localize';
+
 export interface UnitDefinition {
   id: string;
   symbol: string;
@@ -190,9 +193,11 @@ export function calculateUnitConversion(
     truckCapacity?: number;
     truckTargetUnit?: string;
     bagWeightKg?: number;
-  }
+  },
+  language: Language = 'en'
 ): ConversionResult | null {
   if (isNaN(quantity) || quantity <= 0) return null;
+  const formatNumber = (value: number) => value.toLocaleString(intlLocaleFor(language));
 
   // 1. Standard: Ton -> kg
   if (unitId === 'Ton') {
@@ -200,7 +205,11 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: kg,
       targetUnit: 'kg',
-      explanation: `${quantity.toLocaleString()} Ton = ${kg.toLocaleString()} kg (1 Ton = 1,000 kg)`,
+      explanation: localizeText(language, {
+        en: `${formatNumber(quantity)} tons = ${formatNumber(kg)} kg (1 ton = 1,000 kg)`,
+        fa: `${formatNumber(quantity)} تن = ${formatNumber(kg)} کیلوگرام (هر تن = ۱٬۰۰۰ کیلوگرام)`,
+        ps: `${formatNumber(quantity)} ټنه = ${formatNumber(kg)} کیلوګرام (۱ ټن = ۱٬۰۰۰ کیلوګرام)`,
+      }),
       isStandard: true,
     };
   }
@@ -211,7 +220,11 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: tons,
       targetUnit: 'Ton',
-      explanation: `${quantity.toLocaleString()} kg = ${tons.toLocaleString()} Ton`,
+      explanation: localizeText(language, {
+        en: `${formatNumber(quantity)} kg = ${formatNumber(tons)} tons`,
+        fa: `${formatNumber(quantity)} کیلوگرام = ${formatNumber(tons)} تن`,
+        ps: `${formatNumber(quantity)} کیلوګرام = ${formatNumber(tons)} ټنه`,
+      }),
       isStandard: true,
     };
   }
@@ -222,7 +235,11 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: kg,
       targetUnit: 'kg',
-      explanation: `${quantity.toLocaleString()} سیر = ${kg.toLocaleString()} kg (1 سیر = 7 kg)`,
+      explanation: localizeText(language, {
+        en: `${formatNumber(quantity)} seer = ${formatNumber(kg)} kg (1 seer = 7 kg)`,
+        fa: `${formatNumber(quantity)} سیر = ${formatNumber(kg)} کیلوگرام (هر سیر = ۷ کیلوگرام)`,
+        ps: `${formatNumber(quantity)} سیر = ${formatNumber(kg)} کیلوګرام (۱ سیر = ۷ کیلوګرام)`,
+      }),
       isStandard: true,
     };
   }
@@ -233,7 +250,11 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: kg,
       targetUnit: 'kg',
-      explanation: `${quantity.toLocaleString()} خروار = ${kg.toLocaleString()} kg (1 خروار = 80 سیر = 560 kg)`,
+      explanation: localizeText(language, {
+        en: `${formatNumber(quantity)} kharwar = ${formatNumber(kg)} kg (1 kharwar = 80 seer = 560 kg)`,
+        fa: `${formatNumber(quantity)} خروار = ${formatNumber(kg)} کیلوگرام (۱ خروار = ۸۰ سیر = ۵۶۰ کیلوگرام)`,
+        ps: `${formatNumber(quantity)} خروار = ${formatNumber(kg)} کیلوګرام (۱ خروار = ۸۰ سیر = ۵۶۰ کیلوګرام)`,
+      }),
       isStandard: true,
     };
   }
@@ -244,7 +265,7 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: cm,
       targetUnit: 'cm',
-      explanation: `${quantity} m = ${cm} cm`,
+      explanation: `${formatNumber(quantity)} m = ${formatNumber(cm)} cm`,
       isStandard: true,
     };
   }
@@ -257,7 +278,11 @@ export function calculateUnitConversion(
     return {
       convertedQuantity: totalKg,
       targetUnit: 'kg',
-      explanation: `${quantity.toLocaleString()} خریطه = ${totalKg.toLocaleString()} kg (${totalTons} Ton) با فرض ۵۰ کیلو`,
+      explanation: localizeText(language, {
+        en: `${formatNumber(quantity)} bags = ${formatNumber(totalKg)} kg (${totalTons} tons), assuming ${formatNumber(bagKg)} kg per bag`,
+        fa: `${formatNumber(quantity)} بوجی = ${formatNumber(totalKg)} کیلوگرام (${totalTons} تن)، با فرض ${formatNumber(bagKg)} کیلوگرام برای هر بوجی`,
+        ps: `${formatNumber(quantity)} بوجۍ = ${formatNumber(totalKg)} کیلوګرام (${totalTons} ټنه)، د هرې بوجۍ وزن ${formatNumber(bagKg)} کیلوګرام فرض شوی`,
+      }),
       isStandard: false,
     };
   }
@@ -270,7 +295,11 @@ export function calculateUnitConversion(
       return {
         convertedQuantity: totalCapacity,
         targetUnit,
-        explanation: `${quantity} موتر = ${totalCapacity.toLocaleString()} ${targetUnit} (ظرفیت هر موتر: ${customCapacity.truckCapacity} ${targetUnit})`,
+        explanation: localizeText(language, {
+          en: `${formatNumber(quantity)} truckloads = ${formatNumber(totalCapacity)} ${targetUnit} (capacity per truck: ${formatNumber(customCapacity.truckCapacity)} ${targetUnit})`,
+          fa: `${formatNumber(quantity)} موتر = ${formatNumber(totalCapacity)} ${targetUnit} (ظرفیت هر موتر: ${formatNumber(customCapacity.truckCapacity)} ${targetUnit})`,
+          ps: `${formatNumber(quantity)} لارۍ = ${formatNumber(totalCapacity)} ${targetUnit} (د هرې لارۍ ظرفیت: ${formatNumber(customCapacity.truckCapacity)} ${targetUnit})`,
+        }),
         isStandard: false,
       };
     }

@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "default_account_code": "5990",
+  "groups": [
+    {
+      "id": "structure",
+      "labels": {
+        "en": "Structure, concrete and masonry",
+        "fa": "اسکلت، کانکریت و بنایی",
+        "ps": "اسکلیټ، کانکریټ او خښتي کارونه"
+      }
+    },
+    {
+      "id": "formwork",
+      "labels": {
+        "en": "Timber, formwork and scaffolding",
+        "fa": "چوب، قالب‌بندی و داربست",
+        "ps": "لرګي، قالب بندي او داربست"
+      }
+    },
+    {
+      "id": "electrical",
+      "labels": {
+        "en": "Electrical and low-voltage systems",
+        "fa": "برق و سیستم‌های ولتاژ پایین",
+        "ps": "برېښنا او د ټیټ ولتاژ سیستمونه"
+      }
+    },
+    {
+      "id": "plumbing",
+      "labels": {
+        "en": "Plumbing and sanitary materials",
+        "fa": "لوله‌کشی و مواد تأسیسات صحی",
+        "ps": "نل لیکنه او د حفظ الصحې توکي"
+      }
+    },
+    {
+      "id": "joinery",
+      "labels": {
+        "en": "Woodwork, doors and windows",
+        "fa": "نجاری، دروازه و کلکین",
+        "ps": "نجاري، دروازې او کړکۍ"
+      }
+    },
+    {
+      "id": "finishes",
+      "labels": {
+        "en": "Tiles, paint, finishing and decoration",
+        "fa": "کاشی، رنگ، تکمیل‌کاری و دیکوریشن",
+        "ps": "کاشي، رنګ، بشپړکاري او سینګار"
+      }
+    },
+    {
+      "id": "specialty",
+      "labels": {
+        "en": "Roofing and specialty building systems",
+        "fa": "بام‌سازی و سیستم‌های تخصصی ساختمان",
+        "ps": "چت جوړونه او ځانګړي ودانیز سیستمونه"
+      }
+    },
+    {
+      "id": "other",
+      "labels": {
+        "en": "Other or general construction materials",
+        "fa": "سایر مصالح عمومی ساختمانی",
+        "ps": "نور یا عمومي ودانیز توکي"
+      }
+    }
+  ],
+  "categories": [
+    { "id": "mat_rebar", "account_code": "51001", "parent_code": "5100", "group": "structure", "labels": { "en": "Reinforcing steel and rebar", "fa": "میل‌گرد و سیخ‌گول تقویتی", "ps": "د کانکریټ سیخ‌ګول او تقویتي فولاد" } },
+    { "id": "mat_structural_steel", "account_code": "51002", "parent_code": "5100", "group": "structure", "labels": { "en": "Structural steel sections and plates", "fa": "پروفیل، تیرآهن و ورق فولادی ساختمانی", "ps": "ساختماني فولادي پروفیلونه او تختې" } },
+    { "id": "mat_reinforcement_mesh", "account_code": "51003", "parent_code": "5100", "group": "structure", "labels": { "en": "Welded mesh and reinforcement accessories", "fa": "توری جوشی و لوازم تقویت فولاد", "ps": "جوش شوې جالۍ او د تقویتي فولادو لوازم" } },
+    { "id": "mat_metal_fasteners", "account_code": "51004", "parent_code": "5100", "group": "structure", "labels": { "en": "Binding wire, nails, bolts and metal fasteners", "fa": "مفتول، میخ، بولت و اتصالات فلزی", "ps": "تړونکي سیم، مېخونه، بولټونه او فلزي نښلوونکي" } },
+    { "id": "mat_ready_mix_concrete", "account_code": "52001", "parent_code": "5200", "group": "structure", "labels": { "en": "Ready-mix concrete", "fa": "کانکریت آماده", "ps": "چمتو کانکریټ" } },
+    { "id": "mat_precast_concrete", "account_code": "52002", "parent_code": "5200", "group": "structure", "labels": { "en": "Precast concrete products", "fa": "محصولات پیش‌ساخته کانکریتی", "ps": "له مخکې جوړ شوي کانکریټي محصولات" } },
+    { "id": "mat_concrete_admixtures", "account_code": "52003", "parent_code": "5200", "group": "structure", "labels": { "en": "Concrete admixtures and curing compounds", "fa": "مواد افزودنی و عمل‌آوری کانکریت", "ps": "د کانکریټ ګډوونکي او د کلکولو مواد" } },
+    { "id": "mat_portland_cement", "account_code": "53001", "parent_code": "5300", "group": "structure", "labels": { "en": "Portland and general-purpose cement", "fa": "سیمنت پرتلند و سیمنت ساختمانی عمومی", "ps": "پورټلنډ او عمومي ساختماني سمنټ" } },
+    { "id": "mat_white_cement", "account_code": "53002", "parent_code": "5300", "group": "structure", "labels": { "en": "White and decorative cement", "fa": "سیمنت سفید و دیکوراتیف", "ps": "سپین او سینګاري سمنټ" } },
+    { "id": "mat_lime", "account_code": "53003", "parent_code": "5300", "group": "structure", "labels": { "en": "Lime and lime-based binders", "fa": "آهک و مواد چسباننده آهکی", "ps": "چونه او د چونې نښلوونکي مواد" } },
+    { "id": "mat_gypsum_plaster", "account_code": "53004", "parent_code": "5300", "group": "structure", "labels": { "en": "Gypsum, plaster and wall render", "fa": "گچ، پلستر و مواد اندود دیوار", "ps": "ګچ، پلستر او د دېوال اندود" } },
+    { "id": "mat_mortar_adhesive_grout", "account_code": "53005", "parent_code": "5300", "group": "structure", "labels": { "en": "Mortar, tile adhesive and grout", "fa": "ملات، چسب کاشی و مواد بندکشی", "ps": "ملات، د کاشي سریښ او د بندونو ډکولو مواد" } },
+    { "id": "mat_fine_sand", "account_code": "54001", "parent_code": "5400", "group": "structure", "labels": { "en": "Fine and plastering sand", "fa": "ریگ نرم و ریگ پلسترکاری", "ps": "نرمه شګه او د پلستر شګه" } },
+    { "id": "mat_gravel_crushed_aggregate", "account_code": "54002", "parent_code": "5400", "group": "structure", "labels": { "en": "Gravel, crushed stone and aggregates", "fa": "جغل، سنگ‌شکسته و سنگ‌دانه", "ps": "جغل، ماتې ډبرې او ډبرین مواد" } },
+    { "id": "mat_fill_base_course", "account_code": "54003", "parent_code": "5400", "group": "structure", "labels": { "en": "Fill, sub-base and road base materials", "fa": "خاک‌ریزی، زیر‌بنا و مواد اساس", "ps": "ډکون، فرعي بنسټ او د لارې د بنسټ مواد" } },
+    { "id": "mat_clay_bricks", "account_code": "55001", "parent_code": "5500", "group": "structure", "labels": { "en": "Fired clay bricks", "fa": "خشت پخته و آجر رسی", "ps": "پخې خښتې او خټینې خښتې" } },
+    { "id": "mat_concrete_blocks", "account_code": "55002", "parent_code": "5500", "group": "structure", "labels": { "en": "Concrete blocks", "fa": "بلاک کانکریتی", "ps": "کانکریټي بلاکونه" } },
+    { "id": "mat_aac_blocks", "account_code": "55003", "parent_code": "5500", "group": "structure", "labels": { "en": "Lightweight and AAC blocks", "fa": "بلاک سبک و AAC", "ps": "سپک او AAC بلاکونه" } },
+    { "id": "mat_pavers", "account_code": "55004", "parent_code": "5500", "group": "structure", "labels": { "en": "Paving and interlocking blocks", "fa": "سنگ‌فرش و بلاک‌های قفل‌شونده", "ps": "د فرش او یو بل سره تړل کېدونکي بلاکونه" } },
+    { "id": "mat_formwork_lumber", "account_code": "59101", "parent_code": "5910", "group": "formwork", "labels": { "en": "Formwork timber, boards and lumber", "fa": "چوب، تخته و الوار قالب‌بندی", "ps": "د قالب بندۍ لرګي او تختې" } },
+    { "id": "mat_formwork_plywood", "account_code": "59102", "parent_code": "5910", "group": "formwork", "labels": { "en": "Plywood and reusable form panels", "fa": "پلای‌وود و تخته‌های قالب‌بندی چندبارمصرف", "ps": "پلای‌ووډ او بیا کارېدونکې قالب تختې" } },
+    { "id": "mat_scaffold_material", "account_code": "59103", "parent_code": "5910", "group": "formwork", "labels": { "en": "Scaffolding components and materials", "fa": "اجزای فلزی و مواد داربست", "ps": "د داربست برخې او مواد" } },
+    { "id": "mat_formwork_consumables", "account_code": "59104", "parent_code": "5910", "group": "formwork", "labels": { "en": "Form ties, nails and release agents", "fa": "تای‌راډ، میخ و روغن رهاساز قالب", "ps": "د قالب تړونکي راډونه، مېخونه او د قالب خوشې کوونکي مواد" } },
+    { "id": "mat_electrical_cables", "account_code": "59201", "parent_code": "5920", "group": "electrical", "labels": { "en": "Electrical cables and wires", "fa": "کیبل و سیم برق", "ps": "برېښنايي کېبلونه او مزي" } },
+    { "id": "mat_conduits_trunking", "account_code": "59202", "parent_code": "5920", "group": "electrical", "labels": { "en": "Electrical conduits and trunking", "fa": "لوله برق، داکت و ترنکینگ", "ps": "برېښنايي پایپونه او ټرنکینګ" } },
+    { "id": "mat_switches_sockets", "account_code": "59203", "parent_code": "5920", "group": "electrical", "labels": { "en": "Switches, sockets and outlets", "fa": "کلید، ساکت و پریز برق", "ps": "سوېچونه، ساکټونه او برېښنايي نښلونځي" } },
+    { "id": "mat_distribution_panels", "account_code": "59204", "parent_code": "5920", "group": "electrical", "labels": { "en": "Distribution boards, breakers and protection", "fa": "تابلو برق، بریکر و وسایل حفاظتی", "ps": "د وېش تختې، برېکرونه او حفاظتي وسایل" } },
+    { "id": "mat_lighting_fixtures", "account_code": "59205", "parent_code": "5920", "group": "electrical", "labels": { "en": "Lighting fixtures, lamps and drivers", "fa": "چراغ، لامپ و وسایل روشنایی", "ps": "د رڼا څراغونه، لامپونه او ډرایورونه" } },
+    { "id": "mat_earthing_lightning_protection", "account_code": "59206", "parent_code": "5920", "group": "electrical", "labels": { "en": "Earthing and lightning protection", "fa": "سیستم اتصال زمین و حفاظت برق‌گیر", "ps": "ځمکنۍ نښلونې او د برېښنا صاعقې ساتنه" } },
+    { "id": "mat_data_cctv_intercom", "account_code": "59207", "parent_code": "5920", "group": "electrical", "labels": { "en": "Data, CCTV, intercom and low-voltage equipment", "fa": "تجهیزات شبکه، کمره، آیفون و ولتاژ پایین", "ps": "د شبکې، CCTV، انټرکام او ټیټ ولتاژ تجهیزات" } },
+    { "id": "mat_electrical_accessories", "account_code": "59208", "parent_code": "5920", "group": "electrical", "labels": { "en": "Electrical fittings and consumables", "fa": "اتصالات و مواد مصرفی برق", "ps": "برېښنايي نښلونې او مصرفي توکي" } },
+    { "id": "mat_plastic_pipes", "account_code": "59301", "parent_code": "5930", "group": "plumbing", "labels": { "en": "PPR, PVC and HDPE pipes", "fa": "پایپ‌های PPR، PVC و HDPE", "ps": "PPR، PVC او HDPE پایپونه" } },
+    { "id": "mat_metal_pipes", "account_code": "59302", "parent_code": "5930", "group": "plumbing", "labels": { "en": "GI, steel and copper pipes", "fa": "پایپ گالوانیزه، فولادی و مسی", "ps": "جست شوي، فولادي او مسي پایپونه" } },
+    { "id": "mat_pipe_fittings_valves", "account_code": "59303", "parent_code": "5930", "group": "plumbing", "labels": { "en": "Pipe fittings, valves and connectors", "fa": "فیتینگ، والو و اتصالات پایپ", "ps": "د پایپ فټینګونه، والوګانې او نښلونې" } },
+    { "id": "mat_drainage_sewer", "account_code": "59304", "parent_code": "5930", "group": "plumbing", "labels": { "en": "Drainage, sewer and rainwater materials", "fa": "مواد درین، فاضلاب و آب باران", "ps": "د فاضلاب، کانال او باراني اوبو مواد" } },
+    { "id": "mat_sanitary_ware", "account_code": "59305", "parent_code": "5930", "group": "plumbing", "labels": { "en": "Sanitary ware, toilets and basins", "fa": "چینی‌آلات صحی، تشناب و دست‌شویی", "ps": "حفظ الصحې لوښي، تشنابونه او لاس مینځونکي" } },
+    { "id": "mat_taps_bathroom_accessories", "account_code": "59306", "parent_code": "5930", "group": "plumbing", "labels": { "en": "Taps, mixers, showers and bathroom accessories", "fa": "شیرآلات، مکسر، دوش و لوازم حمام", "ps": "نلونه، مکسرونه، شاورونه او د تشناب لوازم" } },
+    { "id": "mat_tanks_pumps_heaters", "account_code": "59307", "parent_code": "5930", "group": "plumbing", "labels": { "en": "Water tanks, pumps and water heaters", "fa": "ذخیره آب، پمپ و آب‌گرم‌کن", "ps": "د اوبو ټانکونه، پمپونه او د اوبو ګرمونکي" } },
+    { "id": "mat_joinery_timber", "account_code": "59401", "parent_code": "5940", "group": "joinery", "labels": { "en": "Joinery timber and carpentry materials", "fa": "چوب نجاری و مواد کارهای چوبی", "ps": "د نجارۍ لرګي او د لرګي کارونو مواد" } },
+    { "id": "mat_wooden_doors_frames", "account_code": "59402", "parent_code": "5940", "group": "joinery", "labels": { "en": "Wooden doors and door frames", "fa": "دروازه و چوکات چوبی", "ps": "لرګینې دروازې او چوکاتونه" } },
+    { "id": "mat_metal_doors_frames", "account_code": "59403", "parent_code": "5940", "group": "joinery", "labels": { "en": "Metal doors and frames", "fa": "دروازه و چوکات فلزی", "ps": "فلزي دروازې او چوکاتونه" } },
+    { "id": "mat_aluminium_upvc_windows", "account_code": "59404", "parent_code": "5940", "group": "joinery", "labels": { "en": "Aluminium and uPVC windows and frames", "fa": "کلکین و چوکات المونیمی و UPVC", "ps": "المونیمي او UPVC کړکۍ او چوکاتونه" } },
+    { "id": "mat_glass_glazing", "account_code": "59405", "parent_code": "5940", "group": "joinery", "labels": { "en": "Glass, glazing and window accessories", "fa": "شیشه، شیشه‌کاری و لوازم کلکین", "ps": "ښیښه، ښیښه کاري او د کړکۍ لوازم" } },
+    { "id": "mat_locks_hinges_hardware", "account_code": "59406", "parent_code": "5940", "group": "joinery", "labels": { "en": "Locks, hinges, handles and door hardware", "fa": "قفل، لولا، دستگیره و یراق دروازه", "ps": "قلفونه، قبضې، لاستي او د دروازې وسایل" } },
+    { "id": "mat_cabinets_joinery", "account_code": "59407", "parent_code": "5940", "group": "joinery", "labels": { "en": "Built-in cabinets and fitted joinery", "fa": "کابینت و چوب‌کاری نصب‌شده", "ps": "نصب شوي المارۍ او د نجارۍ کارونه" } },
+    { "id": "mat_railings_metalwork", "account_code": "59408", "parent_code": "5940", "group": "joinery", "labels": { "en": "Railings, grills and architectural metalwork", "fa": "نرده، حفاظ و فلزکاری معماری", "ps": "کټارې، حفاظتي جالۍ او ساختماني فلزکاري" } },
+    { "id": "mat_ceramic_tiles", "account_code": "59501", "parent_code": "5950", "group": "finishes", "labels": { "en": "Ceramic wall and floor tiles", "fa": "کاشی سرامیک دیوار و کف", "ps": "د دېوال او فرش سرامیکي کاشي" } },
+    { "id": "mat_porcelain_tiles", "account_code": "59502", "parent_code": "5950", "group": "finishes", "labels": { "en": "Porcelain tiles and engineered tile slabs", "fa": "کاشی پرسلان و تخته‌های سنگی صنعتی", "ps": "پرسلاني کاشي او جوړې شوې ډبرینې تختې" } },
+    { "id": "mat_natural_stone_flooring", "account_code": "59503", "parent_code": "5950", "group": "finishes", "labels": { "en": "Marble, granite, terrazzo and natural stone", "fa": "مرمر، گرانیت، موزاییک و سنگ طبیعی", "ps": "مرمر، ګرانېټ، تراززو او طبیعي ډبرې" } },
+    { "id": "mat_wood_vinyl_flooring", "account_code": "59504", "parent_code": "5950", "group": "finishes", "labels": { "en": "Parquet, laminate, vinyl and floor coverings", "fa": "پارکت، لمینت، وینیل و پوشش کف", "ps": "پارکېټ، لامینېټ، وینیل او د فرش پوښونه" } },
+    { "id": "mat_paints", "account_code": "59505", "parent_code": "5950", "group": "finishes", "labels": { "en": "Interior and exterior paints", "fa": "رنگ داخلی و بیرونی ساختمان", "ps": "د ودانۍ دننه او بهر رنګونه" } },
+    { "id": "mat_primers_putty_varnishes", "account_code": "59506", "parent_code": "5950", "group": "finishes", "labels": { "en": "Primer, putty, varnish and sealers", "fa": "پرایمر، پوتی، ورنیس و مواد درزبندی", "ps": "پرایمر، پټي، ورنیش او د درزونو بندوونکي" } },
+    { "id": "mat_plasterboard_ceilings", "account_code": "59507", "parent_code": "5950", "group": "finishes", "labels": { "en": "Gypsum board, plasterboard and ceiling systems", "fa": "گچ‌برگ، کناف و سیستم سقف کاذب", "ps": "جپسم بورډ، پلستر بورډ او د چت سیستمونه" } },
+    { "id": "mat_cladding_wallpaper_panels", "account_code": "59508", "parent_code": "5950", "group": "finishes", "labels": { "en": "Wall cladding, wallpaper and decorative panels", "fa": "پوشش دیوار، کاغذ دیواری و پنل دیکوراتیف", "ps": "د دېوال پوښ، وال پېپر او سینګاري تختې" } },
+    { "id": "mat_decorative_mouldings", "account_code": "59509", "parent_code": "5950", "group": "finishes", "labels": { "en": "Cornices, mouldings and decorative trims", "fa": "قرنیز، ابزار گچ‌بری و نوارهای دیکوراتیف", "ps": "کارنیسونه، قالبونه او سینګاري پټې" } },
+    { "id": "mat_flooring_accessories", "account_code": "59510", "parent_code": "5950", "group": "finishes", "labels": { "en": "Skirting, floor profiles and finishing accessories", "fa": "قرنیز کف، پروفیل و لوازم تکمیل‌کاری", "ps": "د فرش څنډې، پروفیلونه او د بشپړکارۍ لوازم" } },
+    { "id": "mat_roofing", "account_code": "50101", "parent_code": "5010", "group": "specialty", "labels": { "en": "Roofing sheets, tiles and rainwater goods", "fa": "ورق، کاشی بام و لوازم آب‌رو", "ps": "د چت پاڼې، کاشي او د باراني اوبو لوازم" } },
+    { "id": "mat_waterproofing_insulation", "account_code": "50102", "parent_code": "5010", "group": "specialty", "labels": { "en": "Waterproofing membranes and thermal insulation", "fa": "عایق رطوبتی، ممبران و عایق حرارتی", "ps": "د لندبل ضد پردې او حرارتي عایق" } },
+    { "id": "mat_hvac_ventilation", "account_code": "50103", "parent_code": "5010", "group": "specialty", "labels": { "en": "HVAC, ventilation, ducting and heating materials", "fa": "مواد تهویه، کانال‌کشی و گرمایش ساختمان", "ps": "د HVAC، هواخور، ډکټ او تودوخې مواد" } },
+    { "id": "mat_fire_protection", "account_code": "50104", "parent_code": "5010", "group": "specialty", "labels": { "en": "Fire alarms, sprinklers and fire-protection materials", "fa": "اعلان حریق، اسپرینکلر و مواد ضد حریق", "ps": "د اور خبرتیا، سپرېنکلر او د اور ساتنې مواد" } },
+    { "id": "mat_solar_building_systems", "account_code": "50105", "parent_code": "5010", "group": "specialty", "labels": { "en": "Solar, backup power and building-control systems", "fa": "سیستم آفتابی، برق احتیاطی و کنترول ساختمان", "ps": "لمریز، احتیاطي برېښنا او د ودانۍ کنټرول سیستمونه" } },
+    { "id": "mat_elevator_systems", "account_code": "50106", "parent_code": "5010", "group": "specialty", "labels": { "en": "Elevators, lifts and escalator materials", "fa": "مواد و تجهیزات لیفتر و آسانسور", "ps": "د لفټونو او ایسکلیټر مواد او تجهیزات" } },
+    { "id": "mat_shoring_geotextile", "account_code": "50107", "parent_code": "5010", "group": "specialty", "labels": { "en": "Shoring, retaining and geotextile materials", "fa": "مصالح شمع‌کوبی، دیوار حایل و ژئوتکستایل", "ps": "د ملاتړ، استنادي دېوال او جیوټکسټایل مواد" } },
+    { "id": "mat_landscaping_external_works", "account_code": "50108", "parent_code": "5010", "group": "specialty", "labels": { "en": "Landscaping, fencing and external works materials", "fa": "مصالح فضای سبز، حصارکشی و کارهای بیرونی", "ps": "د منظرې، کټارې او بهرنیو کارونو مواد" } },
+    { "id": "mat_specialty_materials", "account_code": "50109", "parent_code": "5010", "group": "specialty", "labels": { "en": "Other specialty construction materials", "fa": "سایر مصالح تخصصی ساختمان", "ps": "نور ځانګړي ساختماني توکي" } },
+    { "id": "mat_other", "account_code": "5990", "parent_code": "5000", "group": "other", "existing_account": true, "labels": { "en": "Other or unclassified construction materials", "fa": "سایر مصالح یا مصالح دسته‌بندی‌نشده", "ps": "نور یا ناپېژندل شوي ودانیز توکي" } }
+  ],
+  "legacy_accounts": {
+    "مصالح عمومی ساختمانی": "5990",
+    "سیمان و مواد چسباننده": "5300",
+    "ریگ، جغل و سنگ‌دانه": "5400",
+    "خشت و بلاک ساختمانی": "5500",
+    "پایپ‌دوانی و تأسیسات آب": "5930",
+    "تأسیسات برقی و کیبل": "5920",
+    "گچ، رنگ و نازک‌کاری": "5950",
+    "تجهیزات و مصالح متفرقه": "5990",
+    "general construction materials": "5990",
+    "cement & binders": "5300",
+    "sand, gravel & aggregates": "5400",
+    "bricks & blocks": "5500",
+    "plumbing & pipes": "5930",
+    "electrical & wiring": "5920",
+    "plaster, paint & finishing": "5950",
+    "other building materials": "5990",
+    "cement": "5300",
+    "materials": "5300",
+    "steel": "5100",
+    "rebar": "5100",
+    "concrete": "5200",
+    "paint": "5950",
+    "tiles": "5950",
+    "wood_supplier": "5910",
+    "plywood & wood supplier": "5910"
+  }
+}

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Core Financial Operations API
  * Income, Payments, Bank, Cash, Petty Cash & Transfers

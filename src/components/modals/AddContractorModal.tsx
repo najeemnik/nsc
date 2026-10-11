@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { HardHat, X, AlertCircle } from 'lucide-react';
 
 interface AddContractorModalProps {
@@ -8,14 +9,17 @@ interface AddContractorModalProps {
 }
 
 export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addContractor, contractors, t } = useApp();
+  const { currentProject, addContractor, contractors, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [name, setName] = useState('');
-  const [contractType, setContractType] = useState('قالب‌بندی و سیخ‌بندی');
+  const [contractType, setContractType] = useState(() => tx('Formwork and steel fixing', 'قالب‌بندی و سیخ‌بندی', 'قالب‌بندي او سیخ تړل'));
+  const [contractTypeEdited, setContractTypeEdited] = useState(false);
   const [phone, setPhone] = useState('');
   const [contractAmount, setContractAmount] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
-  const [paymentTerms, setPaymentTerms] = useState('پرداخت دوره‌ای طبق پیشرفت کار و تایید انجنیر ناظر');
+  const [paymentTerms, setPaymentTerms] = useState(() => tx('Periodic payment based on work progress and site engineer approval', 'پرداخت دوره‌ای بر اساس پیشرفت کار و تأیید انجنییر ناظر', 'د کار د پرمختګ او د ساحوي انجنیر د تایید له مخې دوره‌يي تادیه'));
+  const [paymentTermsEdited, setPaymentTermsEdited] = useState(false);
   const [retentionPercentage, setRetentionPercentage] = useState('5');
   const [notes, setNotes] = useState('');
   const [currency, setCurrency] = useState<'USD' | 'AFN'>('USD');
@@ -36,6 +40,11 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  React.useEffect(() => {
+    if (!contractTypeEdited) setContractType(tx('Formwork and steel fixing', 'قالب‌بندی و سیخ‌بندی', 'قالب‌بندي او سیخ تړل'));
+    if (!paymentTermsEdited) setPaymentTerms(tx('Periodic payment based on work progress and site engineer approval', 'پرداخت دوره‌ای بر اساس پیشرفت کار و تأیید انجنییر ناظر', 'د کار د پرمختګ او د ساحوي انجنیر د تایید له مخې دوره‌يي تادیه'));
+  }, [language, contractTypeEdited, paymentTermsEdited]);
+
   if (!isOpen || !currentProject) return null;
 
   const parsedAmount = parseFloat(contractAmount) || 0;
@@ -49,7 +58,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
     setFormError(null);
 
     if (!name.trim()) {
-      setFormError('نام قراردادی الزامی است.');
+      setFormError(tx('Contractor name is required.', 'نام قراردادی الزامی است.', 'د قراردادي نوم اړین دی.'));
       return;
     }
 
@@ -58,22 +67,22 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
            c.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
     if (isDuplicate) {
-      setFormError(`قراردادی با نام "${name.trim()}" قبلاً در این پروژه ثبت شده است.`);
+      setFormError(tx(`Contractor ${name.trim()} is already registered for this project.`, `قراردادی با نام «${name.trim()}» پیش‌تر در این پروژه ثبت شده است.`, `د ${name.trim()} قراردادي په دې پروژه کې مخکې ثبت شوی دی.`));
       return;
     }
 
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setFormError('مبلغ قرارداد باید بزرگتر از صفر باشد.');
+      setFormError(tx('The contract amount must be greater than zero.', 'مبلغ قرارداد باید بیشتر از صفر باشد.', 'د تړون اندازه باید تر صفر لوړه وي.'));
       return;
     }
 
     if (retention < 0 || retention > 100) {
-      setFormError('درصد ضمانت حسن نیت نامعتبر است.');
+      setFormError(tx('The retention percentage is invalid.', 'درصد تضمین قرارداد نامعتبر است.', 'د تضمین سلنه ناسمه ده.'));
       return;
     }
 
     if (!startDate || isNaN(new Date(startDate).getTime())) {
-      setFormError('تاریخ شروع نامعتبر است.');
+      setFormError(tx('The start date is invalid.', 'تاریخ آغاز نامعتبر است.', 'د پیل نېټه ناسمه ده.'));
       return;
     }
 
@@ -82,7 +91,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
       projectId: currentProject.id,
       name: name.trim(),
       contractType: contractType.trim(),
-      phone: phone.trim() || '+93 78 000 0000',
+      phone: phone.trim(),
       contractAmount: contractAmountUSD,
       totalPaid: 0,
       remainingBalance: contractAmountUSD,
@@ -109,7 +118,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
             type="button"
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -129,7 +138,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
               <input
                 type="text"
                 required
-                placeholder="مثلاً: استاد قادر قالب‌بند"
+                placeholder={tx('e.g. Qadir, formwork contractor', 'مثلاً: استاد قادر قالب‌بند', 'لکه: استاد قادر قالب‌بند')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
@@ -140,9 +149,9 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
               <input
                 type="text"
                 required
-                placeholder="مثلاً: قالب‌بندی / نل‌دوانی / خشت‌کاری"
+                placeholder={tx('e.g. Formwork / plumbing / masonry', 'مثلاً: قالب‌بندی / نلدوانی / خشت‌کاری', 'لکه: قالب‌بندي / نل‌دواني / خښتو ایښودل')}
                 value={contractType}
-                onChange={(e) => setContractType(e.target.value)}
+                onChange={(e) => { setContractType(e.target.value); setContractTypeEdited(true); }}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
@@ -169,14 +178,14 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
                       onClick={() => setCurrency('USD')}
                       className={`px-2 py-0.5 rounded text-[10px] font-black ${currency === 'USD' ? 'bg-amber-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
                     >
-                      دالر ($)
+                      {tx('US dollars ($)', 'دالر ($)', 'امریکايي ډالر ($)')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setCurrency('AFN')}
                       className={`px-2 py-0.5 rounded text-[10px] font-black ${currency === 'AFN' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
                     >
-                      افغانی
+                      {tx('Afghan afghani', 'افغانی', 'افغانۍ')}
                     </button>
                   </div>
                   <button
@@ -191,7 +200,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
 
               {showRateInput && (
                 <div className="mb-2 p-2 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center gap-2 text-xs">
-                  <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">نرخ:</span>
+                  <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">{tx('Exchange rate:', 'نرخ تبادله:', 'د تبادلې نرخ:')}</span>
                   <input
                     type="number"
                     step="any"
@@ -199,13 +208,13 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
                     onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 70)}
                     className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold bg-surface border border-amber-400 rounded text-center text-ink"
                   />
-                  <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">افغانی</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">{tx('AFN', 'افغانی', 'افغانۍ')}</span>
                   <button
                     type="button"
                     onClick={() => setShowRateInput(false)}
                     className="px-2 py-0.5 bg-amber-600 text-white rounded text-[10px] font-bold"
                   >
-                    تایید
+                    {tx('Apply', 'تأیید', 'تایید')}
                   </button>
                 </div>
               )}
@@ -215,7 +224,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
                 step="any"
                 min="0"
                 required
-                placeholder="مثلاً: 75000"
+                placeholder={tx('e.g. 75,000', 'مثلاً: ۷۵٬۰۰۰', 'لکه: ۷۵٬۰۰۰')}
                 value={contractAmount}
                 onChange={(e) => setContractAmount(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold font-mono"
@@ -253,7 +262,7 @@ export const AddContractorModal: React.FC<AddContractorModalProps> = ({ isOpen, 
             <input
               type="text"
               value={paymentTerms}
-              onChange={(e) => setPaymentTerms(e.target.value)}
+              onChange={(e) => { setPaymentTerms(e.target.value); setPaymentTermsEdited(true); }}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
             />
           </div>

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { User, UserActivityEvent, CustomActionButton, CustomBillDesign, DEFAULT_ACTION_BUTTONS } from '../types';
+import { intlLocaleFor, localizeActionButtonLabel, localizeText } from '../i18n/localize';
+import type { LocalizedCopy } from '../i18n/localize';
 import { 
   ShieldCheck, 
   Lock, 
@@ -76,35 +78,36 @@ interface MasterAdminModalProps {
 }
 
 /** Every clickable app section an owner/employee can be granted access to */
-const TAB_OPTIONS: Array<{ id: string; label: string }> = [
-  { id: 'dashboard',   label: 'داشبورد' },
-  { id: 'projects',    label: 'پروژه‌ها' },
-  { id: 'income',      label: 'عواید و دریافت‌ها' },
-  { id: 'materials',   label: 'خرید مصالح و تدارکات' },
-  { id: 'labor',       label: 'کارکرد و معاشات' },
-  { id: 'steel',       label: 'سیخ‌گول' },
-  { id: 'concrete',    label: 'کانکریت' },
-  { id: 'expenses',    label: 'هزینه‌ها' },
-  { id: 'contractors', label: 'پیمانکاران' },
-  { id: 'suppliers',   label: 'عرضه‌کنندگان' },
-  { id: 'apartments',  label: 'پلاک‌ها و فروش' },
-  { id: 'payments',    label: 'پرداخت‌ها' },
-  { id: 'treasury',    label: 'بانک و حسابداری' },
-  { id: 'petty_cash',  label: 'صندوق خُرد' },
-  { id: 'assets',      label: 'اموال و تجهیزات' },
-  { id: 'transfers',   label: 'انتقالات کارگاهی' },
-  { id: 'budget',      label: 'بودجه پروژه' },
-  { id: 'accounting',  label: 'دفاتر حسابداری' },
-  { id: 'journal',     label: 'اسناد روزنامچه' },
-  { id: 'documents',   label: 'اسناد و بِل‌ها' },
-  { id: 'reports',     label: 'گزارشات' },
-  { id: 'settings',    label: 'تنظیمات' },
-  { id: 'users',       label: 'مدیریت کارمندان' },
-  { id: 'audit_logs',  label: 'ثبت رویدادها' },
+const TAB_OPTIONS: Array<{ id: string; label: LocalizedCopy }> = [
+  { id: 'dashboard', label: { en: 'Dashboard', fa: 'داشبورد', ps: 'ډشبورډ' } },
+  { id: 'projects', label: { en: 'Projects', fa: 'پروژه‌ها', ps: 'پروژې' } },
+  { id: 'income', label: { en: 'Income & collections', fa: 'عواید و دریافت‌ها', ps: 'عواید او ترلاسه کول' } },
+  { id: 'materials', label: { en: 'Materials & procurement', fa: 'خرید مصالح و تدارکات', ps: 'د موادو پېرود او تدارکات' } },
+  { id: 'labor', label: { en: 'Labor & wages', fa: 'کارکرد و معاشات', ps: 'د کار او معاشاتو ثبت' } },
+  { id: 'steel', label: { en: 'Rebar & steel', fa: 'سیخ‌گول و آهن‌آلات', ps: 'سیخ ګول او اوسپنه' } },
+  { id: 'concrete', label: { en: 'Concrete', fa: 'کانکریت', ps: 'کانکریټ' } },
+  { id: 'expenses', label: { en: 'Expenses', fa: 'مصارف', ps: 'لګښتونه' } },
+  { id: 'contractors', label: { en: 'Contractors', fa: 'قراردادی‌ها', ps: 'قراردادیان' } },
+  { id: 'suppliers', label: { en: 'Suppliers', fa: 'عرضه‌کنندگان', ps: 'عرضه کوونکي' } },
+  { id: 'apartments', label: { en: 'Apartments & sales', fa: 'آپارتمان‌ها و فروش', ps: 'اپارتمانونه او پلور' } },
+  { id: 'payments', label: { en: 'Payments', fa: 'پرداخت‌ها', ps: 'تادیات' } },
+  { id: 'treasury', label: { en: 'Bank & treasury', fa: 'بانک و خزانه‌داری', ps: 'بانک او خزانه' } },
+  { id: 'petty_cash', label: { en: 'Petty cash', fa: 'صندوق خُرد', ps: 'کوچنی صندوق' } },
+  { id: 'assets', label: { en: 'Assets & equipment', fa: 'اموال و تجهیزات', ps: 'شتمنۍ او تجهیزات' } },
+  { id: 'transfers', label: { en: 'Project transfers', fa: 'انتقالات پروژه‌ای', ps: 'د پروژو ترمنځ لېږدونه' } },
+  { id: 'budget', label: { en: 'Project budget', fa: 'بودجه پروژه', ps: 'د پروژې بودجه' } },
+  { id: 'accounting', label: { en: 'Accounting books', fa: 'دفاتر حسابداری', ps: 'د محاسبې دفترونه' } },
+  { id: 'journal', label: { en: 'Journal entries', fa: 'اسناد روزنامچه', ps: 'د ورځپاڼې اسناد' } },
+  { id: 'documents', label: { en: 'Documents & bills', fa: 'اسناد و بل‌ها', ps: 'اسناد او بلونه' } },
+  { id: 'reports', label: { en: 'Reports', fa: 'گزارشات', ps: 'راپورونه' } },
+  { id: 'settings', label: { en: 'Settings', fa: 'تنظیمات', ps: 'تنظیمات' } },
+  { id: 'users', label: { en: 'Employee management', fa: 'مدیریت کارمندان', ps: 'د کارکوونکو مدیریت' } },
+  { id: 'audit_logs', label: { en: 'Audit log', fa: 'ثبت رویدادها', ps: 'د پېښو ثبت' } },
 ];
 
 export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onClose, directAccess, fullPage }) => {
   const { 
+    currentUser,
     users, 
     projects, 
     chargeUserSubscription, 
@@ -115,19 +118,16 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     addUser,
     activityEvents,
     logout,
-    t 
+    t,
+    language,
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const getTabLabel = (id: string) => {
+    const option = TAB_OPTIONS.find(tab => tab.id === id);
+    return option ? localizeText(language, option.label) : tx('Other section', 'بخش دیگر', 'بله برخه');
+  };
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Fresh master login → bypass the second key screen entirely
-  useEffect(() => {
-    if (isOpen && directAccess) setIsAuthenticated(true);
-  }, [isOpen, directAccess]);
-  const [securityPassword, setSecurityPassword] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const isAuthenticated = Boolean(currentUser?.isMasterSuperAdmin);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'locked' | 'ai'>('all');
@@ -235,9 +235,6 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
   // دفتر هفت SaaS dashboard internals
   const [officeTab, setOfficeTab] = useState<'dashboard' | 'owners' | 'security'>('dashboard');
-  const [newGateKey, setNewGateKey] = useState('');
-  const [newGateKeyRepeat, setNewGateKeyRepeat] = useState('');
-  const [gateKeyMsg, setGateKeyMsg] = useState<string | null>(null);
 
   const tenantUsers = users.filter(u => !u.isMasterSuperAdmin);
 
@@ -269,42 +266,6 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
   const employeesOf = (ownerId: string) => staffList.filter(u => u.ownerAdminId === ownerId);
   const ungroupedStaff = staffList.filter(u => !ownerList.some(o => o.id === u.ownerAdminId));
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (lockoutUntil && Date.now() < lockoutUntil) {
-      const remainingSecs = Math.ceil((lockoutUntil - Date.now()) / 1000);
-      setAuthError(`دسترسی برای ${remainingSecs} ثانیه مسدود است.`);
-      return;
-    }
-
-    const cleanPwd = securityPassword.trim();
-    const customKey = localStorage.getItem('nsc_office7_key') || '';
-    const masterAccountPwd = users.find(u => u.isMasterSuperAdmin)?.password || '';
-    const validMasterKeys = [
-      customKey,
-      masterAccountPwd,
-      'nik@master2026',
-      '0093783788278',
-      'najeemnik@2026',
-      'password123'
-    ].filter(Boolean);
-
-    if (validMasterKeys.includes(cleanPwd)) {
-      setIsAuthenticated(true);
-      setAuthError(null);
-      setFailedAttempts(0);
-      setLockoutUntil(null);
-    } else {
-      const newAttempts = failedAttempts + 1;
-      setFailedAttempts(newAttempts);
-      if (newAttempts >= 5) {
-        setLockoutUntil(Date.now() + 30000);
-        setAuthError('تلاش‌های ناموفق بیش از حد. دسترسی ۳۰ ثانیه معلق شد.');
-      } else {
-        setAuthError(`رمز امنیتی ماستر نادرست است. (${5 - newAttempts} تلاش باقیمانده)`);
-      }
-    }
-  };
 
   const handleOpenTenantInspector = (user: User) => {
     setSelectedTenant(user);
@@ -346,11 +307,20 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       borderStyle: bill.borderStyle || 'solid',
     });
 
-    setEditButtonConfig(
-      user.customButtonConfig && user.customButtonConfig.length > 0 
-        ? user.customButtonConfig 
-        : DEFAULT_ACTION_BUTTONS
-    );
+    const configuredButtons = user.customButtonConfig && user.customButtonConfig.length > 0
+      ? user.customButtonConfig
+      : DEFAULT_ACTION_BUTTONS;
+    setEditButtonConfig(configuredButtons.map(button => {
+      const defaults = DEFAULT_ACTION_BUTTONS.find(candidate => candidate.id === button.id);
+      return {
+        ...button,
+        actionKey: button.actionKey || button.id,
+        labelFa: button.labelFa || defaults?.labelFa || button.label,
+        labelEn: button.labelEn || defaults?.labelEn || '',
+        labelPs: button.labelPs || defaults?.labelPs || '',
+        isEnabled: button.isEnabled ?? button.enabled,
+      };
+    }));
 
     const mods = user.customEnabledModules || {};
     setEditModules({
@@ -393,11 +363,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     }
   };
 
-  const handleSaveTenantChanges = (e?: React.FormEvent) => {
+  const handleSaveTenantChanges = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedTenant) return;
 
-    const result = updateTenantByMasterAdmin(selectedTenant.id, {
+    const result = await updateTenantByMasterAdmin(selectedTenant.id, {
       name: editName.trim(),
       email: editEmail.trim(),
       phone: editPhone.trim(),
@@ -418,50 +388,61 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
     });
 
     if (result.success) {
-      setSaveSuccessNotice(`تنظیمات شرکت ${editCompanyName || editName} با موفقیت به روز شد.`);
-      setTimeout(() => {
-        setSaveSuccessNotice(null);
-      }, 4000);
+      setSaveSuccessNotice(`مشخصات حساب، ماژول‌ها و دسترسی تب‌ها در سرور ذخیره شد؛ تغییرات لوگو، طرح بل و دکمه‌ها هنوز در سرور پشتیبانی نمی‌شود.`);
+      setTimeout(() => setSaveSuccessNotice(null), 6000);
+    } else {
+      setSaveSuccessNotice(result.error || 'تنظیمات در سرور ذخیره نشد.');
+      setTimeout(() => setSaveSuccessNotice(null), 6000);
     }
   };
 
-  const handleQuickCharge = (months: number) => {
+  const handleQuickCharge = async (months: number) => {
     if (!selectedTenant) return;
-    chargeUserSubscription(selectedTenant.id, months);
-    const updated = users.find(u => u.id === selectedTenant.id);
-    if (updated?.subscriptionExpiresAt) {
-      setEditExpiresAt(updated.subscriptionExpiresAt.split('T')[0]);
+    const result = await chargeUserSubscription(selectedTenant.id, months);
+    if (!result.success) {
+      setSaveSuccessNotice(result.error || 'Subscription update failed.');
+      setTimeout(() => setSaveSuccessNotice(null), 5000);
+      return;
     }
+    const nextExpiry = result.subscriptionExpiresAt;
+    if (!nextExpiry) {
+      setSaveSuccessNotice('اشتراک تمدید شد، اما تاریخ تازه از سرور دریافت نشد؛ فهرست را تازه کنید.');
+      setTimeout(() => setSaveSuccessNotice(null), 5000);
+      return;
+    }
+    setSelectedTenant(prev => prev ? { ...prev, subscriptionExpiresAt: nextExpiry } : prev);
+    setEditExpiresAt(nextExpiry.split('T')[0]);
     setSaveSuccessNotice(`اشتراک برای ${months} ماه با موفقیت تمدید شد.`);
     setTimeout(() => setSaveSuccessNotice(null), 3000);
   };
 
-  const handleImpersonate = (user: User) => {
-    impersonateTenant(user);
-    handleClose();
+  const handleToggleTenantLock = async () => {
+    if (!selectedTenant) return;
+    const result = await toggleLockUserBySuperAdmin(selectedTenant.id);
+    if (!result.success || result.isLocked === undefined) {
+      setSaveSuccessNotice(result.error || 'وضعیت حساب در سرور تغییر نکرد.');
+      setTimeout(() => setSaveSuccessNotice(null), 5000);
+      return;
+    }
+    setSelectedTenant(prev => prev ? {
+      ...prev,
+      isLockedBySuperAdmin: result.isLocked,
+      active: !result.isLocked,
+    } : prev);
+    setSaveSuccessNotice(result.isLocked ? 'حساب شرکت در سرور قفل شد.' : 'قفل حساب شرکت در سرور برداشته شد.');
+    setTimeout(() => setSaveSuccessNotice(null), 4000);
+  };
+
+  const handleImpersonate = (_user: User) => {
+    setSaveSuccessNotice('Tenant impersonation is disabled until a server-authorized inspection flow is implemented.');
+    setTimeout(() => setSaveSuccessNotice(null), 5000);
   };
 
   const handleCreateOwner = (e: React.FormEvent) => {
     e.preventDefault();
-    addUser({
-      username: newOwner.username.trim(),
-      email: newOwner.email.trim(),
-      password: newOwner.password,
-      name: newOwner.name.trim(),
-      phone: newOwner.phone.trim(),
-      companyName: newOwner.companyName.trim(),
-      companyAddress: newOwner.companyAddress.trim(),
-      role: 'admin',
-      active: true,
-      verified: true,
-      subscriptionPlan: newOwner.subscriptionPlan || 'trial',
-      subscriptionExpiresAt: newOwner.expiresAt ? new Date(newOwner.expiresAt).toISOString() : undefined,
-      permissions: { aiEnabled: true },
-    });
-    setSaveSuccessNotice(`مالک جدید «${newOwner.companyName || newOwner.name}» ساخته شد — حالا خودش برای کارمندانش یوزر می‌سازد.`);
-    setTimeout(() => setSaveSuccessNotice(null), 4000);
-    setNewOwner(emptyNewOwner);
-    setShowNewOwnerForm(false);
+    setSaveSuccessNotice('Server-side tenant provisioning is not available yet. No account was created.');
+    setTimeout(() => setSaveSuccessNotice(null), 5000);
+    setNewOwner({ ...emptyNewOwner, password: '' });
   };
 
   const toggleOwnerExpanded = (ownerId: string) => {
@@ -490,7 +471,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
               : 'bg-amber-50 border-amber-200 text-amber-600'
           }`}>
             {user.customLogoUrl ? (
-              <img src={user.customLogoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+              <img src={user.customLogoUrl} alt={tx('Company logo', 'لوگوی شرکت', 'د شرکت لوګو')} className="w-full h-full object-contain p-1" />
             ) : isEmployee ? (
               <UserCog className="w-6 h-6" />
             ) : (
@@ -507,27 +488,33 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   ? 'bg-cyan-100 text-cyan-700 border-cyan-200'
                   : 'bg-amber-100 text-amber-700 border-amber-200'
               }`}>
-                {isEmployee ? (user.role === 'accountant' ? 'کارمند · محاسب' : user.role === 'viewer' ? 'کارمند · ناظر' : 'کارمند') : 'مالک کمپنی'}
+                {isEmployee
+                  ? user.role === 'accountant'
+                    ? tx('Employee · Accountant', 'کارمند · محاسب', 'کارکوونکی · محاسب')
+                    : user.role === 'viewer'
+                      ? tx('Employee · Viewer', 'کارمند · ناظر', 'کارکوونکی · کتونکی')
+                      : tx('Employee', 'کارمند', 'کارکوونکی')
+                  : tx('Company owner', 'مالک کمپنی', 'د شرکت مالک')}
               </span>
 
               {isLocked ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                  مسدود شده
+                  {tx('Locked', 'مسدود شده', 'تړل شوی')}
                 </span>
               ) : isExpired ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                  منقضی شده
+                  {tx('Expired', 'منقضی شده', 'پای ته رسېدلی')}
                 </span>
               ) : (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                  فعال ({remainingDays} روز)
+                  {tx(`${remainingDays} days left`, `${remainingDays} روز باقی‌مانده`, `${remainingDays} ورځې پاتې دي`)}
                 </span>
               )}
             </div>
             <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1 font-mono">
-              <span>یوزر: {user.username}</span>
-              <span>ایمیل: {user.email}</span>
-              {user.phone && <span>تیلیفون: {user.phone}</span>}
+              <span>{tx('Username:', 'یوزر:', 'کارن-نوم:')} {user.username}</span>
+              <span>{tx('Email:', 'ایمیل:', 'برېښنالیک:')} {user.email}</span>
+              {user.phone && <span>{tx('Phone:', 'تیلیفون:', 'ټیلیفون:')} {user.phone}</span>}
             </div>
           </div>
         </div>
@@ -537,7 +524,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             type="button"
             onClick={() => handleImpersonate(user)}
             className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors border border-slate-200"
-            title="ورود به حساب کاربری و دیدن همه‌چیز از دید ایشان"
+            title={tx('Sign in to view this account as the user', 'ورود به حساب کاربری و دیدن سیستم از دید کاربر', 'د دې کارن په توګه حساب ته ننوتل')}
           >
             <LogIn className="w-4 h-4" />
           </button>
@@ -547,28 +534,13 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>{isEmployee ? 'مدیریت کارمند' : 'مدیریت شرکت'}</span>
+            <span>{isEmployee ? tx('Manage employee', 'مدیریت کارمند', 'د کارکوونکي مدیریت') : tx('Manage company', 'مدیریت شرکت', 'د شرکت مدیریت')}</span>
           </button>
         </div>
       </div>
     );
   };
 
-  const handleSaveGateKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newGateKey.trim() || newGateKey.trim().length < 4) {
-      setGateKeyMsg('کلید جدید باید لااقل ۴ حرف باشد.');
-      return;
-    }
-    if (newGateKey !== newGateKeyRepeat) {
-      setGateKeyMsg('تکرار کلید مطابقت ندارد.');
-      return;
-    }
-    localStorage.setItem('nsc_office7_key', newGateKey.trim());
-    setNewGateKey('');
-    setNewGateKeyRepeat('');
-    setGateKeyMsg('کلید دفتر هفت با موفقیت تغییر کرد. رمز اکانت najeemnik هم همواره مقبول باقی می‌ماند.');
-  };
 
   // ---- دفتر هفت usage analytics (who used which option how much & when) ----
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -580,11 +552,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       const dayStr = d.toISOString().slice(0, 10);
       return {
         day: dayStr,
-        label: d.toLocaleDateString('fa-AF', { weekday: 'short' }),
+        label: d.toLocaleDateString(intlLocaleFor(language), { weekday: 'short' }),
         count: activityEvents.filter(ev => ev.timestamp.startsWith(dayStr)).length,
       };
     });
-  }, [activityEvents]);
+  }, [activityEvents, language]);
 
   const featureUsage: Array<{ feature: string; count: number; color: string }> = useMemo(() => {
     const counts = new Map<string, number>();
@@ -592,12 +564,12 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       counts.set(ev.feature!, (counts.get(ev.feature!) || 0) + 1);
     });
     const palette = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6', '#64748b'];
-    return TAB_OPTIONS.map(o => ({ feature: o.label, count: counts.get(o.id) || 0 }))
+    return TAB_OPTIONS.map(o => ({ feature: getTabLabel(o.id), count: counts.get(o.id) || 0 }))
       .filter(f => f.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 7)
       .map((f, i) => ({ ...f, color: palette[i % palette.length] }));
-  }, [activityEvents]);
+  }, [activityEvents, language]);
 
   interface UserUsageStat {
     userId: string;
@@ -615,7 +587,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
       if (!byUser.has(ev.userId)) byUser.set(ev.userId, []);
       byUser.get(ev.userId)!.push(ev);
     });
-    const featureLabel = (id: string) => TAB_OPTIONS.find(o => o.id === id)?.label || id;
+    const featureLabel = getTabLabel;
     return Array.from(byUser.entries()).map(([userId, evs]) => {
       const sorted = [...evs].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
       let approxMinutes = 0;
@@ -638,7 +610,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
         topFeature: topFeatId ? featureLabel(topFeatId) : '—',
       };
     }).sort((a, b) => b.events - a.events);
-  }, [activityEvents]);
+  }, [activityEvents, language]);
 
   const recentActivity = useMemo(
     () => [...activityEvents].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 8),
@@ -699,15 +671,12 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
           return el;
         })}
         <text x="21" y="20" textAnchor="middle" fontSize="7" fontWeight="800" fill="#0f172a">{total}</text>
-        <text x="21" y="26" textAnchor="middle" fontSize="3.2" fill="#94a3b8">رویداد</text>
+        <text x="21" y="26" textAnchor="middle" fontSize="3.2" fill="#94a3b8">{tx('Events', 'رویدادها', 'پېښې')}</text>
       </svg>
     );
   };
 
   const handleClose = () => {
-    setIsAuthenticated(false);
-    setSecurityPassword('');
-    setAuthError(null);
     setSelectedTenant(null);
     onClose();
   };
@@ -733,79 +702,56 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-black tracking-tight">
-                  دفتر هفت (office_7)
+                  {tx('Office 7 (office_7)', 'دفتر هفت (office_7)', 'دفتر ۷ (office_7)')}
                 </h2>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/15 border border-white/25">
-                  پورتال مدیریت ارشد
+                  {tx('Senior administration portal', 'پورتال مدیریت ارشد', 'د لوړ مدیریت پورټل')}
                 </span>
               </div>
               <p className="text-[11px] text-indigo-100/90 mt-0.5">
-                نظارت کامل بر مالک‌ها و کارمندانشان — استفادهٔ هر یوزر، دقیقه‌به‌دقیقه، با تاریخ و ساعت
+                {tx(
+                  'Full oversight of owners and their employees — usage by each user, minute by minute, with timestamps.',
+                  'نظارت کامل بر مالک‌ها و کارمندان‌شان — میزان استفادهٔ هر کاربر، دقیقه‌به‌دقیقه، همراه تاریخ و ساعت.',
+                  'د مالکانو او د هغوی د کارکوونکو بشپړه څارنه — د هر کارن کارونه، دقیقه په دقیقه، له نېټې او وخت سره.'
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleClose}
-              title="بازگشت به سیستم اصلی"
+              title={tx('Return to the main system', 'بازگشت به سیستم اصلی', 'بېرته اصلي سیستم ته ستنېدل')}
               className="h-9 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center gap-1.5 text-[11px] font-bold transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
-              <span className="hidden sm:inline">بازگشت به اپ</span>
+              <span className="hidden sm:inline">{tx('Back to the app', 'بازگشت به برنامه', 'اپلېکېشن ته بېرته تلل')}</span>
             </button>
             <button
               onClick={() => { handleClose(); logout(); }}
-              title="خروج از سیستم"
+              title={tx('Sign out of the system', 'خروج از سیستم', 'له سیستم څخه وتل')}
               className="h-9 px-3.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-300/30 text-white flex items-center gap-1.5 text-[11px] font-bold transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">خروج</span>
+              <span className="hidden sm:inline">{tx('Sign out', 'خروج', 'وتل')}</span>
             </button>
           </div>
         </div>
 
-        {/* SCREEN 1: Authentication Screen */}
+        {/* Office 7 relies only on the authenticated, server-verified master session. */}
         {!isAuthenticated ? (
-          <div className="p-8 sm:p-12 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full text-center space-y-6 bg-white/60">
-            <div className="w-20 h-20 rounded-3xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-200/50">
-              <KeyRound className="w-10 h-10" />
+          <div className="p-8 sm:p-12 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full text-center space-y-5 bg-white/60">
+            <div className="w-20 h-20 rounded-3xl bg-rose-50 border-2 border-rose-200 flex items-center justify-center text-rose-600 shadow-xl shadow-rose-200/40">
+              <ShieldCheck className="w-10 h-10" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-slate-900">ورود محرمانه به دفتر هفت</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                کلید امنیتی دفتر هفت یا همان رمز اکانت مالک (najeemnik) را وارد فرمایید. در صورت فراموشی، کلید پیش‌فرض سیستم نیز پذیرفته می‌شود.
-              </p>
-            </div>
-
-            {authError && (
-              <div className="w-full p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2 text-start">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{authError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleAuthSubmit} className="w-full space-y-4">
-              <input
-                type="password"
-                required
-                autoFocus
-                value={securityPassword}
-                onChange={(e) => setSecurityPassword(e.target.value)}
-                placeholder="کلید امنیتی دفتر هفت..."
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-center font-mono text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-              />
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-l from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
-              >
-                <span>احراز هویت و ورود</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-
-            <div className="text-[11px] text-slate-400">
-              IP & Master Session Logged · AES-256 Protected
-            </div>
+            <h3 className="text-lg font-black text-slate-900">{tx('Master database session required', 'ورود ماستر به نشست دیتابیس الزامی است', 'د ماستر لپاره ډیټابېس ته ننوتل اړین دي')}</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {tx(
+                'Office 7 accepts only a server-authenticated master account. No browser PIN, shared gate key, or fallback password is accepted.',
+                'دفتر هفت تنها حساب ماستری را می‌پذیرد که از سوی سرور تأیید شده باشد. PIN مرورگر، کلید مشترک ورود یا رمز جایگزین پذیرفته نمی‌شود.',
+                'دفتر ۷ یوازې هغه ماستر حساب مني چې سرور یې تصدیق کړي. د براوزر PIN، ګډه د ننوتلو کیلي یا بدیل پټنوم نه مني.'
+              )}
+            </p>
+            <button type="button" onClick={handleClose} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-bold">{t("close")}</button>
           </div>
         ) : selectedTenant ? (
           /* SCREEN 2: Tenant Inspector Modal */
@@ -818,22 +764,22 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-300 text-slate-600 text-xs font-bold flex items-center gap-1.5 transition-colors"
                 >
                   <ArrowRight className="w-4 h-4" />
-                  <span>بازگشت به لیست</span>
+                  <span>{tx('Back to list', 'بازگشت به فهرست', 'لړلیک ته بېرته تلل')}</span>
                 </button>
                 <div className="border-r border-slate-300 pe-3 flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-500">شرکت منتخب:</span>
+                  <span className="text-xs font-bold text-slate-500">{tx('Selected company:', 'شرکت منتخب:', 'ټاکل شوی شرکت:')}</span>
                   <span className="text-sm font-black text-amber-400">{editCompanyName || editName}</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
                 {[
-                  { id: 'profile', label: 'مشخصات شرکت', icon: UserCheck },
-                  { id: 'access', label: 'پرمیژن و اکسس', icon: UserCog },
-                  { id: 'modules', label: 'کنترل ماژول‌ها (۱۸)', icon: Sliders },
-                  { id: 'buttons', label: 'دکمه‌ها و اکشن‌بار', icon: Sliders },
-                  { id: 'bill', label: 'استودیوی بل و واچر', icon: Receipt },
-                  { id: 'subscription', label: 'تمدید و قفل اشتراک', icon: Calendar },
+                  { id: 'profile', label: tx('Company profile', 'مشخصات شرکت', 'د شرکت معلومات'), icon: UserCheck },
+                  { id: 'access', label: tx('Permissions and access', 'صلاحیت‌ها و دسترسی', 'اجازې او لاسرسی'), icon: UserCog },
+                  { id: 'modules', label: tx('Module controls (18)', 'کنترل ماژول‌ها (۱۸)', 'د ماډیولونو کنټرول (۱۸)'), icon: Sliders },
+                  { id: 'buttons', label: tx('Buttons and action bar', 'دکمه‌ها و نوار عملیات', 'تڼۍ او د کړنو پټه'), icon: Sliders },
+                  { id: 'bill', label: tx('Bill and voucher studio', 'استودیوی بل و واچر', 'د بل او واچر سټوډیو'), icon: Receipt },
+                  { id: 'subscription', label: tx('Subscription renewal and lock', 'تمدید و قفل اشتراک', 'د ګډون نوي کول او تړل'), icon: Calendar },
                 ].map(t => {
                   const Icon = t.icon;
                   return (
@@ -861,7 +807,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>{saveSuccessNotice}</span>
                 </span>
-                <span className="text-[10px] text-emerald-400 font-mono">ذخیره شد</span>
+                <span className="text-[10px] text-emerald-400 font-mono">{tx('Saved', 'ذخیره شد', 'خوندي شو')}</span>
               </div>
             )}
 
@@ -871,11 +817,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 space-y-4">
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-amber-400" />
-                      <span>مشخصات مدیر و شرکت</span>
+                      <span>{tx('Administrator and company details', 'مشخصات مدیر و شرکت', 'د مدیر او شرکت معلومات')}</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1">نام مدیر</label>
+                        <label className="block text-slate-500 font-bold mb-1">{tx('Administrator name', 'نام مدیر', 'د مدیر نوم')}</label>
                         <input
                           type="text"
                           value={editName}
@@ -884,7 +830,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1">نام شرکت</label>
+                        <label className="block text-slate-500 font-bold mb-1">{tx('Company name', 'نام شرکت', 'د شرکت نوم')}</label>
                         <input
                           type="text"
                           value={editCompanyName}
@@ -893,7 +839,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1">ایمیل رسمی</label>
+                        <label className="block text-slate-500 font-bold mb-1">{tx('Official email', 'ایمیل رسمی', 'رسمي برېښنالیک')}</label>
                         <input
                           type="email"
                           value={editEmail}
@@ -902,7 +848,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1">شماره تماس</label>
+                        <label className="block text-slate-500 font-bold mb-1">{t("phone")}</label>
                         <input
                           type="text"
                           value={editPhone}
@@ -916,13 +862,13 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <div className="p-4 bg-amber-950/20 border border-amber-500/30 rounded-2xl space-y-3">
                     <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
                       <KeyRound className="w-4 h-4 text-amber-400" />
-                      <span>تغییر مستقیم رمز عبور کاربر توسط ماستر</span>
+                      <span>{tx('Change the user password directly as master', 'تغییر مستقیم رمز عبور کاربر توسط ماستر', 'د ماستر له‌خوا د کارن پټنوم مستقیم بدلول')}</span>
                     </h3>
                     <input
                       type="text"
                       value={editPassword}
                       onChange={(e) => setEditPassword(e.target.value)}
-                      placeholder="رمز عبور جدید..."
+                      placeholder={tx('New password...', 'رمز عبور جدید...', 'نوی پټنوم...')}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-amber-400 rounded-xl text-slate-900 font-mono text-xs"
                     />
                   </div>
@@ -935,24 +881,34 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2">
                       <div className="flex items-center gap-2 text-amber-300 text-xs font-black">
                         <Crown className="w-4 h-4" />
-                        <span>این حساب «مالک کمپنی» است</span>
+                        <span>{tx('This account is a company owner', 'این حساب «مالک شرکت» است', 'دا حساب د شرکت د مالک دی')}</span>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
-                        مالک به تمام تب‌های فعال کمپنی‌اش دسترسی کامل دارد. برای محدود کردن مالک، از برگهٔ
-                        <span className="text-amber-300 font-bold"> «کنترل ماژول‌ها» </span>
-                        ماژول‌های کمپنی را خاموش/روشن کنید تا یکجا روی مالک و تمام کارمندانش اعمال شود.
-                        تب‌های منتخب ذیل همچنین به عنوان اکسس‌لیست ذخیره می‌شوند (برای کارمندان همین کمپنی اعمال می‌شوند).
+                        {tx(
+                          'Owners have full access to every enabled company tab. To limit an owner, open the',
+                          'مالک به تمام برگه‌های فعال شرکت خود دسترسی کامل دارد. برای محدود کردن دسترسی مالک، برگهٔ',
+                          'مالک د خپل شرکت ټولو فعالو ټبونو ته بشپړ لاسرسی لري. د مالک د لاسرسي محدودولو لپاره،'
+                        )}
+                        <span className="text-amber-300 font-bold"> {tx('Module controls', 'کنترل ماژول‌ها', 'د ماډیولونو کنټرول')} </span>
+                        {tx(
+                          'and enable or disable modules; the change applies to the owner and all employees. The selected tabs below are also saved and apply to this company’s employees.',
+                          'را باز کنید و ماژول‌ها را فعال یا غیرفعال سازید؛ این تغییر یکجا بر مالک و همهٔ کارمندانش تطبیق می‌شود. برگه‌های انتخاب‌شدهٔ زیر نیز ذخیره شده و برای کارمندان همین شرکت به‌کار می‌رود.',
+                          'ټب پرانیزئ او ماډیولونه فعال یا بند کړئ؛ دا بدلون پر مالک او د هغه پر ټولو کارکوونکو یوځای تطبیقېږي. لاندې ټاکل شوي ټبونه هم ساتل کېږي او د همدې شرکت د کارکوونکو لپاره کارول کېږي.'
+                        )}
                       </p>
                     </div>
                   ) : (
                     <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl space-y-1">
                       <div className="flex items-center gap-2 text-cyan-300 text-xs font-black">
                         <UserCog className="w-4 h-4" />
-                        <span>اکسس تب‌ها برای این کاربر</span>
+                        <span>{tx('Tab access for this employee', 'دسترسی برگه‌ها برای این کاربر', 'دې کارکوونکي ته د ټبونو لاسرسی')}</span>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
-                        برای کارمند (محاسب/ناظر)، تب‌هایی را که اجازه دارد ببیند فعال کنید. تغییرات در همان لحظه در همهٔ
-                        دستگاه‌ها و صفحات ناوبری (سایدبار، منوی موبایل و دروازهٔ لاگین) اعمال می‌شود.
+                        {tx(
+                          'For an employee (accountant/viewer), enable only the tabs they are permitted to access. Changes take effect immediately on all devices and navigation surfaces (sidebar, mobile menu, and login screen).',
+                          'برای کارمند (محاسب یا ناظر)، فقط برگه‌هایی را فعال کنید که اجازهٔ دیدن آن‌ها را دارد. تغییرات فوراً در همهٔ دستگاه‌ها و بخش‌های ناوبری (نوار کناری، منوی موبایل و صفحهٔ ورود) تطبیق می‌شود.',
+                          'د کارکوونکي (محاسب یا کتونکي) لپاره یوازې هغه ټبونه فعال کړئ چې د لیدلو اجازه یې لري. بدلونونه سمدستي په ټولو وسیلو او د تګ راتګ برخو (اړخیز مېنو، موبایل مېنو او د ننوتلو پاڼه) کې پلي کېږي.'
+                        )}
                       </p>
                     </div>
                   )}
@@ -963,16 +919,16 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       onClick={() => setEditAllowedTabs(TAB_OPTIONS.map(o => o.id))}
                       className="px-3 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-600 text-[11px] font-bold hover:bg-emerald-600/30 transition-colors"
                     >
-                      انتخاب همه
+                      {tx('Select all', 'انتخاب همه', 'ټول ټاکل')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditAllowedTabs(['dashboard'])}
                       className="px-3 py-1.5 rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-600 text-[11px] font-bold hover:bg-rose-600/30 transition-colors"
                     >
-                      فقط داشبورد
+                      {tx('Dashboard only', 'فقط داشبورد', 'یوازې ډشبورډ')}
                     </button>
-                    <span className="text-[11px] text-slate-500 ms-auto">{editAllowedTabs.length} تب منتخب</span>
+                    <span className="text-[11px] text-slate-500 ms-auto">{editAllowedTabs.length} {tx('tabs selected', 'برگهٔ منتخب', 'ټاکل شوي ټبونه')}</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -993,7 +949,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-600'
                           }`}
                         >
-                          <span className="text-start">{label}</span>
+                          <span className="text-start">{localizeText(language, label)}</span>
                           {checked && <Check className="w-3.5 h-3.5 shrink-0" />}
                         </button>
                       );
@@ -1006,24 +962,24 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 <div className="space-y-4 max-w-4xl mx-auto">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     {[
-                      { id: 'income', label: 'عواید و دریافت‌ها', desc: 'اقساط، فروش واحد و سرمایه‌گذاران', icon: Coins },
-                      { id: 'materials', label: 'خرید مصالح و تدارکات', desc: 'سیمان، ریگ، خشت با اتصال به مصرف', icon: Truck },
-                      { id: 'labor', label: 'معاشات کارگران', desc: 'دستمزد، مساعده و تسویه کارکرد', icon: UserCheck },
-                      { id: 'steel', label: 'سیخ‌گول و آهن‌آلات', desc: 'محاسبات کیلو و تن و قیمت', icon: Layers },
-                      { id: 'concrete', label: 'کانکریت و پمپ', desc: 'بچینگ، مکسر و کرایه پمپ', icon: CircleDot },
-                      { id: 'expenses', label: 'مصارف روزمره', desc: 'خریدهای عمومی و متفرقه', icon: Receipt },
-                      { id: 'contractors', label: 'قراردادی‌ها', desc: 'قراردادها، پیشرفت و حسن نیت', icon: HardHat },
-                      { id: 'suppliers', label: 'تأمین‌کنندگان', desc: 'فروشندگان مصالح و طلبکاری', icon: Building2 },
-                      { id: 'apartments', label: 'آپارتمان‌ها', desc: 'فروش، متراژ و اقساط', icon: Home },
-                      { id: 'payments', label: 'پرداخت و رسید', desc: 'صدور رسید و ثبت چک و بانکی', icon: CreditCard },
-                      { id: 'treasury', label: 'بانک و خزانه‌داری', desc: 'حساب‌های بانکی و موجودی آنی', icon: Landmark },
-                      { id: 'pettyCash', label: 'تنخواه‌گردان کارگاه', desc: 'مصارف خرد و واچرهای روزمره', icon: Wallet },
-                      { id: 'assets', label: 'اموال و تجهیزات', desc: 'ماشین‌آلات، کرین و استهلاک', icon: Scale },
-                      { id: 'transfers', label: 'انتقالات پروژه‌ای', desc: 'انتقال پول و مصالح بین پروژه‌ها', icon: ArrowLeftRight },
-                      { id: 'journal', label: 'دفتر روزنامچه و تعدیلات', desc: 'اسناد دوبل دبت/کردت و اصلاحی', icon: BookOpen },
-                      { id: 'documents', label: 'اسناد و بل‌ها', desc: 'آرشیو تصاویر و اسناد', icon: FileCheck2 },
-                      { id: 'reports', label: 'گزارشات A4 و P&L', desc: 'بیلان چاپی و سود/زیان پروژه', icon: BarChart3 },
-                      { id: 'auditLogs', label: 'لاگ امنیتی', desc: 'ردیابی تمام تغییرات سیستم', icon: History },
+                      { id: 'income', label: tx('Income & collections', 'عواید و دریافت‌ها', 'عواید او ترلاسه کول'), desc: tx('Installments, unit sales, and investors', 'اقساط، فروش واحد و سرمایه‌گذاران', 'قسطونه، د واحدونو پلور او پانګه‌وال'), icon: Coins },
+                      { id: 'materials', label: tx('Materials & procurement', 'خرید مصالح و تدارکات', 'د ساختماني موادو پېرود او تدارکات'), desc: tx('Cement, gravel, and bricks linked to expenses', 'سیمان، ریگ و خشت با اتصال به مصارف', 'سمنټ، جغل او خښتې چې له لګښتونو سره تړلي دي'), icon: Truck },
+                      { id: 'labor', label: tx('Worker wages', 'معاشات کارگران', 'د کارګرانو مزدوري'), desc: tx('Wages, advances, and work-settlement records', 'دستمزد، مساعده و تسویهٔ کارکرد', 'مزدوري، مخکې ورکړې او د کار حساب تصفیه'), icon: UserCheck },
+                      { id: 'steel', label: tx('Rebar & steel', 'سیخ‌گول و آهن‌آلات', 'سیخ ګول او اوسپنیز توکي'), desc: tx('Weight and price calculations in kilograms and tons', 'محاسبهٔ وزن و قیمت به کیلوگرام و تُن', 'په کیلوګرام او ټنو کې د وزن او بیې محاسبه'), icon: Layers },
+                      { id: 'concrete', label: tx('Concrete & pump', 'کانکریت و پمپ', 'کانکریټ او پمپ'), desc: tx('Batching, mixers, and pump rental', 'بچینگ، مکسر و کرایهٔ پمپ', 'بچینګ، مکسرونه او د پمپ کرایه'), icon: CircleDot },
+                      { id: 'expenses', label: tx('Daily expenses', 'مصارف روزمره', 'ورځني لګښتونه'), desc: tx('General and miscellaneous purchases', 'خریدهای عمومی و متفرقه', 'عمومي او بېلابېل پېرودونه'), icon: Receipt },
+                      { id: 'contractors', label: tx('Contractors', 'قراردادی‌ها', 'قراردادیان'), desc: tx('Contracts, progress, and retention', 'قراردادها، پیشرفت و تضمین حسن اجرا', 'قراردادونه، پرمختګ او د حسن اجرا تضمین'), icon: HardHat },
+                      { id: 'suppliers', label: tx('Suppliers', 'عرضه‌کنندگان', 'عرضه کوونکي'), desc: tx('Materials suppliers and outstanding balances', 'فروشندگان مصالح و حساب‌های باقیمانده', 'د موادو عرضه کوونکي او پاتې حسابونه'), icon: Building2 },
+                      { id: 'apartments', label: tx('Apartments', 'آپارتمان‌ها', 'اپارتمانونه'), desc: tx('Sales, floor area, and installments', 'فروش، مساحت و اقساط', 'پلور، مساحت او قسطونه'), icon: Home },
+                      { id: 'payments', label: tx('Payments & receipts', 'پرداخت و رسید', 'تادیات او رسیدونه'), desc: tx('Issue receipts and record cheques and bank payments', 'صدور رسید و ثبت چک و پرداخت‌های بانکی', 'رسیدونه صادرول او چکونه او بانکي تادیات ثبتول'), icon: CreditCard },
+                      { id: 'treasury', label: tx('Bank & treasury', 'بانک و خزانه‌داری', 'بانک او خزانه'), desc: tx('Bank accounts and live balances', 'حساب‌های بانکی و موجودی لحظه‌ای', 'بانکي حسابونه او اوسني بیلانسونه'), icon: Landmark },
+                      { id: 'pettyCash', label: tx('Site petty cash', 'تنخواه‌گردان کارگاه', 'د کارځای کوچنی صندوق'), desc: tx('Small site expenses and daily vouchers', 'مصارف خرد و واچرهای روزمرهٔ کارگاه', 'د کارځای کوچني لګښتونه او ورځني واچرونه'), icon: Wallet },
+                      { id: 'assets', label: tx('Assets & equipment', 'اموال و تجهیزات', 'شتمنۍ او تجهیزات'), desc: tx('Machinery, cranes, and depreciation', 'ماشین‌آلات، کرین و استهلاک', 'ماشینونه، کرېنونه او استهلاک'), icon: Scale },
+                      { id: 'transfers', label: tx('Project transfers', 'انتقالات پروژه‌ای', 'د پروژو ترمنځ لېږدونه'), desc: tx('Transfer money and materials between projects', 'انتقال پول و مصالح میان پروژه‌ها', 'د پروژو ترمنځ د پیسو او موادو لېږد'), icon: ArrowLeftRight },
+                      { id: 'journal', label: tx('Journal and adjustments', 'دفتر روزنامچه و تعدیلات', 'د ورځپاڼې دفتر او تعدیلات'), desc: tx('Double-entry debits, credits, and adjustments', 'ثبت دوبل بدهکار، بستانکار و تعدیلات', 'دوه‌اړخیز ډیبیټ، کریډیټ او تعدیلات'), icon: BookOpen },
+                      { id: 'documents', label: tx('Documents & bills', 'اسناد و بل‌ها', 'اسناد او بلونه'), desc: tx('Archive of images and documents', 'آرشیف تصاویر و اسناد', 'د انځورونو او اسنادو زېرمتون'), icon: FileCheck2 },
+                      { id: 'reports', label: tx('A4 reports & P&L', 'گزارشات A4 و سود و زیان', 'A4 راپورونه او ګټه او زیان'), desc: tx('Printable statements and project profit/loss', 'صورت‌حساب چاپی و سود و زیان پروژه', 'چاپېدونکي راپورونه او د پروژې ګټه/زیان'), icon: BarChart3 },
+                      { id: 'auditLogs', label: tx('Security log', 'لاگ امنیتی', 'امنیتي لاګ'), desc: tx('Track all system changes', 'ردیابی تمام تغییرات سیستم', 'د سیستم د ټولو بدلونونو څارنه'), icon: History },
                     ].map(mod => {
                       const isEnabled = (editModules as any)[mod.id] !== false;
                       const Icon = mod.icon;
@@ -1048,7 +1004,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                                 isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-100 text-slate-500'
                               }`}>
-                                {isEnabled ? 'فعال' : 'غیرفعال'}
+                                {isEnabled ? t("active") : t("disabled")}
                               </span>
                             </div>
                             <p className="text-[11px] text-slate-500 mt-0.5">{mod.desc}</p>
@@ -1066,10 +1022,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     <div>
                       <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                         <Sliders className="w-4 h-4 text-amber-500" />
-                        <span>مدیریت دکمه‌های اکشن‌بار و ثبت سریع</span>
+                        <span>{tx('Action bar and quick-entry buttons', 'مدیریت دکمه‌های نوار عملیات و ثبت سریع', 'د کړنو پټې او چټک ثبت تڼۍ')}</span>
                       </h3>
                       <p className="text-[11px] text-slate-500 mt-0.5">
-                        تنظیم ترتیب قرارگیری، فعال/غیرفعال بودن، شکل دکمه (Pill, Rounded, Square)، رنگ و عنوان هر دکمه.
+                        {tx(
+                          'Set the order, enabled state, shape, color, and label for each button.',
+                          'ترتیب، وضعیت فعال یا غیرفعال، شکل، رنگ و عنوان هر دکمه را تنظیم کنید.',
+                          'د هرې تڼۍ ترتیب، فعال یا غیرفعال حالت، بڼه، رنګ او سرلیک وټاکئ.'
+                        )}
                       </p>
                     </div>
                     <button
@@ -1077,7 +1037,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       onClick={() => setEditButtonConfig([...DEFAULT_ACTION_BUTTONS])}
                       className="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
                     >
-                      بازنشانی به حالت اولیه
+                      {tx('Reset to defaults', 'بازنشانی به حالت اولیه', 'اصلي حالت ته ستنول')}
                     </button>
                   </div>
 
@@ -1138,7 +1098,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                     disabled={index === 0}
                                     onClick={moveUp}
                                     className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 disabled:opacity-30"
-                                    title="حرکت به بالا"
+                                    title={tx('Move up', 'حرکت به بالا', 'پورته خوځول')}
                                   >
                                     <MoveUp className="w-3.5 h-3.5" />
                                   </button>
@@ -1147,7 +1107,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                     disabled={index === arr.length - 1}
                                     onClick={moveDown}
                                     className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 disabled:opacity-30"
-                                    title="حرکت به پایین"
+                                    title={tx('Move down', 'حرکت به پایین', 'ښکته خوځول')}
                                   >
                                     <MoveDown className="w-3.5 h-3.5" />
                                   </button>
@@ -1160,45 +1120,67 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-black text-xs text-slate-800 dark:text-slate-100">
-                                      {btn.labelFa}
+                                      {localizeActionButtonLabel(btn, language)}
                                     </span>
                                     <span className="text-[10px] text-slate-400 font-mono">
                                       ({btn.actionKey})
                                     </span>
                                   </div>
-                                  <span className="text-[11px] text-slate-400">{btn.labelEn}</span>
+                                  <div className="flex flex-wrap gap-x-2 text-[10px] text-slate-400">
+                                    <span>{tx('English:', 'انگلیسی:', 'انګلیسي:')} {btn.labelEn || tx('Translation unavailable', 'ترجمه موجود نیست', 'ژباړه نشته')}</span>
+                                    <span>{tx('Afghan Dari:', 'دری:', 'د افغانستان دري:')} {btn.labelFa || tx('Translation unavailable', 'ترجمه موجود نیست', 'ژباړه نشته')}</span>
+                                    <span>{tx('Pashto:', 'پشتو:', 'پښتو:')} {btn.labelPs || tx('Translation unavailable', 'ترجمه موجود نیست', 'ژباړه نشته')}</span>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Live button style preview */}
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-400 font-semibold">پیش‌نمایش دکمه:</span>
+                                <span className="text-[10px] text-slate-400 font-semibold">{tx('Button preview:', 'پیش‌نمایش دکمه:', 'د تڼۍ بېلګه:')}</span>
                                 <div
                                   className={`px-3 py-1.5 text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all ${
-                                    btn.color === 'primary' ? 'bg-amber-600 text-white' :
-                                    btn.color === 'success' ? 'bg-emerald-600 text-white' :
-                                    btn.color === 'danger' ? 'bg-rose-600 text-white' :
-                                    btn.color === 'warning' ? 'bg-orange-500 text-white' :
-                                    btn.color === 'info' ? 'bg-blue-600 text-white' :
+                                    btn.color === 'primary' || btn.color === 'amber' ? 'bg-amber-600 text-white' :
+                                    btn.color === 'success' || btn.color === 'emerald' ? 'bg-emerald-600 text-white' :
+                                    btn.color === 'danger' || btn.color === 'rose' ? 'bg-rose-600 text-white' :
+                                    btn.color === 'warning' || btn.color === 'orange' ? 'bg-orange-500 text-white' :
+                                    btn.color === 'info' || btn.color === 'blue' || btn.color === 'indigo' ? 'bg-blue-600 text-white' :
+                                    btn.color === 'purple' ? 'bg-purple-600 text-white' :
                                     'bg-slate-700 text-white'
                                   } ${
                                     btn.shape === 'pill' ? 'rounded-full' :
-                                    btn.shape === 'square' ? 'rounded-md' : 'rounded-xl'
+                                    btn.shape === 'square' || btn.shape === 'rounded-md' ? 'rounded-md' : 'rounded-xl'
                                   }`}
                                 >
-                                  <span>{btn.labelFa}</span>
+                                  <span>{localizeActionButtonLabel(btn, language)}</span>
                                 </div>
                               </div>
 
                               {/* Form Controls */}
                               <div className="flex flex-wrap items-center gap-2">
-                                {/* Editable label */}
+                                {/* One label per supported language; never borrow copy from another locale. */}
                                 <input
                                   type="text"
-                                  value={btn.labelFa}
+                                  value={btn.labelEn || ''}
+                                  onChange={e => updateField('labelEn', e.target.value)}
+                                  aria-label={tx('English action label', 'برچسب انگلیسی دکمه', 'د تڼۍ انګلیسي سرلیک')}
+                                  placeholder={tx('English label', 'برچسب انگلیسی', 'انګلیسي سرلیک')}
+                                  className="w-32 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                />
+                                <input
+                                  type="text"
+                                  value={btn.labelFa || ''}
                                   onChange={e => updateField('labelFa', e.target.value)}
-                                  placeholder="عنوان فارسی/دری"
-                                  className="w-28 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                  aria-label={tx('Afghan Dari action label', 'برچسب دری افغانستان', 'د افغانستان دري سرلیک')}
+                                  placeholder={tx('Dari label', 'برچسب دری', 'دري سرلیک')}
+                                  className="w-32 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                />
+                                <input
+                                  type="text"
+                                  value={btn.labelPs || ''}
+                                  onChange={e => updateField('labelPs', e.target.value)}
+                                  aria-label={tx('Pashto action label', 'برچسب پشتو', 'پښتو سرلیک')}
+                                  placeholder={tx('Pashto label', 'برچسب پشتو', 'پښتو سرلیک')}
+                                  className="w-32 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
                                 />
 
                                 {/* Color picker */}
@@ -1207,12 +1189,19 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                   onChange={e => updateField('color', e.target.value as any)}
                                   className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
                                 >
-                                  <option value="primary">رنگ طلایی (Amber)</option>
-                                  <option value="success">رنگ سبز (Emerald)</option>
-                                  <option value="info">رنگ آبی (Blue)</option>
-                                  <option value="danger">رنگ قرمز (Rose)</option>
-                                  <option value="warning">رنگ نارنجی (Orange)</option>
-                                  <option value="slate">رنگ سرمه‌ای (Slate)</option>
+                                  <option value="primary">{tx('Gold', 'طلایی', 'زرین')}</option>
+                                  <option value="amber">{tx('Amber', 'کهربایی', 'امبر')}</option>
+                                  <option value="success">{tx('Green', 'سبز', 'شنه')}</option>
+                                  <option value="emerald">{tx('Emerald', 'زمردی', 'زمردي')}</option>
+                                  <option value="info">{tx('Blue', 'آبی', 'آبي')}</option>
+                                  <option value="blue">{tx('Blue', 'آبی', 'آبي')}</option>
+                                  <option value="indigo">{tx('Indigo', 'نیلی', 'نیلي')}</option>
+                                  <option value="danger">{tx('Red', 'قرمز', 'سور')}</option>
+                                  <option value="rose">{tx('Rose', 'گل‌سرخ', 'ګلابي')}</option>
+                                  <option value="warning">{tx('Orange', 'نارنجی', 'نارنجي')}</option>
+                                  <option value="orange">{tx('Orange', 'نارنجی', 'نارنجي')}</option>
+                                  <option value="purple">{tx('Purple', 'بنفش', 'ارغواني')}</option>
+                                  <option value="slate">{tx('Slate', 'خاکستری تیره', 'خړ توره')}</option>
                                 </select>
 
                                 {/* Shape picker */}
@@ -1221,9 +1210,11 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                   onChange={e => updateField('shape', e.target.value as any)}
                                   className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200"
                                 >
-                                  <option value="rounded">گوشه گرد (Rounded)</option>
-                                  <option value="pill">کپسولی (Pill)</option>
-                                  <option value="square">مربعی (Square)</option>
+                                  <option value="rounded">{tx('Rounded', 'گوشه‌گرد', 'ګرد کونجونه')}</option>
+                                  <option value="rounded-xl">{tx('Extra rounded', 'بسیار گوشه‌گرد', 'ډېر ګرد کونجونه')}</option>
+                                  <option value="rounded-md">{tx('Medium rounded', 'گوشه‌گرد متوسط', 'منځني ګرد کونجونه')}</option>
+                                  <option value="pill">{tx('Pill-shaped', 'کپسولی', 'کپسول بڼه')}</option>
+                                  <option value="square">{tx('Square', 'مربعی', 'څلورګوټیز')}</option>
                                 </select>
 
                                 {/* On/Off Switch */}
@@ -1236,7 +1227,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                       : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                                   }`}
                                 >
-                                  {btn.isEnabled ? 'فعال' : 'غیرفعال'}
+                                  {btn.isEnabled ? t("active") : t("disabled")}
                                 </button>
                               </div>
                             </div>
@@ -1254,10 +1245,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     <div>
                       <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                         <Receipt className="w-4 h-4 text-amber-500" />
-                        <span>استودیو و دیزاینر آزاد و انعطاف‌پذیر رسیدها، بل‌ها و واچرها (Voucher Studio)</span>
+                        <span>{tx('Flexible voucher, bill, and receipt design studio', 'استودیوی طراحی انعطاف‌پذیر واچرها، بل‌ها و رسیدها', 'د واچرونو، بلونو او رسیدونو د طرح انعطاف منونکې سټوډیو')}</span>
                       </h3>
                       <p className="text-[11px] text-slate-500 mt-0.5">
-                        تنظیم آزادانه سربرگ، پاورقی، رنگ سازمانی، کسر تضمین حسن نیت، مالیات موضوعی، بارکد اصالت و پیش‌نمایش آنی
+                        {tx(
+                          'Configure the header, footer, brand color, retention and withholding tax, authenticity QR code, and live preview.',
+                          'سربرگ، پاورقی، رنگ سازمانی، کسور تضمین حسن اجرا و مالیات، کُد QR اصالت و پیش‌نمایش زنده را تنظیم کنید.',
+                          'سرلیک، پایلیک، د نښې رنګ، د حسن اجرا تضمین او مالیاتي کسرونه، د اصالت QR کوډ او ژوندۍ بېلګه تنظیم کړئ.'
+                        )}
                       </p>
                     </div>
 
@@ -1268,28 +1263,28 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           onClick={() => setBillPreviewType('pv')}
                           className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'pv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                          واچر پرداخت (PV)
+                          {tx('Payment voucher (PV)', 'واچر پرداخت (PV)', 'د تادیې واچر (PV)')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setBillPreviewType('rv')}
                           className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'rv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                          واچر دریافت (RV)
+                          {tx('Receipt voucher (RV)', 'واچر دریافت (RV)', 'د ترلاسه کولو واچر (RV)')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setBillPreviewType('pcv')}
                           className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'pcv' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                          تنخواه‌گردان (PCV)
+                          {tx('Petty cash voucher (PCV)', 'واچر تنخواه‌گردان (PCV)', 'د کوچني صندوق واچر (PCV)')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setBillPreviewType('contractor')}
                           className={`px-2.5 py-1.5 rounded-lg transition ${billPreviewType === 'contractor' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                          بل پیمانکار
+                          {tx('Contractor invoice', 'بل پیمانکار', 'د قراردادي بل')}
                         </button>
                       </div>
 
@@ -1299,7 +1294,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
                       >
                         <Printer className="w-3.5 h-3.5" />
-                        <span>چاپ آزمایشی (Print)</span>
+                        <span>{tx('Test print', 'چاپ آزمایشی', 'ازمایښتي چاپ')}</span>
                       </button>
                     </div>
                   </div>
@@ -1312,35 +1307,35 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                         <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-indigo-500" />
-                          <span>هویت و سربرگ رسمی سند</span>
+                          <span>{tx('Document identity and official letterhead', 'هویت و سربرگ رسمی سند', 'د سند پېژند او رسمي سرلیک')}</span>
                         </h4>
 
                         <div className="space-y-2.5 text-xs">
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">نام یا سربرگ شرکت:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Company name or letterhead:', 'نام یا سربرگ شرکت:', 'د شرکت نوم یا رسمي سرلیک:')}</label>
                             <input
                               type="text"
                               value={editBillDesign.receiptHeader || ''}
                               onChange={e => setEditBillDesign(p => ({ ...p, receiptHeader: e.target.value }))}
-                              placeholder="شرکت ساختمانی و مهندسی نگین کابل"
+                              placeholder={tx('Negin Kabul Construction and Engineering Company', 'شرکت ساختمانی و مهندسی نگین کابل', 'د نگین کابل ساختماني او انجینري شرکت')}
                               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">زیرعنوان یا نوع فعالیت:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Subtitle or business type:', 'زیرعنوان یا نوع فعالیت:', 'فرعي سرلیک یا د فعالیت ډول:')}</label>
                             <input
                               type="text"
                               value={editBillDesign.receiptSubheader || ''}
                               onChange={e => setEditBillDesign(p => ({ ...p, receiptSubheader: e.target.value }))}
-                              placeholder="سهامی خاص · شماره ثبت تجارتی کابل"
+                              placeholder={tx('Private limited company · Kabul trade registration', 'شرکت سهامی خاص · شمارهٔ ثبت تجارتی کابل', 'خصوصي محدود شرکت · د کابل د سوداګرۍ ثبت')}
                               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                             />
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-slate-500 font-bold mb-1">نمبر تشخیصیه (TIN):</label>
+                              <label className="block text-slate-500 font-bold mb-1">{tx('Tax identification number (TIN):', 'نمبر تشخیصیهٔ مالیاتی (TIN):', 'د مالیې پېژندنې شمېره (TIN):')}</label>
                               <input
                                 type="text"
                                 value={editBillDesign.taxNumber || ''}
@@ -1350,7 +1345,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               />
                             </div>
                             <div>
-                              <label className="block text-slate-500 font-bold mb-1">تلفن تماس شرکت:</label>
+                              <label className="block text-slate-500 font-bold mb-1">{tx('Company phone:', 'تلفن تماس شرکت:', 'د شرکت د ټیلیفون شمېره:')}</label>
                               <input
                                 type="text"
                                 value={editBillDesign.receiptContact || ''}
@@ -1362,12 +1357,12 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           </div>
 
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">آدرس رسمی دفتر:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Official office address:', 'آدرس رسمی دفتر:', 'د دفتر رسمي پته:')}</label>
                             <input
                               type="text"
                               value={editBillDesign.companyAddress || ''}
                               onChange={e => setEditBillDesign(p => ({ ...p, companyAddress: e.target.value }))}
-                              placeholder="چهارراهی صدارت، کابل، افغانستان"
+                              placeholder={tx('Sadarat Square, Kabul, Afghanistan', 'چهارراهی صدارت، کابل، افغانستان', 'صدارت څلورلارې، کابل، افغانستان')}
                               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                             />
                           </div>
@@ -1378,12 +1373,12 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                         <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                           <Palette className="w-4 h-4 text-amber-500" />
-                          <span>رنگ و قالب چاپی</span>
+                          <span>{tx('Print color and layout', 'رنگ و قالب چاپی', 'د چاپ رنګ او بڼه')}</span>
                         </h4>
 
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">رنگ سازمانی سربرگ:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Letterhead brand color:', 'رنگ سازمانی سربرگ:', 'د رسمي سرلیک د نښې رنګ:')}</label>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
@@ -1401,29 +1396,29 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           </div>
 
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">سایز کاغذ چاپی:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Print paper size:', 'اندازهٔ کاغذ چاپ:', 'د چاپ کاغذ کچه:')}</label>
                             <select
                               value={editBillDesign.paperSize || 'A4'}
                               onChange={e => setEditBillDesign(p => ({ ...p, paperSize: e.target.value as any }))}
                               className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold"
                             >
-                              <option value="A4">A4 (استاندارد شرکتی)</option>
-                              <option value="A5">A5 (نیم‌صفحه رسید)</option>
-                              <option value="Letter">Letter</option>
-                              <option value="Thermal80mm">حرارتی ۸۰ میلی‌متری</option>
+                              <option value="A4">{tx('A4 (company standard)', 'A4 (استاندارد شرکتی)', 'A4 (د شرکت معیاري کچه)')}</option>
+                              <option value="A5">{tx('A5 (half-page receipt)', 'A5 (نیم‌صفحهٔ رسید)', 'A5 (د رسید نیم مخ)')}</option>
+                              <option value="Letter">{tx('Letter size', 'اندازهٔ Letter', 'د Letter کچه')}</option>
+                              <option value="Thermal80mm">{tx('80 mm thermal paper', 'کاغذ حرارتی ۸۰ میلی‌متری', '۸۰ ملي‌متر حرارتي کاغذ')}</option>
                             </select>
                           </div>
                         </div>
 
                         {/* Presets */}
                         <div className="flex items-center gap-2 pt-1">
-                          <span className="text-[10px] text-slate-400">رنگ‌های محبوب:</span>
+                          <span className="text-[10px] text-slate-400">{tx('Popular colors:', 'رنگ‌های پرکاربرد:', 'ډېر کارېدونکي رنګونه:')}</span>
                           {[
-                            { name: 'سرمه‌ای', color: '#0f172a' },
-                            { name: 'زمردی', color: '#065f46' },
-                            { name: 'نیلی', color: '#3730a3' },
-                            { name: 'طلایی', color: '#b45309' },
-                            { name: 'زرشکی', color: '#991b1b' },
+                            { name: tx('Navy', 'سرمه‌ای', 'سمندري شین'), color: '#0f172a' },
+                            { name: tx('Emerald', 'زمردی', 'زمردي'), color: '#065f46' },
+                            { name: tx('Indigo', 'نیلی', 'نیلي'), color: '#3730a3' },
+                            { name: tx('Gold', 'طلایی', 'زرین'), color: '#b45309' },
+                            { name: tx('Burgundy', 'زرشکی', 'زرشکي'), color: '#991b1b' },
                           ].map(c => (
                             <button
                               key={c.color}
@@ -1441,13 +1436,13 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                         <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                           <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                          <span>بخش‌های حسابداری ساختمانی و مهندسی</span>
+                          <span>{tx('Construction and engineering accounting options', 'گزینه‌های حسابداری ساختمانی و مهندسی', 'د ساختماني او انجینري محاسبې غوراوي')}</span>
                         </h4>
 
                         <div className="space-y-2 text-xs">
                           <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              نمایش جدول کسر ۱۰٪ حسن نیت (Retention)
+                              {tx('Show the 10% retention deduction', 'نمایش کسر ۱۰٪ تضمین حسن اجرا', 'د ۱۰٪ د حسن اجرا تضمین کسر وښایئ')}
                             </span>
                             <input
                               type="checkbox"
@@ -1459,7 +1454,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                           <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              نمایش کسر مالیات موضوعی ۲٪ یا ۷٪ (BRT)
+                              {tx('Show 2% or 7% business-receipts tax withholding (BRT)', 'نمایش کسر مالیات بر عواید تجارتی ۲٪ یا ۷٪ (BRT)', 'د ۲٪ یا ۷٪ د سوداګریزو عوایدو مالیاتي کسر (BRT) وښایئ')}
                             </span>
                             <input
                               type="checkbox"
@@ -1471,7 +1466,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                           <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              نمایش بارکد هوشمند اصالت سند (QR Code)
+                              {tx('Show the document authenticity QR code', 'نمایش کُد QR اصالت سند', 'د سند د اصالت QR کوډ وښایئ')}
                             </span>
                             <input
                               type="checkbox"
@@ -1483,7 +1478,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                           <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              کادر دو امضا (محاسب / مدیر پروژه) و محل مهر
+                              {tx('Two signature lines (accountant / project manager) and stamp area', 'جای دو امضا (محاسب / مدیر پروژه) و محل مهر', 'دوه لاسلیک ځایونه (محاسب / د پروژې مدیر) او د مهر ځای')}
                             </span>
                             <input
                               type="checkbox"
@@ -1495,7 +1490,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                           <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              نمایش واترمارک رسمی در پس‌زمینه سند
+                              {tx('Show an official watermark behind the document', 'نمایش نشان رسمی پس‌زمینهٔ سند', 'د سند په شالید کې رسمي واټرمارک وښایئ')}
                             </span>
                             <input
                               type="checkbox"
@@ -1509,10 +1504,10 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                       {/* Terms & Footer Note */}
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">شرایط و پاورقی سند</h4>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">{tx('Document terms and footer', 'شرایط و پاورقی سند', 'د سند شرایط او پایلیک')}</h4>
                         <div className="space-y-2 text-xs">
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">شرایط پرداخت و تسویه:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Payment and settlement terms:', 'شرایط پرداخت و تسویه:', 'د تادیې او تصفیې شرایط:')}</label>
                             <textarea
                               rows={2}
                               value={editBillDesign.termsAndConditions || ''}
@@ -1521,12 +1516,12 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             />
                           </div>
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1">متن پاورقی:</label>
+                            <label className="block text-slate-500 font-bold mb-1">{tx('Footer text:', 'متن پاورقی:', 'د پایلیک متن:')}</label>
                             <input
                               type="text"
                               value={editBillDesign.receiptFooter || ''}
                               onChange={e => setEditBillDesign(p => ({ ...p, receiptFooter: e.target.value }))}
-                              placeholder="کابل، افغانستان · تمامی حقوق مالی محفوظ است."
+                              placeholder={tx('Kabul, Afghanistan · All financial rights reserved.', 'کابل، افغانستان · تمامی حقوق مالی محفوظ است.', 'کابل، افغانستان · ټول مالي حقونه خوندي دي.')}
                               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                             />
                           </div>
@@ -1539,7 +1534,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       <div className="sticky top-20 bg-slate-200 dark:bg-slate-950 p-4 sm:p-6 rounded-3xl border border-slate-300 dark:border-slate-800 shadow-xl overflow-x-auto">
                         <div className="text-center mb-3">
                           <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-line">
-                            پیش‌نمایش زنده چاپی · Live WYSIWYG Print Preview ({editBillDesign.paperSize || 'A4'})
+                            {tx('Live print preview', 'پیش‌نمایش زندهٔ چاپ', 'د چاپ ژوندۍ بېلګه')} ({editBillDesign.paperSize || 'A4'})
                           </span>
                         </div>
 
@@ -1555,7 +1550,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           {/* Security Watermark Background */}
                           {editBillDesign.showWatermark !== false && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] rotate-[-25deg] select-none text-6xl font-black font-mono">
-                              OFFICIAL VOUCHER
+                              {tx('OFFICIAL VOUCHER', 'واچر رسمی', 'رسمي واچر')}
                             </div>
                           )}
 
@@ -1568,7 +1563,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               {editLogoUrl ? (
                                 <img
                                   src={editLogoUrl}
-                                  alt="Company Logo"
+                                  alt={tx('Company logo', 'لوگوی شرکت', 'د شرکت لوګو')}
                                   className="w-12 h-12 rounded-xl object-cover bg-white p-1"
                                 />
                               ) : (
@@ -1578,28 +1573,32 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               )}
                               <div>
                                 <h1 className="text-base font-black">
-                                  {editBillDesign.receiptHeader || editCompanyName || 'شرکت ساختمانی نگین کابل'}
+                                  {editBillDesign.receiptHeader || editCompanyName || tx('Negin Kabul Construction Company', 'شرکت ساختمانی نگین کابل', 'د نگین کابل ساختماني شرکت')}
                                 </h1>
                                 <p className="text-[10px] text-white/80">
-                                  {editBillDesign.receiptSubheader || 'سهامی خاص · شماره ثبت تجارتی کابل'}
+                                  {editBillDesign.receiptSubheader || tx('Private limited company · Kabul trade registration', 'شرکت سهامی خاص · شمارهٔ ثبت تجارتی کابل', 'خصوصي محدود شرکت · د کابل د سوداګرۍ ثبت')}
                                 </p>
                                 <p className="text-[10px] text-white/70 font-mono">
-                                  TIN: {editBillDesign.taxNumber || 'TIN-908234-AF'} | {editBillDesign.receiptContact || '0783788278'}
+                                  {tx('TIN:', 'شماره تشخیصیه:', 'د مالیې شمېره:')} {editBillDesign.taxNumber || 'TIN-908234-AF'} | {editBillDesign.receiptContact || '0783788278'}
                                 </p>
                               </div>
                             </div>
 
                             <div className="text-left font-mono">
                               <span className="inline-block px-2 py-0.5 rounded-md bg-white/20 text-[10px] font-black uppercase">
-                                {billPreviewType === 'rv' ? 'واچر دریافت (RV)' :
-                                 billPreviewType === 'pv' ? 'واچر پرداخت (PV)' :
-                                 billPreviewType === 'pcv' ? 'تنخواه‌گردان (PCV)' : 'صورت وضعیت بل'}
+                                {billPreviewType === 'rv'
+                                  ? tx('Receipt voucher (RV)', 'واچر دریافت (RV)', 'د ترلاسه کولو واچر (RV)')
+                                  : billPreviewType === 'pv'
+                                    ? tx('Payment voucher (PV)', 'واچر پرداخت (PV)', 'د تادیې واچر (PV)')
+                                    : billPreviewType === 'pcv'
+                                      ? tx('Petty cash voucher (PCV)', 'واچر تنخواه‌گردان (PCV)', 'د کوچني صندوق واچر (PCV)')
+                                      : tx('Contractor invoice', 'صورت‌وضعیت پیمانکار', 'د قراردادي صورت‌حساب')}
                               </span>
                               <div className="text-[11px] font-bold mt-1">
-                                No: {billPreviewType.toUpperCase()}-2026-0891
+                                {tx('No:', 'شماره:', 'شمېره:')} {billPreviewType.toUpperCase()}-2026-0891
                               </div>
                               <div className="text-[10px] text-white/80">
-                                Date: {new Date().toISOString().split('T')[0]}
+                                {tx('Date:', 'تاریخ:', 'نېټه:')} {new Date().toISOString().split('T')[0]}
                               </div>
                             </div>
                           </div>
@@ -1607,22 +1606,22 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           {/* Voucher Meta Info */}
                           <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] mb-4">
                             <div>
-                              <span className="text-slate-500 block">پروژه ساختمانی:</span>
-                              <span className="font-bold text-slate-800">برج تجارتی نگین کابل (فاز ۲)</span>
+                              <span className="text-slate-500 block">{tx('Building project:', 'پروژه ساختمانی:', 'د ودانیزې پروژې نوم:')}</span>
+                              <span className="font-bold text-slate-800">{tx('Negin Kabul Commercial Tower (Phase 2)', 'برج تجارتی نگین کابل (فاز ۲)', 'د نگین کابل سوداګریز برج (۲ پړاو)')}</span>
                             </div>
                             <div>
                               <span className="text-slate-500 block">
-                                {billPreviewType === 'rv' ? 'دریافت شده از:' : 'پرداخت شده به:'}
+                                {billPreviewType === 'rv' ? tx('Received from:', 'دریافت شده از:', 'ترلاسه شوی له:') : tx('Paid to:', 'پرداخت شده به:', 'تادیه شوی ورته:')}
                               </span>
-                              <span className="font-bold text-slate-800">شرکت تدارکات مصالح برادران رحیمی</span>
+                              <span className="font-bold text-slate-800">{tx('Rahimi Brothers Building Materials Supply Company', 'شرکت تدارکات مصالح برادران رحیمی', 'د رحیمي وروڼو د ساختماني موادو رسولو شرکت')}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500 block">بابت / شرح عملیات:</span>
-                              <span className="font-semibold text-slate-700">تأمین ۵۰۰ خریطه سیمان غوری تیپ ۲ با کرایه تخلیه</span>
+                              <span className="text-slate-500 block">{tx('Purpose / description:', 'بابت / شرح عملیات:', 'موخه / د کار تشریح:')}</span>
+                              <span className="font-semibold text-slate-700">{tx('Supply of 500 bags of Ghori Type 2 cement, including offloading', 'تأمین ۵۰۰ خریطه سیمان غوری نوع ۲ همراه با کرایهٔ تخلیه', 'د غوري دویم ډول سیمنټو ۵۰۰ بوجۍ برابرول، د ښکته کولو له کرایې سره')}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500 block">حساب معین / منبع:</span>
-                              <span className="font-semibold text-slate-700">حساب جاری کابل بانک پروژه</span>
+                              <span className="text-slate-500 block">{tx('Account / source:', 'حساب معین / منبع:', 'ځانګړی حساب / سرچینه:')}</span>
+                              <span className="font-semibold text-slate-700">{tx('Project current account at Kabul Bank', 'حساب جاری پروژه در کابل‌بانک', 'د کابل بانک د پروژې جاري حساب')}</span>
                             </div>
                           </div>
 
@@ -1631,24 +1630,24 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             <thead>
                               <tr className="border-b-2 border-slate-300 bg-slate-100 text-slate-700 font-bold">
                                 <th className="p-2">#</th>
-                                <th className="p-2">شرح کالا یا خدمات</th>
-                                <th className="p-2 text-center">مقدار</th>
-                                <th className="p-2 text-left">فی (AFN)</th>
-                                <th className="p-2 text-left">مجموع (AFN)</th>
+                                <th className="p-2">{tx('Item or service description', 'شرح کالا یا خدمات', 'د توکي یا خدمت تشریح')}</th>
+                                <th className="p-2 text-center">{tx('Quantity', 'مقدار', 'اندازه')}</th>
+                                <th className="p-2 text-left">{tx('Unit price (AFN)', 'قیمت فی (AFN)', 'د واحد بیه (AFN)')}</th>
+                                <th className="p-2 text-left">{tx('Total (AFN)', 'مجموع (AFN)', 'ټول (AFN)')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
                               <tr>
                                 <td className="p-2 font-mono">1</td>
-                                <td className="p-2 font-semibold">سیمان غوری پورتلند پاکتی ۵۰ کیلویی</td>
-                                <td className="p-2 text-center font-mono">500 خریطه</td>
+                                <td className="p-2 font-semibold">{tx('Ghori Portland cement, 50 kg bag', 'سیمان پورتلند غوری، خریطهٔ ۵۰ کیلویی', 'د غوري پورټلنډ سیمنټ، ۵۰ کیلوګرامه بوجۍ')}</td>
+                                <td className="p-2 text-center font-mono">{tx('500 bags', '۵۰۰ خریطه', '۵۰۰ بوجۍ')}</td>
                                 <td className="p-2 text-left font-mono">380</td>
                                 <td className="p-2 text-left font-mono font-bold">190,000</td>
                               </tr>
                               <tr>
                                 <td className="p-2 font-mono">2</td>
-                                <td className="p-2 font-semibold">کرایه لاری و تخلیه کارگری ساحه کارگاه</td>
-                                <td className="p-2 text-center font-mono">1 سرویس</td>
+                                <td className="p-2 font-semibold">{tx('Truck rental and unloading labor at the site', 'کرایهٔ لاری و کارگر تخلیه در ساحهٔ کارگاه', 'د کارځای د بار ښکته کولو کارګرانو او لارۍ کرایه')}</td>
+                                <td className="p-2 text-center font-mono">{tx('1 service', '۱ خدمت', '۱ خدمت')}</td>
                                 <td className="p-2 text-left font-mono">10,000</td>
                                 <td className="p-2 text-left font-mono font-bold">10,000</td>
                               </tr>
@@ -1658,35 +1657,35 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           {/* Financial Calculations Box (Retention + Tax Deductions) */}
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 mb-4 text-[11px]">
                             <div className="flex justify-between items-center text-slate-600">
-                              <span>مبلغ کل ناخالص (Gross Amount):</span>
-                              <span className="font-mono font-bold">200,000 AFN</span>
+                              <span>{tx('Gross amount:', 'مبلغ کل ناخالص:', 'ټوله ناخالصه اندازه:')}</span>
+                              <span className="font-mono font-bold">{tx('200,000 AFN', '۲۰۰٬۰۰۰ افغانی', '۲۰۰٬۰۰۰ افغانۍ')}</span>
                             </div>
 
                             {editBillDesign.showRetentionBox !== false && (
                               <div className="flex justify-between items-center text-amber-700 font-semibold">
-                                <span>کسر ۱۰٪ تضمین حسن نیت کار (Retention 10%):</span>
-                                <span className="font-mono">-20,000 AFN</span>
+                                <span>{tx('10% retention deduction:', 'کسر ۱۰٪ تضمین حسن اجرا:', 'د حسن اجرا د تضمین ۱۰٪ کسر:')}</span>
+                                <span className="font-mono">{tx('-20,000 AFN', '−۲۰٬۰۰۰ افغانی', '−۲۰٬۰۰۰ افغانۍ')}</span>
                               </div>
                             )}
 
                             {editBillDesign.showWithholdingTax !== false && (
                               <div className="flex justify-between items-center text-rose-700 font-semibold">
-                                <span>کسر مالیات موضوعی قرارداد (BRT 2% Withholding):</span>
-                                <span className="font-mono">-4,000 AFN</span>
+                                <span>{tx('Business-receipts tax withholding (BRT 2%):', 'کسر مالیات عواید تجارتی (BRT) به نرخ ۲٪:', 'د سوداګریزو عوایدو ۲٪ مالیاتي کسر (BRT):')}</span>
+                                <span className="font-mono">{tx('-4,000 AFN', '−۴٬۰۰۰ افغانی', '−۴٬۰۰۰ افغانۍ')}</span>
                               </div>
                             )}
 
                             <div className="pt-2 border-t border-slate-300 flex justify-between items-center font-black text-sm text-slate-900">
-                              <span>خالص قابل پرداخت / تسویه (Net Payable):</span>
+                              <span>{tx('Net payable:', 'خالص قابل پرداخت:', 'خالص تادیه کېدونکې اندازه:')}</span>
                               <span
                                 className="font-mono text-base px-2 py-0.5 rounded-lg text-white"
                                 style={{ backgroundColor: editBillDesign.primaryColor || '#0f172a' }}
                               >
                                 {editBillDesign.showRetentionBox !== false && editBillDesign.showWithholdingTax !== false
-                                  ? '176,000 AFN'
+                                  ? tx('176,000 AFN', '۱۷۶٬۰۰۰ افغانی', '۱۷۶٬۰۰۰ افغانۍ')
                                   : editBillDesign.showRetentionBox !== false
-                                  ? '180,000 AFN'
-                                  : '200,000 AFN'}
+                                    ? tx('180,000 AFN', '۱۸۰٬۰۰۰ افغانی', '۱۸۰٬۰۰۰ افغانۍ')
+                                    : tx('200,000 AFN', '۲۰۰٬۰۰۰ افغانی', '۲۰۰٬۰۰۰ افغانۍ')}
                               </span>
                             </div>
                           </div>
@@ -1694,7 +1693,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                           {/* Terms & Conditions */}
                           {editBillDesign.termsAndConditions && (
                             <div className="p-2.5 rounded-xl bg-slate-100 text-[10px] text-slate-600 mb-4 leading-relaxed">
-                              <span className="font-bold text-slate-800 block mb-0.5">شرایط و ملاحظات:</span>
+                              <span className="font-bold text-slate-800 block mb-0.5">{tx('Terms and notes:', 'شرایط و ملاحظات:', 'شرایط او یادښتونه:')}</span>
                               {editBillDesign.termsAndConditions}
                             </div>
                           )}
@@ -1705,15 +1704,15 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             {editBillDesign.showStampSignature !== false ? (
                               <div className="grid grid-cols-2 gap-6 text-center text-[10px]">
                                 <div>
-                                  <span className="text-slate-500 block mb-6">امضای محاسب و صندوق‌دار:</span>
+                                  <span className="text-slate-500 block mb-6">{tx('Accountant and cashier signature:', 'امضای محاسب و صندوق‌دار:', 'د محاسب او صندوقدار لاسلیک:')}</span>
                                   <div className="border-t border-slate-400 pt-1 font-bold text-slate-700">
-                                    امضای امور مالی
+                                    {tx('Finance signature', 'امضای امور مالی', 'د مالي برخې لاسلیک')}
                                   </div>
                                 </div>
                                 <div>
-                                  <span className="text-slate-500 block mb-6">تأیید مهندس ناظر / مدیر:</span>
+                                  <span className="text-slate-500 block mb-6">{tx('Supervisor engineer / manager approval:', 'تأیید مهندس ناظر / مدیر:', 'د څارونکي انجینر / مدیر تایید:')}</span>
                                   <div className="border-t border-slate-400 pt-1 font-bold text-slate-700">
-                                    امضای مدیریت پروژه
+                                    {tx('Project management signature', 'امضای مدیریت پروژه', 'د پروژې د مدیریت لاسلیک')}
                                   </div>
                                 </div>
                               </div>
@@ -1723,8 +1722,8 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             <div className="flex items-center gap-3">
                               {editBillDesign.showStampSignature !== false && (
                                 <div className="w-16 h-16 rounded-full border-2 border-dashed border-rose-500/60 flex flex-col items-center justify-center text-[8px] font-black text-rose-500 rotate-[-12deg]">
-                                  <span>مهر رسمی</span>
-                                  <span>تأیید شد</span>
+                                  <span>{tx('Official stamp', 'مهر رسمی', 'رسمي مهر')}</span>
+                                  <span>{tx('Approved', 'تأیید شد', 'تایید شو')}</span>
                                 </div>
                               )}
 
@@ -1732,7 +1731,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                               {editBillDesign.showQrCode !== false && (
                                 <div className="p-1.5 bg-white border border-slate-300 rounded-xl shadow-xs text-center">
                                   <QrCode className="w-10 h-10 text-slate-800 mx-auto" />
-                                  <span className="text-[8px] font-mono block text-slate-500 mt-0.5">اصالت سند</span>
+                                  <span className="text-[8px] font-mono block text-slate-500 mt-0.5">{tx('Document authenticity', 'اصالت سند', 'د سند اصالت')}</span>
                                 </div>
                               )}
                             </div>
@@ -1756,7 +1755,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1">تاریخ انقضای اشتراک:</label>
+                        <label className="block text-slate-500 font-bold mb-1">{tx('Subscription expiry date:', 'تاریخ انقضای اشتراک:', 'د ګډون د پای نېټه:')}</label>
                         <input
                           type="date"
                           value={editExpiresAt}
@@ -1765,22 +1764,18 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         />
                       </div>
                       <div className="flex flex-col justify-end">
-                        <span className="text-[11px] text-slate-500 mb-1">شارژ سریع اشتراک:</span>
+                        <span className="text-[11px] text-slate-500 mb-1">{tx('Quick subscription extension:', 'تمدید سریع اشتراک:', 'ګډون ژر غځول:')}</span>
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => handleQuickCharge(6)}
                             className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-colors"
-                          >
-                            + تمدید ۶ ماه
-                          </button>
+                          >{t("charge6Months")}</button>
                           <button
                             type="button"
                             onClick={() => handleQuickCharge(12)}
                             className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-colors"
-                          >
-                            + تمدید ۱ سال
-                          </button>
+                          >{t("charge1Year")}</button>
                         </div>
                       </div>
                     </div>
@@ -1788,23 +1783,21 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">قفل کردن یا بازگشایی حساب شرکت</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">در صورت مسدود بودن، ورود به این حساب ناممکن می‌شود.</p>
+                      <h4 className="text-xs font-bold text-slate-900">{tx('Lock or unlock company account', 'قفل یا بازکردن حساب شرکت', 'د شرکت حساب تړل یا خلاصول')}</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{tx('A locked account cannot sign in.', 'اگر حساب قفل باشد، ورود به آن ممکن نیست.', 'که حساب تړلی وي، ننوتل ورته ناشوني دي.')}</p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        toggleLockUserBySuperAdmin(selectedTenant.id);
-                        const updated = users.find(u => u.id === selectedTenant.id);
-                        if (updated) setSelectedTenant(updated);
-                      }}
+                      onClick={handleToggleTenantLock}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                         selectedTenant.isLockedBySuperAdmin 
                           ? 'bg-rose-600 hover:bg-rose-500 text-slate-900' 
                           : 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
                       }`}
                     >
-                      {selectedTenant.isLockedBySuperAdmin ? 'حساب مسدود است (کلیک برای بازگشایی)' : 'حساب فعال است (کلیک برای قفل)'}
+                      {selectedTenant.isLockedBySuperAdmin
+                        ? tx('Account is locked (click to unlock)', 'حساب قفل است (برای بازکردن کلیک کنید)', 'حساب تړلی دی (د خلاصولو لپاره کلیک وکړئ)')
+                        : tx('Account is active (click to lock)', 'حساب فعال است (برای قفل‌کردن کلیک کنید)', 'حساب فعال دی (د تړلو لپاره کلیک وکړئ)')}
                     </button>
                   </div>
                 </div>
@@ -1818,23 +1811,21 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-300 text-amber-400 text-xs font-bold flex items-center gap-2 transition-colors border border-amber-500/20"
               >
                 <LogIn className="w-4 h-4" />
-                <span>ورود به عنوان این کاربر (Impersonate)</span>
+                <span>{tx('Sign in as this user', 'ورود به حساب از دید این کاربر', 'د دې کارن په توګه ننوتل')}</span>
               </button>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedTenant(null)}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-300 text-slate-600 text-xs font-bold"
-                >
-                  انصراف
-                </button>
+                >{t("cancel")}</button>
                 <button
                   type="button"
                   onClick={() => handleSaveTenantChanges()}
                   className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-900 font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all"
                 >
                   <Save className="w-4 h-4" />
-                  <span>ذخیره تغییرات</span>
+                  <span>{t("saveChanges")}</span>
                 </button>
               </div>
             </div>
@@ -1846,9 +1837,9 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
             {/* Internal nav */}
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl w-fit shadow-sm sticky top-0 z-10">
               {([
-                { id: 'dashboard', label: 'داشبورد نظارت', icon: LayoutDashboard },
-                { id: 'owners', label: 'مالک‌ها و کارمندان', icon: Crown },
-                { id: 'security', label: 'امنیت و رمز', icon: KeyRound },
+                { id: 'dashboard', label: tx('Monitoring dashboard', 'داشبورد نظارت', 'د څارنې ډشبورډ'), icon: LayoutDashboard },
+                { id: 'owners', label: tx('Owners and employees', 'مالک‌ها و کارمندان', 'مالکان او کارکوونکي'), icon: Crown },
+                { id: 'security', label: tx('Security and passwords', 'امنیت و رمز', 'امنیت او پټنومونه'), icon: KeyRound },
               ] as Array<{ id: typeof officeTab; label: string; icon: any }>).map(tab => {
                 const TabIcon = tab.icon;
                 const active = officeTab === tab.id;
@@ -1875,10 +1866,10 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 {/* Stat cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {([
-                    { label: 'مالک‌های کمپنی', value: ownerList.length, icon: Crown, grad: 'from-indigo-500 to-violet-500', chip: 'shadow-indigo-500/30' },
-                    { label: 'کل کارمندان', value: staffList.length, icon: Users, grad: 'from-cyan-500 to-sky-500', chip: 'shadow-cyan-500/30' },
-                    { label: 'اشتراک فعال', value: tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length, icon: CheckCircle2, grad: 'from-emerald-500 to-teal-500', chip: 'shadow-emerald-500/30' },
-                    { label: 'رویداد امروز', value: eventsToday.length, icon: Activity, grad: 'from-amber-500 to-orange-500', chip: 'shadow-amber-500/30' },
+                    { label: tx('Company owners', 'مالک‌های شرکت', 'د شرکت مالکان'), value: ownerList.length, icon: Crown, grad: 'from-indigo-500 to-violet-500', chip: 'shadow-indigo-500/30' },
+                    { label: tx('Employees total', 'مجموع کارمندان', 'ټول کارکوونکي'), value: staffList.length, icon: Users, grad: 'from-cyan-500 to-sky-500', chip: 'shadow-cyan-500/30' },
+                    { label: tx('Active subscriptions', 'اشتراک‌های فعال', 'فعال ګډونونه'), value: tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length, icon: CheckCircle2, grad: 'from-emerald-500 to-teal-500', chip: 'shadow-emerald-500/30' },
+                    { label: tx('Events today', 'رویدادهای امروز', 'د نن ورځې پېښې'), value: eventsToday.length, icon: Activity, grad: 'from-amber-500 to-orange-500', chip: 'shadow-amber-500/30' },
                   ]).map((card, i) => {
                     const CardIcon = card.icon;
                     return (
@@ -1901,21 +1892,21 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-indigo-500" />
-                        <h4 className="text-sm font-black text-slate-800">فعالیت سیستم — ۷ روز اخیر</h4>
+                        <h4 className="text-sm font-black text-slate-800">{tx('System activity — last 7 days', 'فعالیت سیستم — ۷ روز اخیر', 'د سیستم فعالیت — د تېرو ۷ ورځو')}</h4>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-mono">{activityEvents.length} رویداد ثبت‌شده</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{activityEvents.length} {tx('recorded events', 'رویداد ثبت‌شده', 'ثبت شوې پېښې')}</span>
                     </div>
                     {activityEvents.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-10 text-center">هنوز فعالیتی ثبت نشده — با گردش کاربران این نمودار زنده می‌شود.</p>
+                      <p className="text-xs text-slate-400 py-10 text-center">{tx('No activity has been recorded yet. This chart will populate as users work.', 'هنوز فعالیتی ثبت نشده است؛ با استفادهٔ کاربران، نمودار به‌روز می‌شود.', 'تر اوسه فعالیت نه ده ثبت شوې؛ د کارنانو په کارولو سره به دا چارټ ډک شي.')}</p>
                     ) : (
                       <MiniArea data={last7Days} />
                     )}
                   </div>
 
                   <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-800 mb-2">پراستفاده‌ترین گزینه‌ها</h4>
+                    <h4 className="text-sm font-black text-slate-800 mb-2">{tx('Most-used sections', 'بخش‌های پراستفاده', 'تر ټولو ډېر کارېدونکې برخې')}</h4>
                     {featureUsage.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-10 text-center">به‌زودی اینجا دیده می‌شود که کاربران بیشتر کدام بخش را باز می‌کنند.</p>
+                      <p className="text-xs text-slate-400 py-10 text-center">{tx('Usage ranking will appear here when users start opening sections.', 'وقتی کاربران از بخش‌ها استفاده کنند، پربازدیدترین بخش‌ها در اینجا نمایش می‌شود.', 'کله چې کارنان برخې وکاروي، د ډېر کارېدونکو برخو لړلیک به دلته ښکاره شي.')}</p>
                     ) : (
                       <div className="flex items-center gap-4">
                         <MiniDonut segments={featureUsage} />
@@ -1939,10 +1930,10 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
                       <Users className="w-4 h-4 text-violet-500" />
-                      <h4 className="text-sm font-black text-slate-800">فعال‌ترین کاربران — چکار کرده، چقدر وقت</h4>
+                      <h4 className="text-sm font-black text-slate-800">{tx('Most active users — actions and time spent', 'کاربران فعال — نوع فعالیت و مدت استفاده', 'ډېر فعال کارنان — کړنې او د کار وخت')}</h4>
                     </div>
                     {userUsage.length === 0 ? (
-                      <p className="text-xs text-slate-400 p-6 text-center">با اولین ورود/گردش کاربران، این جدول پر می‌شود.</p>
+                      <p className="text-xs text-slate-400 p-6 text-center">{tx('This table will fill after the first user sign-in and activity.', 'پس از نخستین ورود و فعالیت کاربران، این جدول نمایش داده می‌شود.', 'د کارنانو له لومړي ننوتلو او فعالیت وروسته به دا جدول ډک شي.')}</p>
                     ) : (
                       <div className="divide-y divide-slate-100">
                         {userUsage.slice(0, 6).map((u, i) => (
@@ -1955,16 +1946,16 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-black text-slate-800 truncate">{u.userName}</p>
                               <p className="text-[10px] text-slate-400">
-                                بیشترین استفاده: <span className="font-bold text-indigo-600">{u.topFeature}</span>
+                                {tx('Most used:', 'بیشترین استفاده:', 'تر ټولو ډېر کارېدلی:')} <span className="font-bold text-indigo-600">{u.topFeature}</span>
                               </p>
                             </div>
                             <div className="text-left shrink-0">
                               <p className="text-[11px] font-mono font-bold text-slate-700 flex items-center gap-1 justify-end">
                                 <Timer className="w-3.5 h-3.5 text-emerald-500" />
-                                {u.approxMinutes} دقیقه
+                                {u.approxMinutes} {tx('minutes', 'دقیقه', 'دقیقې')}
                               </p>
                               <p className="text-[10px] text-slate-400 font-mono">
-                                آخرین: {new Date(u.lastActiveAt).toLocaleTimeString('fa-AF', { hour: '2-digit', minute: '2-digit' })}
+                                {tx('Last:', 'آخرین:', 'وروستی:')} {new Date(u.lastActiveAt).toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit' })}
                               </p>
                             </div>
                           </div>
@@ -1977,10 +1968,10 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-cyan-500" />
-                      <h4 className="text-sm font-black text-slate-800">آخرین فعالیت‌ها (زنده)</h4>
+                      <h4 className="text-sm font-black text-slate-800">{tx('Recent activity (live)', 'فعالیت‌های تازه (زنده)', 'وروستي فعالیتونه (ژوندي)')}</h4>
                     </div>
                     {recentActivity.length === 0 ? (
-                      <p className="text-xs text-slate-400 p-6 text-center">هنوز فعالیتی نیامده است.</p>
+                      <p className="text-xs text-slate-400 p-6 text-center">{tx('No activity yet.', 'هنوز فعالیتی ثبت نشده است.', 'تر اوسه هېڅ فعالیت نشته.')}</p>
                     ) : (
                       <div className="divide-y divide-slate-50 max-h-72 overflow-y-auto scroll-touch">
                         {recentActivity.map(ev => (
@@ -1994,10 +1985,14 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                             </span>
                             <div className="min-w-0">
                               <p className="text-[11px] font-bold text-slate-700 truncate">
-                                {ev.userName} — {ev.kind === 'login' ? 'وارد سیستم شد' : ev.kind === 'logout' ? 'خارج شد' : `باز کرد: ${TAB_OPTIONS.find(o => o.id === ev.feature)?.label || ev.feature || ''}`}
+                                {ev.userName} — {ev.kind === 'login'
+                                  ? tx('Signed in', 'وارد سیستم شد', 'سیستم ته ننوتل')
+                                  : ev.kind === 'logout'
+                                    ? tx('Signed out', 'از سیستم خارج شد', 'له سیسټم څخه ووتل')
+                                    : `${tx('Opened:', 'باز کرد:', 'پرانیستل:')} ${getTabLabel(ev.feature || '')}`}
                               </p>
                               <p className="text-[10px] text-slate-400 font-mono">
-                                {new Date(ev.timestamp).toLocaleDateString('fa-AF')} · {new Date(ev.timestamp).toLocaleTimeString('fa-AF', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                {new Date(ev.timestamp).toLocaleDateString(intlLocaleFor(language))} · {new Date(ev.timestamp).toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                               </p>
                             </div>
                           </div>
@@ -2014,27 +2009,27 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 {/* owner/staff stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">کل مالک‌ها:</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">{tx('Owners total:', 'کل مالک‌ها:', 'ټول مالکان:')}</span>
                     <span className="text-xl font-black text-slate-900 font-mono">{ownerList.length}</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">کل کارمندان:</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">{tx('Employees total:', 'کل کارمندان:', 'ټول کارکوونکي:')}</span>
                     <span className="text-xl font-black text-slate-900 font-mono">{staffList.length}</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <span className="text-[10px] text-emerald-600 uppercase font-bold block mb-1">اشتراک فعال:</span>
+                    <span className="text-[10px] text-emerald-600 uppercase font-bold block mb-1">{tx('Active subscriptions:', 'اشتراک‌های فعال:', 'فعال ګډونونه:')}</span>
                     <span className="text-xl font-black text-emerald-600 font-mono">
                       {tenantUsers.filter(u => !u.isLockedBySuperAdmin && (!u.subscriptionExpiresAt || new Date(u.subscriptionExpiresAt).getTime() >= Date.now())).length}
                     </span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <span className="text-[10px] text-cyan-600 uppercase font-bold block mb-1">هوش مصنوعی فعال:</span>
+                    <span className="text-[10px] text-cyan-600 uppercase font-bold block mb-1">{tx('AI enabled:', 'هوش مصنوعی فعال:', 'مصنوعي ځیرکتیا فعاله:')}</span>
                     <span className="text-xl font-black text-cyan-600 font-mono">
                       {tenantUsers.filter(u => u.permissions?.aiEnabled !== false).length}
                     </span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                    <span className="text-[10px] text-rose-500 uppercase font-bold block mb-1">منقضی / قفل:</span>
+                    <span className="text-[10px] text-rose-500 uppercase font-bold block mb-1">{tx('Expired / locked:', 'منقضی / قفل:', 'پای ته رسېدلي / تړلي:')}</span>
                     <span className="text-xl font-black text-rose-500 font-mono">
                       {tenantUsers.filter(u => u.isLockedBySuperAdmin || (u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt).getTime() < Date.now())).length}
                     </span>
@@ -2048,7 +2043,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="جستجوی نام شرکت، نام مدیر، ایمیل یا تیلیفون..."
+                      placeholder={tx('Search company, administrator, email, or phone...', 'جستجوی نام شرکت، مدیر، ایمیل یا تیلیفون...', 'د شرکت، مدیر، برېښنالیک یا ټیلیفون نوم ولټوئ...')}
                       className="w-full ps-9 pe-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm"
                     />
                   </div>
@@ -2062,7 +2057,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                     }`}
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{showNewOwnerForm ? 'بستن فورم' : 'مالک جدید'}</span>
+                      <span>{showNewOwnerForm ? tx('Close form', 'بستن فورم', 'فورمه تړل') : tx('New owner', 'مالک جدید', 'نوی مالک')}</span>
                   </button>
                 </div>
 
@@ -2070,17 +2065,17 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                   <form onSubmit={handleCreateOwner} className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3 shadow-sm">
                     <div className="flex items-center gap-2 text-emerald-700 text-xs font-black">
                       <Crown className="w-4 h-4" />
-                      <span>ساخت حساب «مالک کمپنی» جدید — خودش بعداً برای کارمندانش یوزر می‌سازد</span>
+                      <span>{tx('Create a new company-owner account; the owner can add employee accounts later.', 'ساخت حساب مالک شرکت جدید؛ مالک بعداً می‌تواند برای کارمندان خود حساب کاربری بسازد.', 'د شرکت د نوي مالک حساب جوړ کړئ؛ مالک وروسته د خپلو کارکوونکو لپاره حسابونه جوړولی شي.')}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       {([
-                        { key: 'name', label: 'نام مالک', ph: 'حاجی احمد شاه' },
-                        { key: 'username', label: 'نام کاربری (username)', ph: 'ahmadshah' },
-                        { key: 'password', label: 'رمز عبور', ph: '********', type: 'text' },
-                        { key: 'email', label: 'ایمیل', ph: 'owner@company.com', type: 'email' },
-                        { key: 'phone', label: 'تیلیفون', ph: '+93...' },
-                        { key: 'companyName', label: 'نام کمپنی', ph: 'Ahmad Shah Construction Co.' },
-                        { key: 'companyAddress', label: 'آدرس کمپنی', ph: 'کابل، افغانستان' },
+                        { key: 'name', label: tx('Owner name', 'نام مالک', 'د مالک نوم'), ph: tx('Haji Ahmad Shah', 'حاجی احمد شاه', 'حاجي احمد شاه') },
+                        { key: 'username', label: tx('Username', 'نام کاربری', 'کارن-نوم'), ph: tx('e.g. ahmadshah', 'مثلاً ahmadshah', 'لکه ahmadshah') },
+                        { key: 'password', label: t("password"), ph: tx('Enter a password', 'رمز عبور جدید را وارد کنید', 'نوی پټنوم دننه کړئ'), type: 'password' },
+                        { key: 'email', label: tx('Email', 'ایمیل', 'برېښنالیک'), ph: tx('owner@company.com', 'owner@company.com', 'owner@company.com'), type: 'email' },
+                        { key: 'phone', label: tx('Phone', 'تیلیفون', 'ټیلیفون'), ph: tx('Example: +93...', 'مثلاً +93...', 'بېلګه: +93...') },
+                        { key: 'companyName', label: tx('Company name', 'نام شرکت', 'د شرکت نوم'), ph: tx('Ahmad Shah Construction Company', 'شرکت ساختمانی احمدشاه', 'د احمدشاه ساختماني شرکت') },
+                        { key: 'companyAddress', label: tx('Company address', 'آدرس شرکت', 'د شرکت پته'), ph: tx('Kabul, Afghanistan', 'کابل، افغانستان', 'کابل، افغانستان') },
                       ] as Array<{ key: keyof typeof newOwner; label: string; ph: string; type?: string }>).map(f => (
                         <div key={f.key as string} className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500">{f.label}</label>
@@ -2095,20 +2090,20 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         </div>
                       ))}
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500">پلان اشتراک</label>
+                        <label className="text-[10px] font-bold text-slate-500">{tx('Subscription plan', 'طرح اشتراک', 'د ګډون پلان')}</label>
                         <select
                           value={newOwner.subscriptionPlan || 'trial'}
                           onChange={e => setNewOwner(prev => ({ ...prev, subscriptionPlan: e.target.value as User['subscriptionPlan'] }))}
                           className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         >
-                          <option value="trial">تجربه‌ای (Trial)</option>
-                          <option value="6_months">۶ ماهه</option>
-                          <option value="1_year">۱ ساله</option>
-                          <option value="lifetime">دایمی</option>
+                          <option value="trial">{tx('Trial', 'آزمایشی', 'ازمایښتي')}</option>
+                          <option value="6_months">{tx('6 months', '۶ ماهه', '۶ میاشتې')}</option>
+                          <option value="1_year">{tx('1 year', '۱ ساله', '۱ کال')}</option>
+                          <option value="lifetime">{tx('Lifetime', 'دائمی', 'د تل لپاره')}</option>
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500">تاریخ انقضای اشتراک (اختیاری)</label>
+                        <label className="text-[10px] font-bold text-slate-500">{tx('Subscription expiry date (optional)', 'تاریخ انقضای اشتراک (اختیاری)', 'د ګډون د پای نېټه (اختیاري)')}</label>
                         <input
                           type="date"
                           value={newOwner.expiresAt}
@@ -2123,7 +2118,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         className="px-5 py-2 bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 transition-all"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>ساخت حساب مالک</span>
+                        <span>{tx('Create owner account', 'ساخت حساب مالک', 'د مالک حساب جوړول')}</span>
                       </button>
                     </div>
                   </form>
@@ -2139,7 +2134,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                 <div className="space-y-3">
                   {ownerList.length === 0 && ungroupedStaff.length === 0 ? (
                     <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                      هیچ شرکتی یافت نشد.
+                      {tx('No company found.', 'هیچ شرکتی پیدا نشد.', 'هېڅ شرکت ونه موندل شو.')}
                     </div>
                   ) : (
                     <>
@@ -2158,7 +2153,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                                 >
                                   <span className="flex items-center gap-2">
                                     <Users className="w-4 h-4 text-indigo-500" />
-                                    <span>{staff.length} کارمند زیر این مالک</span>
+                                    <span>{staff.length} {tx('employees under this owner', 'کارمند زیر این مالک', 'د دې مالک کارکوونکي')}</span>
                                   </span>
                                   <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
                                 </button>
@@ -2173,7 +2168,7 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
                         <div className="space-y-2 pt-2">
                           <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase px-1">
                             <UserCog className="w-4 h-4 text-indigo-500" />
-                            <span>کارمندان / حساب‌های غیرمتعلق به مالک مشخص</span>
+                            <span>{tx('Employees / accounts without an assigned owner', 'کارمندان / حساب‌های بدون مالک مشخص', 'کارکوونکي / حسابونه چې مالک ورته نه وي ټاکل شوی')}</span>
                           </div>
                           {ungroupedStaff.map(member => renderTenantRow(member, true))}
                         </div>
@@ -2186,51 +2181,25 @@ export const MasterAdminModal: React.FC<MasterAdminModalProps> = ({ isOpen, onCl
 
             {officeTab === 'security' && (
               <div className="max-w-xl space-y-4 animate-in fade-in">
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
                   <div className="flex items-center gap-2">
                     <KeyRound className="w-5 h-5 text-indigo-600" />
-                    <h4 className="text-sm font-black text-slate-800">تغییر کلید ورود دفتر هفت</h4>
+                    <h4 className="text-sm font-black text-slate-800">{tx('Master session security', 'امنیت نشست ماستر', 'د ماستر د ناستې امنیت')}</h4>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
-                    کلید جدید فوراً فعال می‌شود. تذکر: <span className="font-bold text-slate-700">رمز اکانت najeemnik</span> همواره به عنوان کلید پشتیبان پذیرفته است تا هیچ‌وقت بیرون نمانید.
-                  </p>
-                  <form onSubmit={handleSaveGateKey} className="space-y-3">
-                    <input
-                      type="password"
-                      required
-                      value={newGateKey}
-                      onChange={e => setNewGateKey(e.target.value)}
-                      placeholder="کلید جدید دفتر هفت (حداقل ۴ حرف)..."
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                    />
-                    <input
-                      type="password"
-                      required
-                      value={newGateKeyRepeat}
-                      onChange={e => setNewGateKeyRepeat(e.target.value)}
-                      placeholder="تکرار کلید جدید..."
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                    />
-                    {gateKeyMsg && (
-                      <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
-                        gateKeyMsg.includes('موفقیت') ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
-                      }`}>
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span>{gateKeyMsg}</span>
-                      </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    {tx(
+                      'Access is controlled by the authenticated server account and a revocable HttpOnly session. Shared browser gate keys and fallback passwords are disabled.',
+                      'دسترسی با حساب تأییدشدهٔ سرور و نشست HttpOnly قابل لغو کنترول می‌شود. کلیدهای مشترک ورود در مرورگر و رمزهای جایگزین غیرفعال‌اند.',
+                      'لاسرسی د تصدیق شوي سرور حساب او د لغوه کېدونکي HttpOnly ناستې له لارې کنټرولېږي. د براوزر ګډې کیلي او بدیل پټنومونه بند دي.'
                     )}
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 bg-gradient-to-l from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>ذخیره کلید جدید</span>
-                    </button>
-                  </form>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 leading-relaxed">
-                  <span className="font-black">نکتهٔ امنیتی:</span> ۵ تلاش غلط متوالی دروازه را ۳۰ ثانیه می‌بندد و هر ورود در ثبت رویدادها با نشست و ساعت ذخیره می‌شود.
+                  </p>
+                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 leading-relaxed">
+                    {tx(
+                      'Password changes and account recovery must use a verified server-side account-management flow. These controls are not yet available in this panel.',
+                      'تغییر رمز عبور و بازیابی حساب باید از مسیر مدیریت حساب تأییدشده در سرور انجام شود. این گزینه‌ها هنوز در این پنل موجود نیستند.',
+                      'د پټنوم بدلول او د حساب بېرته ترلاسه کول باید د سرور له تایید شوې حساب‌مدیریت لارې ترسره شي. دا کنټرولونه لا په دې پینل کې نشته.'
+                    )}
+                  </p>
                 </div>
               </div>
             )}

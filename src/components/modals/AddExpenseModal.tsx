@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Receipt, X, Camera, Clock, Calendar, PlusCircle, Check, Banknote, AlertCircle, ArrowRightLeft, Package, UserCheck, Upload, Building2 } from 'lucide-react';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
 import { AVAILABLE_UNITS, calculateUnitConversion } from '../../utils/unitConversion';
@@ -27,25 +28,26 @@ const COMMON_CATEGORIES = [
 ];
 
 const QUICK_ITEM_SUGGESTIONS = [
-  'سیخ‌گول (Steel Rebar)',
-  'سمنت (Cement)',
-  'کانکریت آماده (Ready Mix Concrete)',
-  'ریگ شسته (Washed Sand)',
-  'جغله (Gravel)',
-  'خشت پخته (Red Brick)',
-  'بلاک کانکریتی (Concrete Block)',
-  'پلی‌وود / تخته (Plywood)',
-  'سیم سیاه (Tie Wire)',
-  'رنگ و پلاستیک (Paint)',
-  'گچ کاری (Gypsum / Plaster)',
-  'پایپ برق (Electrical Pipe)',
-  'پایپ پی‌وی‌سی (PVC Pipe)',
-  'کرایه باربری (Truck Fare)',
-  'کرین / بالابر (Crane / Mixer)',
+  { en: 'Rebar', fa: 'سیخ‌گول', ps: 'سیخ‌ګول', unit: 'Ton' },
+  { en: 'Cement', fa: 'سمنت', ps: 'سمنټ', unit: 'bag' },
+  { en: 'Ready-mix concrete', fa: 'کانکریت آماده', ps: 'چمتو کانکریټ', unit: 'm3' },
+  { en: 'Washed sand', fa: 'ریگ شسته', ps: 'مینځل شوې شګه', unit: 'truck' },
+  { en: 'Gravel', fa: 'جغله', ps: 'جغل', unit: 'truck' },
+  { en: 'Red brick', fa: 'خشت پخته', ps: 'سورې خښته', unit: 'piece' },
+  { en: 'Concrete block', fa: 'بلاک کانکریتی', ps: 'کانکریټي بلاک', unit: 'piece' },
+  { en: 'Plywood', fa: 'پلی‌وود / تخته', ps: 'پلای‌وډ / تخته', unit: 'piece' },
+  { en: 'Tie wire', fa: 'سیم سیاه', ps: 'تور تړونکی سیم', unit: 'kg' },
+  { en: 'Paint', fa: 'رنگ و پلاستیک', ps: 'رنګ', unit: 'other' },
+  { en: 'Gypsum / plaster', fa: 'گچ کاری', ps: 'ګچ‌کاري', unit: 'bag' },
+  { en: 'Electrical conduit', fa: 'پایپ برق', ps: 'برېښنايي پایپ', unit: 'meter' },
+  { en: 'PVC pipe', fa: 'پایپ پی‌وی‌سی', ps: 'PVC پایپ', unit: 'meter' },
+  { en: 'Truck transport', fa: 'کرایه باربری', ps: 'د لارۍ کرایه', unit: 'truck' },
+  { en: 'Crane / hoist', fa: 'کرین / بالابر', ps: 'کرېن / پورته‌کوونکی', unit: 'other' },
 ];
 
 export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, defaultCategory }) => {
   const { currentProject, addExpense, expenses, suppliers, t, openCameraForCapture, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
   const [category, setCategory] = useState<string>(defaultCategory || COMMON_CATEGORIES[0].id);
@@ -123,7 +125,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
   }, [settlementMode, amount]);
 
   const numQuantity = parseFloat(quantity) || 0;
-  const conversionResult = calculateUnitConversion(numQuantity, unit);
+  const conversionResult = calculateUnitConversion(numQuantity, unit, undefined, language);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -143,11 +145,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
   const paidUSD = currency === 'USD' ? rawPaid : (exchangeRate > 0 ? parseFloat((rawPaid / exchangeRate).toFixed(2)) : rawPaid);
   const remainingDebtUSD = Math.max(0, totalAmountUSD - paidUSD);
 
-  const getCategoryLabel = (cat: typeof COMMON_CATEGORIES[0]) => {
-    if (language === 'ps') return cat.labelPs;
-    if (language === 'fa') return cat.labelFa;
-    return cat.labelEn;
-  };
+  const getCategoryLabel = (cat: typeof COMMON_CATEGORIES[0]) => localizeText(language, {
+    en: cat.labelEn,
+    fa: cat.labelFa,
+    ps: cat.labelPs,
+  });
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -165,19 +167,19 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
     setFormError(null);
 
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setFormError('مبلغ مصرف باید بزرگتر از صفر باشد.');
+      setFormError(tx('Expense amount must be greater than zero.', 'مبلغ مصرف باید بیشتر از صفر باشد.', 'د لګښت اندازه باید تر صفر ډېره وي.'));
       return;
     }
     if (rawPaid < 0) {
-      setFormError('مبلغ پرداختی نامعتبر است.');
+      setFormError(tx('Paid amount is invalid.', 'مبلغ پرداختی نامعتبر است.', 'د ورکړې اندازه ناسمه ده.'));
       return;
     }
     if (rawPaid > parsedAmount) {
-      setFormError('مبلغ پرداختی نمی‌تواند بیشتر از کل فاکتور باشد.');
+      setFormError(tx('Paid amount cannot exceed the invoice total.', 'مبلغ پرداختی نمی‌تواند از مجموع فاکتور بیشتر باشد.', 'د ورکړې اندازه د بل له ټولیزې اندازې زیاته کېدای نه شي.'));
       return;
     }
     if (!date || isNaN(new Date(date).getTime())) {
-      setFormError('تاریخ نامعتبر است.');
+      setFormError(tx('The date is invalid.', 'تاریخ نامعتبر است.', 'نېټه ناسمه ده.'));
       return;
     }
 
@@ -188,7 +190,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                exp.billNumber.trim().toLowerCase() === billNumber.trim().toLowerCase()
       );
       if (isDuplicate) {
-        setFormError(`فاکتور با شماره "${billNumber.trim()}" قبلاً در این پروژه ثبت شده است.`);
+        setFormError(tx(
+          `Invoice ${billNumber.trim()} is already recorded for this project.`,
+          `فاکتور شمارهٔ «${billNumber.trim()}» پیش‌تر در این پروژه ثبت شده است.`,
+          `د ${billNumber.trim()} شمېرې بل په دې پروژه کې مخکې ثبت شوی دی.`,
+        ));
         return;
       }
     }
@@ -261,7 +267,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               <Receipt className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm">{t.addExpense} / ثبت خرید و مصرف</h3>
+              <h3 className="font-extrabold text-sm">{tx('Record purchase / expense', 'ثبت خرید و مصرف', 'پېرود او لګښت ثبت کړئ')}</h3>
               <p className="text-[10px] text-slate-400">{currentProject.name}</p>
             </div>
           </div>
@@ -269,7 +275,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             type="button" 
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -289,20 +295,20 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div className="font-bold text-ink text-xs flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-amber-600" />
-                <span>مشخصات جنس و واحد (Item & Unit)</span>
+                <span>{tx('Item and unit details', 'مشخصات جنس و واحد', 'د توکي او واحد معلومات')}</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-normal">سیخ، سمنت، چوب، ریگ و...</span>
+              <span className="text-[10px] text-slate-400 font-normal">{tx('Rebar, cement, timber, sand, and more', 'سیخ‌گول، سمنت، چوب، ریگ و موارد دیگر', 'سیخ‌ګول، سمنټ، لرګي، شګه او نور')}</span>
             </div>
 
             {/* Item Name Input */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                نام جنس یا خدمت خریداری‌شده <span className="text-rose-500">*</span>
+                {tx('Purchased item or service', 'نام جنس یا خدمت خریداری‌شده', 'د پېرل شوي توکي یا خدمت نوم')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="مثلاً: ۱۰ تن سیخ ۱۶، ۵۰۰ بوجی سمنت، ۱۰۰ موتر خاک..."
+                placeholder={tx('e.g. 10 tons of 16 mm rebar, 500 cement bags, 100 truckloads of soil...', 'مثلاً: ۱۰ تن سیخ ۱۶، ۵۰۰ بوجی سمنت، ۱۰۰ موتر خاک...', 'لکه: ۱۰ ټنه ۱۶ ملي‌متر سیخ‌ګول، ۵۰۰ بوجۍ سمنټ، ۱۰۰ لارۍ خاوره...')}
                 value={item}
                 onChange={(e) => setItem(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -310,17 +316,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {QUICK_ITEM_SUGGESTIONS.slice(0, 5).map((sugg) => (
                   <button
-                    key={sugg}
+                    key={sugg.en}
                     type="button"
                     onClick={() => {
-                      setItem(sugg.split(' ')[0]);
-                      if (sugg.includes('Steel') || sugg.includes('سیخ')) setUnit('Ton');
-                      if (sugg.includes('Cement') || sugg.includes('سمنت')) setUnit('bag');
-                      if (sugg.includes('Concrete') || sugg.includes('کانکریت')) setUnit('m3');
+                      setItem(localizeText(language, { en: sugg.en, fa: sugg.fa, ps: sugg.ps }));
+                      setUnit(sugg.unit);
                     }}
                     className="px-2 py-0.5 rounded-lg bg-surface border border-line hover:border-amber-400 text-slate-600 dark:text-slate-300 text-[10px] transition-colors"
                   >
-                    + {sugg.split(' ')[0]}
+                    + {localizeText(language, { en: sugg.en, fa: sugg.fa, ps: sugg.ps })}
                   </button>
                 ))}
               </div>
@@ -330,12 +334,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  مقدار (Quantity)
+                  {tx('Quantity', 'مقدار', 'مقدار')}
                 </label>
                 <input
                   type="number"
                   step="any"
-                  placeholder="مثال: 10 یا 500"
+                  placeholder={tx('e.g. 10 or 500', 'مثال: ۱۰ یا ۵۰۰', 'لکه: ۱۰ یا ۵۰۰')}
                   value={quantity}
                   onChange={(e) => handleQuantityChange(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -343,7 +347,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  واحد شمارش (Unit)
+                  {tx('Unit', 'واحد شمارش', 'واحد')}
                 </label>
                 <select
                   value={unit}
@@ -352,14 +356,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 >
                   {AVAILABLE_UNITS.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.nameFa} {u.symbol ? `(${u.symbol})` : ''}
+                      {localizeText(language, { en: u.nameEn, fa: u.nameFa, ps: u.namePs })}
                     </option>
                   ))}
                 </select>
                 {unit === 'other' && (
                   <input
                     type="text"
-                    placeholder="واحد دلخواه..."
+                    placeholder={tx('Custom unit...', 'واحد دلخواه...', 'ځانګړی واحد...')}
                     value={customUnit}
                     onChange={(e) => setCustomUnit(e.target.value)}
                     className="mt-1.5 w-full px-3 py-1.5 border border-amber-300 dark:border-amber-600 rounded-xl text-xs bg-surface text-ink font-bold"
@@ -368,12 +372,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  قیمت فی واحد (Unit Price)
+                  {tx('Unit price', 'قیمت فی واحد', 'د هر واحد بیه')}
                 </label>
                 <input
                   type="number"
                   step="any"
-                  placeholder="فی واحد"
+                  placeholder={tx('Price per unit', 'قیمت فی واحد', 'د هر واحد بیه')}
                   value={unitPrice}
                   onChange={(e) => handleUnitPriceChange(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -385,7 +389,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               <div className="p-2 rounded-xl bg-amber-100/60 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between font-semibold">
                 <span className="flex items-center gap-1.5">
                   <ArrowRightLeft className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                  <span>تبدیل خودکار استاندارد:</span>
+                  <span>{tx('Automatic standard conversion:', 'تبدیل خودکار استاندارد:', 'اتومات معیاري بدلون:')}</span>
                 </span>
                 <span className="font-mono font-bold text-amber-800 dark:text-amber-300 bg-surface px-2 py-0.5 rounded shadow-2xs">
                   {conversionResult.explanation}
@@ -402,7 +406,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             onChangeCurrency={setCurrency}
             exchangeRate={exchangeRate}
             onChangeExchangeRate={setExchangeRate}
-            label="مجموع کل فاکتور (تعداد × قیمت فی واحد)"
+            label={tx('Invoice total (quantity × unit price)', 'مجموع کل فاکتور (تعداد × قیمت فی واحد)', 'د بل ټولیز لګښت (مقدار × د واحد بیه)')}
             required={true}
             placeholder="0"
           />
@@ -412,7 +416,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>{t.date}</span>
+                <span>{tx('Date', 'تاریخ', 'نېټه')}</span>
               </label>
               <input
                 type="date"
@@ -425,7 +429,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>{t.time || 'ساعت'}</span>
+                <span>{tx('Time', 'ساعت', 'وخت')}</span>
               </label>
               <input
                 type="time"
@@ -437,11 +441,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {t.billNumber || 'شماره فاکتور / بل'}
+                {tx('Invoice / bill number', 'شماره فاکتور / بل', 'د بل شمېره')}
               </label>
               <input
                 type="text"
-                placeholder="بل نمبر #401"
+                placeholder={tx('e.g. INV-401', 'مثال: INV-401', 'لکه: INV-401')}
                 value={billNumber}
                 onChange={(e) => setBillNumber(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
@@ -454,21 +458,21 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div className="flex items-center justify-between">
               <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-amber-600" />
-                <span>طرف حساب / فروشنده (Supplier)</span>
+                <span>{tx('Supplier / vendor', 'طرف حساب / فروشنده', 'عرضه‌کوونکی / پلورونکی')}</span>
               </label>
               <button
                 type="button"
                 onClick={() => setIsCustomParty(!isCustomParty)}
                 className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800"
               >
-                {isCustomParty ? 'انتخاب از لیست' : '+ فروشنده جدید'}
+                {isCustomParty ? tx('Choose from list', 'انتخاب از فهرست', 'له لېست څخه وټاکئ') : `+ ${tx('New supplier', 'فروشندهٔ جدید', 'نوی عرضه‌کوونکی')}`}
               </button>
             </div>
 
             {isCustomParty || projectSuppliers.length === 0 ? (
               <input
                 type="text"
-                placeholder="نام فروشنده یا شرکت..."
+                placeholder={tx('Supplier or company name...', 'نام فروشنده یا شرکت...', 'د عرضه‌کوونکي یا شرکت نوم...')}
                 value={partyName}
                 onChange={(e) => setPartyName(e.target.value)}
                 className="w-full px-3 py-2 border border-amber-300 dark:border-amber-600 rounded-xl bg-surface font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
@@ -479,10 +483,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 onChange={(e) => setPartyName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500/20"
               >
-                <option value="">-- انتخاب فروشنده ({projectSuppliers.length}) --</option>
+                <option value="">{tx(`-- Choose a supplier (${projectSuppliers.length}) --`, `-- انتخاب فروشنده (${projectSuppliers.length}) --`, `-- عرضه‌کوونکی وټاکئ (${projectSuppliers.length}) --`)}</option>
                 {projectSuppliers.map((s) => (
                   <option key={s.id} value={s.name}>
-                    {s.name} ({s.materialsSupplied || 'تأمین‌کننده'})
+                    {s.name} ({s.materialsSupplied || tx('Supplier', 'تأمین‌کننده', 'عرضه‌کوونکی')})
                   </option>
                 ))}
               </select>
@@ -494,21 +498,21 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block font-bold text-slate-700 dark:text-slate-300">
-                  دسته‌بندی مصارف
+                  {tx('Expense category', 'دسته‌بندی مصارف', 'د لګښت ډول')}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsCustomCategory(!isCustomCategory)}
                   className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800"
                 >
-                  {isCustomCategory ? 'انتخاب از لیست' : '+ دسته جدید'}
+                  {isCustomCategory ? tx('Choose from list', 'انتخاب از فهرست', 'له لېست څخه وټاکئ') : `+ ${tx('New category', 'دستهٔ جدید', 'نوې ډله')}`}
                 </button>
               </div>
 
               {isCustomCategory ? (
                 <input
                   type="text"
-                  placeholder="نام دسته دلخواه..."
+                  placeholder={tx('Custom category name...', 'نام دستهٔ دلخواه...', 'د خپلې خوښې ډلې نوم...')}
                   value={customCategoryText}
                   onChange={(e) => setCustomCategoryText(e.target.value)}
                   className="w-full px-3 py-2 border border-amber-400 dark:border-amber-600 rounded-xl bg-amber-50/30 dark:bg-slate-950 text-ink font-bold focus:ring-2 focus:ring-amber-500/20"
@@ -529,11 +533,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                توضیحات و شرح خرید
+                {tx('Purchase description', 'توضیحات و شرح خرید', 'د پېرود توضیحات')}
               </label>
               <input
                 type="text"
-                placeholder="توضیحات فاکتور..."
+                placeholder={tx('Invoice details...', 'توضیحات فاکتور...', 'د بل جزیات...')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -545,10 +549,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
           <div className="space-y-2 p-3.5 rounded-2xl border border-amber-200/80 bg-amber-50/40 dark:bg-amber-950/20 dark:border-amber-800/40">
             <div className="flex items-center justify-between">
               <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs">
-                وضعیت تسویه فاکتور با فروشنده
+                {tx('Invoice settlement status', 'وضعیت تسویه فاکتور با فروشنده', 'د بل د تصفیې حالت')}
               </label>
               <span className="text-[10px] text-amber-800 dark:text-amber-300 font-bold">
-                پیش‌فرض: خرید قرضی (باقی‌داری کامل)
+                {tx('Default: purchase on credit (full balance due)', 'پیش‌فرض: خرید قرضی (باقی‌داری کامل)', 'ډیفالټ: په پور پېرود (ټول مبلغ پاتې دی)')}
               </span>
             </div>
 
@@ -562,7 +566,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
-                قرضداری کامل
+                {tx('On credit', 'قرضداری کامل', 'په پور')}
               </button>
               <button
                 type="button"
@@ -573,7 +577,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
-                نقدی کامل
+                {tx('Paid in full', 'نقدی کامل', 'بشپړ ورکړل شوی')}
               </button>
               <button
                 type="button"
@@ -584,7 +588,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                     : 'bg-surface border border-line text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                 }`}
               >
-                مقداری نقدی و باقیمانده قرض
+                {tx('Partial payment', 'مقداری نقدی و باقیمانده قرض', 'یوه برخه ورکړل شوې')}
               </button>
             </div>
 
@@ -592,7 +596,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
               <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    مبلغ نقدی پرداخت‌شده ({currency === 'USD' ? '$' : 'افغانی'})
+                    {tx(`Amount paid (${currency})`, `مبلغ نقدی پرداخت‌شده (${currency})`, `ورکړل شوې اندازه (${currency})`)}
                   </label>
                   <input
                     type="number"
@@ -604,17 +608,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    روش پرداخت
+                    {tx('Payment method', 'روش پرداخت', 'د ورکړې لاره')}
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                   >
-                    <option value="Cash">نقد (Cash)</option>
-                    <option value="Bank">انتقال بانکی (Bank)</option>
-                    <option value="Hawala">صرافی / حواله (Sarafi)</option>
-                    <option value="Personal">حساب شخصی</option>
+                    <option value="Cash">{tx('Cash', 'نقد', 'نغدې پیسې')}</option>
+                    <option value="Bank">{tx('Bank transfer', 'انتقال بانکی', 'بانکي لېږد')}</option>
+                    <option value="Hawala">{tx('Hawala', 'صرافی / حواله', 'حواله')}</option>
+                    <option value="Personal">{tx('Personal account', 'حساب شخصی', 'شخصي حساب')}</option>
                   </select>
                 </div>
               </div>
@@ -623,10 +627,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
             <div className="pt-1 flex items-center justify-between text-xs font-medium">
               <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
                 <Banknote className="w-3.5 h-3.5 text-slate-400" />
-                <span>باقی‌داری قرض:</span>
+                <span>{tx('Outstanding balance:', 'باقی‌داری قرض:', 'پاتې پور:')}</span>
               </span>
               <span className={`font-mono font-bold ${remainingDebtUSD > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                ${remainingDebtUSD.toLocaleString()} {remainingDebtUSD > 0 && `(${(remainingDebtUSD * exchangeRate).toLocaleString()} افغانی)`}
+                ${remainingDebtUSD.toLocaleString()} USD {remainingDebtUSD > 0 && `(${(remainingDebtUSD * exchangeRate).toLocaleString()} AFN)`}
               </span>
             </div>
           </div>
@@ -635,21 +639,21 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                <span>عکس فاکتور / بل فیزیکی</span>
+                <span>{tx('Invoice / receipt image', 'عکس فاکتور / بل فیزیکی', 'د بل / رسید انځور')}</span>
                 {documentUrl && (
                   <button
                     type="button"
                     onClick={() => setDocumentUrl('')}
                     className="text-[10px] text-rose-600 font-bold hover:underline"
                   >
-                    حذف عکس
+                    {tx('Remove image', 'حذف عکس', 'انځور لرې کړئ')}
                   </button>
                 )}
               </label>
               <div className="flex items-center gap-2">
                 <label className="flex-1 cursor-pointer flex items-center justify-center space-x-1.5 rtl:space-x-reverse px-3 py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl bg-surface-2 transition-colors text-xs text-slate-600 dark:text-slate-300 font-bold">
                   <Upload className="w-4 h-4 text-slate-500" />
-                  <span>{documentUrl ? 'عکس انتخاب شد' : 'انتخاب فایل از دستگاه'}</span>
+                  <span>{documentUrl ? tx('Image selected', 'عکس انتخاب شد', 'انځور وټاکل شو') : tx('Choose a file from device', 'انتخاب فایل از دستگاه', 'له وسیلې څخه فایل وټاکئ')}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -660,24 +664,24 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 <button
                   type="button"
                   onClick={() => openCameraForCapture({
-                    title: `بل خرید: ${item || category}`,
+                    title: tx(`Purchase receipt: ${item || category}`, `بل خرید: ${item || category}`, `د پېرود رسید: ${item || category}`),
                     amount: parsedAmount || undefined,
                   })}
                   className="px-3 py-2 bg-surface-2 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center gap-1 text-xs"
-                  title="کمره زنده"
+                  title={tx('Open camera', 'کمره زنده', 'کمره پرانیزئ')}
                 >
                   <Camera className="w-4 h-4 text-amber-600" />
-                  <span className="hidden sm:inline">کمره</span>
+                  <span className="hidden sm:inline">{tx('Camera', 'کمره', 'کمره')}</span>
                 </button>
               </div>
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {t.notes}
+                {tx('Notes', 'یادداشت‌ها', 'یادښتونه')}
               </label>
               <input
                 type="text"
-                placeholder="توضیحات و شرایط..."
+                placeholder={tx('Additional notes and terms...', 'توضیحات و شرایط...', 'نور یادښتونه او شرایط...')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -688,7 +692,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
           {/* Actions & Submit */}
           <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-t border-line">
             <div className="text-[11px] text-ink-muted font-medium">
-              وضعیت در سیستم: <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{settlementMode === 'credit' ? 'قرضداری کامل' : settlementMode === 'installment' ? 'پرداخت قسمی' : 'تسویه شده'}</span>
+              {tx('Status:', 'وضعیت در سیستم:', 'حالت:')} <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{settlementMode === 'credit' ? tx('On credit', 'قرضداری کامل', 'په پور') : settlementMode === 'installment' ? tx('Partially paid', 'پرداخت قسمی', 'یوه برخه ورکړل شوې') : tx('Paid in full', 'تسویه شده', 'بشپړ ورکړل شوی')}</span>
             </div>
             <div className="flex items-center space-x-2 rtl:space-x-reverse w-full sm:w-auto">
               <button
@@ -696,7 +700,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 onClick={onClose}
                 className="flex-1 sm:flex-none px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition-colors text-center"
               >
-                <span>{t.cancel}</span>
+                <span>{tx('Cancel', 'لغو', 'لغوه کول')}</span>
                 <span className="hidden sm:inline-block text-[10px] text-slate-400 ms-1">(Esc)</span>
               </button>
               <button
@@ -705,7 +709,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                 className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-900 dark:bg-amber-600 hover:bg-slate-800 text-amber-400 dark:text-white font-black rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                <span>{isSubmitting ? t.loading : 'ثبت فاکتور در سیستم'}</span>
+                <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : tx('Save invoice', 'ثبت فاکتور در سیستم', 'بل ثبت کړئ')}</span>
               </button>
             </div>
           </div>

@@ -1,3 +1,6 @@
+import type { Language } from '../types';
+import { intlLocaleFor, localizeText } from '../i18n/localize';
+
 export interface ProjectContextSummary {
   projectName: string;
   totalSteelTons: number;
@@ -18,65 +21,65 @@ export interface ProjectContextSummary {
 export function answerProjectQuestionLocally(
   question: string,
   summary: ProjectContextSummary,
-  allProjects: Array<{ name: string; floors: number; units: number; city: string }>
+  allProjects: Array<{ name: string; floors: number; units: number; city: string }>,
+  language: Language = 'en'
 ): string {
   const q = question.toLowerCase().trim();
+  const fmt = (value: number) => value.toLocaleString(intlLocaleFor(language));
+  const projectName = summary.projectName;
 
-  // Steel / Rebar question
-  if (q.includes('سیخ') || q.includes('فولاد') || q.includes('steel') || q.includes('rebar') || q.includes('آهن')) {
-    return `📊 در پروژه "${summary.projectName}" تا اکنون مجموعاً ${summary.totalSteelTons.toLocaleString()} تن سیخ‌گول به ارزش $${summary.steelCostUSD.toLocaleString()} دالر خریداری و ثبت گردیده است.`;
+  if (['سیخ', 'فولاد', 'آهن', 'steel', 'rebar', 'سیخ‌ګول'].some(term => q.includes(term))) {
+    return localizeText(language, {
+      en: `📊 Project "${projectName}" has ${fmt(summary.totalSteelTons)} tons of rebar recorded, valued at $${fmt(summary.steelCostUSD)} USD.`,
+      fa: `📊 در پروژهٔ «${projectName}» تا اکنون ${fmt(summary.totalSteelTons)} تن سیخ‌گول به ارزش $${fmt(summary.steelCostUSD)} دالر ثبت شده است.`,
+      ps: `📊 په «${projectName}» پروژه کې تر اوسه ${fmt(summary.totalSteelTons)} ټنه سیخ‌ګول د $${fmt(summary.steelCostUSD)} ډالرو په ارزښت ثبت شوي دي.`,
+    });
   }
 
-  // Concrete question
-  if (q.includes('کانکریت') || q.includes('کانکریت‌ریزی') || q.includes('concrete') || q.includes('پمپ') || q.includes('متر مکعب')) {
-    return `🏗️ حجم مجموعی کانکریت ثبت شده برای "${summary.projectName}" بالغ بر ${summary.totalConcreteM3.toLocaleString()} متر مکعب با هزینه مجموعی $${summary.concreteCostUSD.toLocaleString()} دالر می‌باشد.`;
+  if (['کانکریت', 'کانکریت‌ریزی', 'concrete', 'pump', 'متر مکعب', 'کانکریټ', 'پمپ'].some(term => q.includes(term))) {
+    return localizeText(language, {
+      en: `🏗️ Project "${projectName}" has ${fmt(summary.totalConcreteM3)} m³ of concrete recorded, costing $${fmt(summary.concreteCostUSD)} USD.`,
+      fa: `🏗️ حجم کانکریت ثبت‌شده در پروژهٔ «${projectName}» ${fmt(summary.totalConcreteM3)} متر مکعب با هزینهٔ $${fmt(summary.concreteCostUSD)} دالر است.`,
+      ps: `🏗️ په «${projectName}» پروژه کې ${fmt(summary.totalConcreteM3)} مکعب متر کانکریټ د $${fmt(summary.concreteCostUSD)} ډالرو په لګښت ثبت شوی دی.`,
+    });
   }
 
-  // Apartments & Sales question
-  if (
-    q.includes('آپارتمان') || 
-    q.includes('فروش') || 
-    q.includes('باقی') || 
-    q.includes('قسط') || 
-    q.includes('مشتری') || 
-    q.includes('apartment') || 
-    q.includes('sold')
-  ) {
-    return `🏢 وضعیت آپارتمان‌های پروژه "${summary.projectName}":
-• تعداد کل واحدها: ${summary.apartmentsTotal} واحد
-• فروخته شده: ${summary.apartmentsSold} واحد
-• واحد‌های باقیمانده (خالی): ${summary.apartmentsAvailable} واحد
-• ارزش کل فروش: $${summary.totalSalesValueUSD.toLocaleString()}
-• مبلغ وصول شده: $${summary.salesReceivedUSD.toLocaleString()}
-• باقی‌داری از خریداران: $${summary.salesDueUSD.toLocaleString()}`;
+  if (['آپارتمان', 'فروش', 'باقی', 'قسط', 'مشتری', 'apartment', 'sold', 'اپارتمان', 'پلور', 'پېرودونکی'].some(term => q.includes(term))) {
+    return localizeText(language, {
+      en: `🏢 Apartment sales in "${projectName}":\n• Total units: ${summary.apartmentsTotal}\n• Sold: ${summary.apartmentsSold}\n• Available: ${summary.apartmentsAvailable}\n• Total sale value: $${fmt(summary.totalSalesValueUSD)}\n• Received: $${fmt(summary.salesReceivedUSD)}\n• Outstanding from buyers: $${fmt(summary.salesDueUSD)}`,
+      fa: `🏢 وضعیت فروش آپارتمان‌های پروژهٔ «${projectName}»:\n• مجموع واحدها: ${summary.apartmentsTotal}\n• فروخته‌شده: ${summary.apartmentsSold}\n• موجود: ${summary.apartmentsAvailable}\n• ارزش کل فروش: $${fmt(summary.totalSalesValueUSD)}\n• دریافت‌شده: $${fmt(summary.salesReceivedUSD)}\n• طلب از خریداران: $${fmt(summary.salesDueUSD)}`,
+      ps: `🏢 د «${projectName}» پروژې د اپارتمانونو پلور:\n• ټول واحدونه: ${summary.apartmentsTotal}\n• پلورل شوي: ${summary.apartmentsSold}\n• شته: ${summary.apartmentsAvailable}\n• د پلور ټول ارزښت: $${fmt(summary.totalSalesValueUSD)}\n• ترلاسه شوي: $${fmt(summary.salesReceivedUSD)}\n• له پېرودونکو پاتې: $${fmt(summary.salesDueUSD)}`,
+    });
   }
 
-  // Expenses & Costs
-  if (q.includes('مصرف') || q.includes('هزینه') || q.includes('خرچ') || q.includes('expense') || q.includes('cost')) {
-    return `💰 مصارف و خروجی مالی پروژه "${summary.projectName}":
-• کل مصارف و خریدهای ثبت شده: $${summary.totalExpensesUSD.toLocaleString()}
-• مجموع پرداختی‌ها: $${summary.totalPaidUSD.toLocaleString()}
-• کل قرضداری‌های باقیمانده (طلبکاران): $${summary.totalDebtUSD.toLocaleString()}`;
+  if (['مصرف', 'هزینه', 'خرچ', 'expense', 'cost', 'لګښت'].some(term => q.includes(term))) {
+    return localizeText(language, {
+      en: `💰 Expenses and payments for "${projectName}":\n• Recorded expenses and purchases: $${fmt(summary.totalExpensesUSD)}\n• Paid: $${fmt(summary.totalPaidUSD)}\n• Outstanding payables: $${fmt(summary.totalDebtUSD)}`,
+      fa: `💰 مصارف و پرداخت‌های پروژهٔ «${projectName}»:\n• مجموع مصارف و خریدهای ثبت‌شده: $${fmt(summary.totalExpensesUSD)}\n• پرداخت‌شده: $${fmt(summary.totalPaidUSD)}\n• بدهی باقی‌مانده: $${fmt(summary.totalDebtUSD)}`,
+      ps: `💰 د «${projectName}» پروژې لګښتونه او تادیې:\n• ثبت شوي لګښتونه او پېرودونه: $${fmt(summary.totalExpensesUSD)}\n• ورکړل شوي: $${fmt(summary.totalPaidUSD)}\n• پاتې پورونه: $${fmt(summary.totalDebtUSD)}`,
+    });
   }
 
-  // Debts & Balances
-  if (q.includes('قرض') || q.includes('طلب') || q.includes('باقیداری') || q.includes('debt') || q.includes('balance')) {
-    return `⚖️ وضعیت بدهی و طلبکاری پروژه "${summary.projectName}":
-• بدهی پروژه به تأمین‌کنندگان و قراردادی‌ها: $${summary.totalDebtUSD.toLocaleString()}
-• طلب پروژه از خریداران آپارتمان (اقساط معوق): $${summary.salesDueUSD.toLocaleString()}`;
+  if (['قرض', 'طلب', 'باقیداری', 'debt', 'balance', 'پور', 'بیلانس'].some(term => q.includes(term))) {
+    return localizeText(language, {
+      en: `⚖️ Balances for "${projectName}":\n• Payables to suppliers and contractors: $${fmt(summary.totalDebtUSD)}\n• Receivables from apartment buyers: $${fmt(summary.salesDueUSD)}`,
+      fa: `⚖️ وضعیت بدهی و طلب پروژهٔ «${projectName}»:\n• بدهی به عرضه‌کنندگان و قراردادیان: $${fmt(summary.totalDebtUSD)}\n• طلب از خریداران آپارتمان: $${fmt(summary.salesDueUSD)}`,
+      ps: `⚖️ د «${projectName}» پروژې بیلانسونه:\n• عرضه‌کوونکو او قراردادیانو ته پور: $${fmt(summary.totalDebtUSD)}\n• د اپارتمان له پېرودونکو پاتې پیسې: $${fmt(summary.salesDueUSD)}`,
+    });
   }
 
-  // All Projects summary
-  if (q.includes('پروژه') || q.includes('ساختمان') || q.includes('project') || q.includes('تعمیر')) {
-    const list = allProjects.map(p => `• ${p.name} (${p.city}): ${p.floors} منزل، ${p.units} واحد`).join('\n');
-    return `🏢 فهرست پروژه‌های ساختمانی شما:\n${list}`;
+  if (['پروژه', 'ساختمان', 'project', 'تعمیر', 'پروژې', 'ودانۍ'].some(term => q.includes(term))) {
+    const list = allProjects.map(project => `${project.name} (${project.city}): ${project.floors} floors, ${project.units} units`).join('\n');
+    return localizeText(language, {
+      en: `🏢 Your construction projects:\n${list}`,
+      fa: `🏢 فهرست پروژه‌های ساختمانی شما:\n${allProjects.map(project => `${project.name} (${project.city}): ${project.floors} منزل، ${project.units} واحد`).join('\n')}`,
+      ps: `🏢 ستاسو د ودانیزو پروژو لېست:\n${allProjects.map(project => `${project.name} (${project.city}): ${project.floors} پوړه، ${project.units} واحدونه`).join('\n')}`,
+    });
   }
 
-  // Default response summarizing current active project stats
-  return `📋 خلاصه وضعیت فعلی پروژه "${summary.projectName}":
-• سیخ مصرفی: ${summary.totalSteelTons.toLocaleString()} تن ($${summary.steelCostUSD.toLocaleString()})
-• کانکریت‌ریزی: ${summary.totalConcreteM3.toLocaleString()} متر مکعب ($${summary.concreteCostUSD.toLocaleString()})
-• کل هزینه‌های عمرانی: $${summary.totalExpensesUSD.toLocaleString()}
-• وضعیت فروشات: ${summary.apartmentsSold} از ${summary.apartmentsTotal} واحد فروخته شده (${summary.apartmentsAvailable} واحد آزاد)
-• اقساط باقیمانده از مشتریان: $${summary.salesDueUSD.toLocaleString()}`;
+  return localizeText(language, {
+    en: `📋 Current status of "${projectName}":\n• Rebar: ${fmt(summary.totalSteelTons)} tons ($${fmt(summary.steelCostUSD)})\n• Concrete: ${fmt(summary.totalConcreteM3)} m³ ($${fmt(summary.concreteCostUSD)})\n• Construction expenses: $${fmt(summary.totalExpensesUSD)}\n• Apartments sold: ${summary.apartmentsSold} of ${summary.apartmentsTotal} (${summary.apartmentsAvailable} available)\n• Buyer balances due: $${fmt(summary.salesDueUSD)}`,
+    fa: `📋 خلاصهٔ وضعیت فعلی پروژهٔ «${projectName}»:\n• سیخ‌گول مصرف‌شده: ${fmt(summary.totalSteelTons)} تن ($${fmt(summary.steelCostUSD)})\n• کانکریت‌ریزی: ${fmt(summary.totalConcreteM3)} متر مکعب ($${fmt(summary.concreteCostUSD)})\n• مصارف ساختمانی: $${fmt(summary.totalExpensesUSD)}\n• آپارتمان‌های فروخته‌شده: ${summary.apartmentsSold} از ${summary.apartmentsTotal} (${summary.apartmentsAvailable} موجود)\n• طلب باقی‌مانده از خریداران: $${fmt(summary.salesDueUSD)}`,
+    ps: `📋 د «${projectName}» پروژې اوسنی لنډیز:\n• سیخ‌ګول: ${fmt(summary.totalSteelTons)} ټنه ($${fmt(summary.steelCostUSD)})\n• کانکریټ: ${fmt(summary.totalConcreteM3)} مکعب متره ($${fmt(summary.concreteCostUSD)})\n• د ودانیزو چارو لګښتونه: $${fmt(summary.totalExpensesUSD)}\n• پلورل شوي اپارتمانونه: له ${summary.apartmentsTotal} څخه ${summary.apartmentsSold} (${summary.apartmentsAvailable} شته)\n• له پېرودونکو پاتې پیسې: $${fmt(summary.salesDueUSD)}`,
+  });
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { localizeText } from '../i18n/localize';
 import {
   LayoutDashboard,
   Receipt,
@@ -16,7 +17,7 @@ interface MobileNavProps {
 }
 
 export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab, onOpenMobileMenu }) => {
-  const { t, isTabAllowed, isSectionProtected, isSectionUnlocked } = useApp();
+  const { t, language, isTabAllowed, isSectionProtected, isSectionUnlocked } = useApp();
 
   const allTabs = [
     { id: 'dashboard', label: t.navDashboard, icon: LayoutDashboard },
@@ -36,7 +37,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab, o
   return (
     <nav
       className="md:hidden fixed bottom-0 inset-x-0 z-40 no-print mobile-nav-chrome safe-bottom"
-      aria-label="Mobile navigation"
+      aria-label={localizeText(language, { en: 'Mobile navigation', fa: 'پیمایش موبایل', ps: 'د ګرځنده تګلارې' })}
     >
       <div className="px-1 pt-0.5 flex items-stretch justify-around">
         {visibleTabs.map((tab) => {

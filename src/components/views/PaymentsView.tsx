@@ -132,14 +132,14 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ onOpenAddPayment }) 
           <table className="w-full text-xs text-left">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
-                <th className="py-3.5 px-4">{t('date') || 'Date'}</th>
+                <th className="py-3.5 px-4">{t('date') || t("accColDate")}</th>
                 <th className="py-3.5 px-4">{t('recipient') || 'Recipient / Payee'}</th>
-                <th className="py-3.5 px-4">{t('paymentMethod') || 'Payment Method'}</th>
+                <th className="py-3.5 px-4">{t('paymentMethod') || t("paymentMethod")}</th>
                 <th className="py-3.5 px-4">{t('referenceNumber') || 'Ref / Voucher #'}</th>
                 <th className="py-3.5 px-4">{t('notes') || 'Purpose / Notes'}</th>
                 <th className="py-3.5 px-4 text-right">{t('amountUSD') || 'Amount (USD)'}</th>
                 <th className="py-3.5 px-4 text-center">{t('receipt') || 'Voucher'}</th>
-                <th className="py-3.5 px-4 text-center">{t('actions') || 'Actions'}</th>
+                <th className="py-3.5 px-4 text-center">{t('actions') || t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -219,19 +219,19 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ onOpenAddPayment }) 
                 <span className="font-mono font-bold">#PAY-{selectedReceiptPayment.id.slice(0, 8).toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">{t('date') || 'Date'}:</span>
+                <span className="text-slate-500">{t('date') || t("accColDate")}:</span>
                 <span className="font-semibold">{selectedReceiptPayment.date}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">{t('payee') || 'Paid To'}:</span>
+                <span className="text-slate-500">{t('payee') || t("paidTo")}:</span>
                 <span className="font-bold text-sm text-slate-900">{selectedReceiptPayment.recipientName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">{t('method') || 'Payment Method'}:</span>
+                <span className="text-slate-500">{t('method') || t("paymentMethod")}:</span>
                 <span className="font-medium">{selectedReceiptPayment.paymentMethod}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-y my-2">
-                <span className="font-bold text-slate-800">{t('amountPaid') || 'Amount Paid'}:</span>
+                <span className="font-bold text-slate-800">{t('amountPaid') || t("paidAmount")}:</span>
                 <span className="text-lg font-black text-emerald-600">
                   {formatCurrency(selectedReceiptPayment.amountUSD, 'USD')} ({formatNumber(selectedReceiptPayment.amount, 0)} {selectedReceiptPayment.currency})
                 </span>

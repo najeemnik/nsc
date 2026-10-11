@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   FileCheck2, 
   Plus, 
@@ -35,6 +36,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
     t, 
     language 
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -62,9 +64,9 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
     setSyncingId(doc.id);
     try {
       await uploadDocumentToDrive(doc);
-      alert(t('fileUploadedToDriveSuccess') || `"${doc.title}" was backed up to Google Drive!`);
+      alert(`${t('fileUploadedToDriveSuccess')}: "${doc.title}"`);
     } catch (e: any) {
-      alert(e.message || 'Failed to upload to Drive');
+      alert(e.message || tx('Failed to upload to Drive', 'بارگذاری به درایو انجام نشد', 'ډرایو ته پورته کول ناکام شول'));
     } finally {
       setSyncingId(null);
     }
@@ -168,7 +170,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
               )}
 
               <div className="text-[11px] text-slate-400 space-y-1 mb-4">
-                <div>{t('date') || 'Date'}: {doc.date}</div>
+                <div>{t('date') || t("accColDate")}: {doc.date}</div>
                 {doc.fileSize && <div>{t('size') || 'Size'}: {doc.fileSize}</div>}
               </div>
             </div>
@@ -190,7 +192,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                 {doc.googleDriveFileId && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 text-[10px] font-bold rounded-lg">
                     <CheckCircle2 className="w-3 h-3" />
-                    <span>In Drive</span>
+                    <span>{tx('In Drive', 'در گوگل درایو', 'په ډرایو کې')}</span>
                   </span>
                 )}
               </div>
@@ -201,7 +203,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-semibold transition disabled:opacity-50"
               >
                 <Cloud className={`w-3.5 h-3.5 ${syncingId === doc.id ? 'animate-spin' : ''}`} />
-                <span>{syncingId === doc.id ? 'Syncing...' : (t('backupToDrive') || 'Sync to Drive')}</span>
+                <span>{syncingId === doc.id ? tx('Syncing...', 'در حال همگام‌سازی...', 'همغږي کېږي...') : (t('backupToDrive') || 'Sync to Drive')}</span>
               </button>
             </div>
           </div>

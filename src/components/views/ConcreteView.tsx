@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   CircleDot, 
   Plus, 
@@ -25,6 +26,7 @@ export const ConcreteView: React.FC<ConcreteViewProps> = ({ onOpenAddConcrete })
     t, 
     language 
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -71,7 +73,7 @@ export const ConcreteView: React.FC<ConcreteViewProps> = ({ onOpenAddConcrete })
             className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition"
           >
             <Printer className="w-4 h-4" />
-            <span>{t('print') || 'Print'}</span>
+            <span>{t('print') || t("print")}</span>
           </button>
 
           <button
@@ -79,7 +81,7 @@ export const ConcreteView: React.FC<ConcreteViewProps> = ({ onOpenAddConcrete })
             className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-teal-500/25 transition active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>{t('addConcrete') || 'Record Concrete Pour'}</span>
+            <span>{t('addConcrete') || t("addConcrete")}</span>
           </button>
         </div>
       </div>
@@ -120,21 +122,21 @@ export const ConcreteView: React.FC<ConcreteViewProps> = ({ onOpenAddConcrete })
           <table className="w-full text-xs text-left">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
-                <th className="py-3.5 px-4">{t('date') || 'Date'}</th>
+                <th className="py-3.5 px-4">{t('date') || t("accColDate")}</th>
                 <th className="py-3.5 px-4">{t('structurePart') || 'Building Section / Floor'}</th>
                 <th className="py-3.5 px-4">{t('supplier') || 'Ready-Mix Supplier'}</th>
                 <th className="py-3.5 px-4">{t('volumeM3') || 'Volume (m³)'}</th>
                 <th className="py-3.5 px-4">{t('pricePerM3') || 'Rate / m³'}</th>
                 <th className="py-3.5 px-4">{t('pumpFee') || 'Pump Fee'}</th>
                 <th className="py-3.5 px-4 text-right">{t('totalCostUSD') || 'Total (USD)'}</th>
-                <th className="py-3.5 px-4 text-center">{t('actions') || 'Actions'}</th>
+                <th className="py-3.5 px-4 text-center">{t('actions') || t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredConcrete.map(c => (
                 <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3.5 px-4 text-ink-muted whitespace-nowrap">{c.date}</td>
-                  <td className="py-3.5 px-4 font-bold text-teal-600 dark:text-teal-400">{c.structurePart || 'Slab / Columns'}</td>
+                  <td className="py-3.5 px-4 font-bold text-teal-600 dark:text-teal-400">{c.structurePart || tx('Slab / columns', 'سقف / ستون‌ها', 'چت / ستنې')}</td>
                   <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">{c.supplierName || '—'}</td>
                   <td className="py-3.5 px-4 font-mono font-bold">{formatNumber(c.volumeM3, 1)} m³</td>
                   <td className="py-3.5 px-4 font-mono">{c.pricePerM3 ? formatCurrency(c.pricePerM3, c.currency || 'USD') : '—'}</td>

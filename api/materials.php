@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Material Procurement & Supply Chain API
  * Solves Excel Flaw #2: Material Purchases Directly Reflected in Actual Costs & P&L

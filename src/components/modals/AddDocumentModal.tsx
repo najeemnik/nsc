@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { FileCheck2, X, Upload, Camera } from 'lucide-react';
 import { DocumentCategory } from '../../types';
 
@@ -9,7 +10,8 @@ interface AddDocumentModalProps {
 }
 
 export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addDocument, t, openCameraForCapture } = useApp();
+  const { currentProject, addDocument, t, openCameraForCapture, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('permits');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -62,11 +64,11 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">عنوان سند یا مدرک</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Document title', 'عنوان سند یا مدرک', 'د سند سرلیک')}</label>
             <input
               type="text"
               required
-              placeholder="مثلاً: تست لابراتوار مقاومت ۲۸ روزه کانکریت"
+              placeholder={tx('e.g. 28-day concrete strength test', 'مثلاً: آزمایش مقاومت ۲۸روزهٔ کانکریت', 'لکه: د کانکریټو د ۲۸ ورځو د مقاومت ازموینه')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -103,11 +105,11 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">مبلغ مالی مرتبط ($) - اختیاری</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Related amount (USD) — optional', 'مبلغ مالی مرتبط ($) — اختیاری', 'اړونده اندازه (USD) — اختیاري')}</label>
             <input
               type="number"
               step="any"
-              placeholder="در صورتی که بل مالی است، مبلغ را بنویسید"
+              placeholder={tx('Enter an amount if this is a financial document', 'اگر سند مالی است، مبلغ را وارد کنید', 'که سند مالي وي، اندازه یې ولیکئ')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -115,7 +117,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">آپلود فایل یا عکس</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Upload a file or photo', 'بارگذاری فایل یا عکس', 'فایل یا انځور پورته کړئ')}</label>
             <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-amber-500 transition-colors">
               <input
                 type="file"
@@ -126,8 +128,8 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               />
               <label htmlFor="doc-file-input" className="cursor-pointer flex flex-col items-center">
                 <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                <span className="font-bold text-slate-800 dark:text-slate-200">کلیک برای انتخاب فایل عکس یا PDF</span>
-                <span className="text-[11px] text-slate-400 mt-1">فرمت‌های JPG, PNG, PDF پشتیبانی می‌شود</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{tx('Click to choose an image or PDF', 'برای انتخاب تصویر یا PDF کلیک کنید', 'د انځور یا PDF ټاکلو لپاره کلیک وکړئ')}</span>
+                <span className="text-[11px] text-slate-400 mt-1">{tx('JPG, PNG, and PDF are supported', 'فرمت‌های JPG، PNG و PDF پشتیبانی می‌شوند', 'JPG، PNG او PDF بڼې منل کېږي')}</span>
               </label>
             </div>
           </div>
@@ -147,7 +149,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ isOpen, onCl
               type="button"
               onClick={() => {
                 onClose();
-                openCameraForCapture({ title: title || 'Project Document' });
+                openCameraForCapture({ title: title || tx('Project document', 'سند پروژه', 'د پروژې سند') });
               }}
               className="flex items-center space-x-1.5 rtl:space-x-reverse text-amber-700 dark:text-amber-400 hover:text-amber-800 font-bold"
             >

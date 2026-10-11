@@ -16,6 +16,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import {
   BookOpen,
   Printer,
@@ -38,6 +39,17 @@ import { computeUnitProfitability } from '../../utils/wipAllocation';
 
 type ReportTab = 'trial' | 'income' | 'balance' | 'units' | 'journal' | 'coa';
 
+const JOURNAL_SOURCE_LABELS: Record<JournalEntry['sourceType'], { en: string; fa: string; ps: string }> = {
+  expense: { en: 'Expense', fa: 'مصرف', ps: 'لګښت' },
+  material: { en: 'Material purchase', fa: 'خرید مصالح', ps: 'د ودانیزو توکو پېرل' },
+  steel: { en: 'Steel purchase', fa: 'خرید سیخ‌گول', ps: 'د سیخ‌ګول پېرل' },
+  concrete: { en: 'Concrete purchase', fa: 'خرید کانکریت', ps: 'د کانکریټ پېرل' },
+  payment: { en: 'Payment', fa: 'پرداخت', ps: 'تادیه' },
+  apartment_sale: { en: 'Apartment sale', fa: 'فروش آپارتمان', ps: 'د اپارتمان پلور' },
+  investment: { en: 'Investment', fa: 'سرمایه‌گذاری', ps: 'پانګه‌اچونه' },
+  adjustment: { en: 'Adjustment', fa: 'تعدیل', ps: 'سمون' },
+};
+
 export const AccountingView: React.FC = () => {
   const {
     currentProject,
@@ -50,12 +62,14 @@ export const AccountingView: React.FC = () => {
     expenses,
     steelRecords,
     concreteRecords,
+    materialProcurements,
     formatCurrency,
     formatNumber,
     t,
     language,
     getAccountDisplayName,
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [tab, setTab] = useState<ReportTab>('trial');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -84,8 +98,9 @@ export const AccountingView: React.FC = () => {
         expenses,
         steelRecords,
         concreteRecords,
+        materialProcurements,
       }),
-    [projectId, currentProject, apartments, expenses, steelRecords, concreteRecords]
+    [projectId, currentProject, apartments, expenses, steelRecords, concreteRecords, materialProcurements]
   );
 
   const bal = (code: string) => {
@@ -126,7 +141,7 @@ export const AccountingView: React.FC = () => {
     { id: 'balance', label: t('accTabBalance') || 'Balance Sheet', Icon: Landmark },
     { id: 'units', label: t('accTabUnits') || 'Per-Unit Profit', Icon: Home },
     { id: 'journal', label: t('accTabJournal') || 'Journal Ledger', Icon: ListOrdered },
-    { id: 'coa', label: language === 'en' ? 'Chart of Accounts (COA)' : 'درخت و کدینگ حساب‌ها (COA)', Icon: BookOpen },
+    { id: 'coa', label: localizeText(language, { en: 'Chart of Accounts (COA)', fa: 'درخت و کدینگ حساب‌ها (COA)', ps: 'د حسابونو نوملړ (COA)' }), Icon: BookOpen },
   ];
 
   const SectionHeader: React.FC<{ Icon: any; title: string; tint: string }> = ({ Icon, title, tint }) => (
@@ -152,10 +167,10 @@ export const AccountingView: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <BookOpen className="w-6 h-6 text-violet-500" />
-            <span>{t('accTitle') || 'Accounting Reports'}</span>
+            <span>{t('accTitle') || t("accTitle")}</span>
           </h1>
           <p className="text-xs text-ink-muted mt-1">
-            {currentProject?.name || ''} • {t('accSubtitle') || 'Auto-generated from the double-entry journal'}
+            {currentProject?.name || ''} • {t('accSubtitle') || t("accSubtitle")}
           </p>
         </div>
         <button
@@ -163,7 +178,7 @@ export const AccountingView: React.FC = () => {
           className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition self-start"
         >
           <Printer className="w-4 h-4" />
-          <span>{t('print') || 'Print'}</span>
+          <span>{t('print') || t("print")}</span>
         </button>
       </div>
 
@@ -190,10 +205,10 @@ export const AccountingView: React.FC = () => {
             <table className="w-full text-xs">
               <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
                 <tr>
-                  <th className="py-3.5 px-4 text-start">{t('accColCode') || 'Code'}</th>
-                  <th className="py-3.5 px-4 text-start">{t('accColAccount') || 'Account'}</th>
-                  <th className="py-3.5 px-4 text-end">{t('accColDebit') || 'Debit ($)'}</th>
-                  <th className="py-3.5 px-4 text-end">{t('accColCredit') || 'Credit ($)'}</th>
+                  <th className="py-3.5 px-4 text-start">{t('accColCode') || t("accColCode")}</th>
+                  <th className="py-3.5 px-4 text-start">{t('accColAccount') || t("accColAccount")}</th>
+                  <th className="py-3.5 px-4 text-end">{t('accColDebit') || t("accColDebit")}</th>
+                  <th className="py-3.5 px-4 text-end">{t('accColCredit') || t("accColCredit")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -201,13 +216,13 @@ export const AccountingView: React.FC = () => {
                   <TBRow key={r.accountCode} code={r.accountCode} name={nameOf(r)} dr={r.debitUSD} cr={r.creditUSD} />
                 ))}
                 {tb.rows.length === 0 && (
-                  <tr><td colSpan={4} className="py-12 text-center text-slate-400">{t('accEmpty') || 'No postings yet for this project'}</td></tr>
+                  <tr><td colSpan={4} className="py-12 text-center text-slate-400">{t('accEmpty') || t("accEmpty")}</td></tr>
                 )}
               </tbody>
               {tb.rows.length > 0 && (
                 <tfoot className="bg-surface-2/60 font-black text-ink border-t border-line">
                   <tr>
-                    <td colSpan={2} className="py-3 px-4">{t('total') || 'Total'}</td>
+                    <td colSpan={2} className="py-3 px-4">{t('total') || t("total")}</td>
                     <td className="py-3 px-4 text-end font-mono">{fmt(tb.totalDebitUSD)}</td>
                     <td className="py-3 px-4 text-end font-mono">{fmt(tb.totalCreditUSD)}</td>
                   </tr>
@@ -219,8 +234,8 @@ export const AccountingView: React.FC = () => {
             Math.abs(tb.totalDebitUSD - tb.totalCreditUSD) < 1 ? 'text-emerald-600 bg-emerald-500/5' : 'text-rose-600 bg-rose-500/5'
           }`}>
             {Math.abs(tb.totalDebitUSD - tb.totalCreditUSD) < 1
-              ? (t('accBalancedOk') || '✅ Books are balanced — total debits equal total credits')
-              : (t('accBalancedBad') || '⚠️ Out of balance — posting error detected')}
+              ? (t('accBalancedOk') || t("accBalancedOk"))
+              : (t('accBalancedBad') || t("accBalancedBad"))}
           </div>
         </div>
       )}
@@ -230,7 +245,7 @@ export const AccountingView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* P&L core: Revenue − COGS − Period expenses */}
           <div className="bg-surface rounded-3xl border border-line shadow-sm p-4 space-y-2 h-fit">
-            <SectionHeader Icon={Wallet} title={t('accRevenue') || 'Revenue'} tint="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" />
+            <SectionHeader Icon={Wallet} title={t('accRevenue') || t("accRevenue")} tint="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" />
             {revenueRows.map(r => (
               <div key={r.accountCode} className="flex items-center justify-between px-3 py-2 text-xs">
                 <span className="text-ink">{nameOf(r)} <span className="font-mono text-ink-muted text-[10px]">({r.accountCode})</span></span>
@@ -238,23 +253,23 @@ export const AccountingView: React.FC = () => {
               </div>
             ))}
             <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-line text-xs font-black">
-              <span className="text-ink">{t('accTotalRevenue') || 'Total Revenue'}</span>
+              <span className="text-ink">{t('accTotalRevenue') || t("accTotalRevenue")}</span>
               <span className="font-mono text-emerald-600 dark:text-emerald-400">{fmt(totalRevenue)}</span>
             </div>
 
-            <SectionHeader Icon={Box} title={t('accCogs') || 'Cost of Units Sold (COGS)'} tint="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
+            <SectionHeader Icon={Box} title={t('accCogs') || t("accCogs")} tint="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
             <div className="flex items-center justify-between px-3 py-2 text-xs">
-              <span className="text-ink">{t('accCogsDesc') || 'Area-allocated construction cost of sold units'} <span className="font-mono text-ink-muted text-[10px]">(5050)</span></span>
+              <span className="text-ink">{t('accCogsDesc') || t("accCogsDesc")} <span className="font-mono text-ink-muted text-[10px]">(5050)</span></span>
               <span className="font-mono font-bold text-rose-600 dark:text-rose-400">({fmt(totalCogs)})</span>
             </div>
             <div className="flex items-center justify-between px-3 py-2 border-t border-line text-xs font-black bg-emerald-500/5 rounded-xl">
-              <span className="text-ink">{t('accGrossProfit') || 'Gross Profit (Revenue − COGS)'}</span>
+              <span className="text-ink">{t('accGrossProfit') || t("accGrossProfit")}</span>
               <span className={`font-mono ${grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{fmt(grossProfit)}</span>
             </div>
 
             {periodExpenseRows.length > 0 && (
               <>
-                <SectionHeader Icon={Building2} title={t('accOpex') || 'Period Expenses (unallocated 5xxx / 6xxx / 7xxx)'} tint="bg-slate-500/10 text-slate-700 dark:text-slate-300" />
+                <SectionHeader Icon={Building2} title={t('accOpex') || t("accOpex")} tint="bg-slate-500/10 text-slate-700 dark:text-slate-300" />
                 {periodExpenseRows.map(r => (
                   <div key={r.accountCode} className="flex items-center justify-between px-3 py-1.5 text-xs">
                     <span className="text-ink">{nameOf(r)} <span className="font-mono text-ink-muted text-[10px]">({r.accountCode})</span></span>
@@ -271,7 +286,7 @@ export const AccountingView: React.FC = () => {
 
           {/* WIP capitalization detail (natural cost classification) */}
           <div className="bg-surface rounded-3xl border border-line shadow-sm p-4 space-y-2 h-fit">
-            <SectionHeader Icon={HardHat} title={t('accWipDetail') || 'Construction Costs Capitalized in WIP (by category)'} tint="bg-amber-500/10 text-amber-700 dark:text-amber-300" />
+            <SectionHeader Icon={HardHat} title={t('accWipDetail') || t("accWipDetail")} tint="bg-amber-500/10 text-amber-700 dark:text-amber-300" />
             <div className="max-h-72 overflow-y-auto space-y-0.5">
               {wipBreakdown.map(r => (
                 <div key={r.costAccountCode} className="flex items-center justify-between px-3 py-1.5 text-xs">
@@ -280,11 +295,11 @@ export const AccountingView: React.FC = () => {
                 </div>
               ))}
               {wipBreakdown.length === 0 && (
-                <p className="px-3 py-6 text-center text-slate-400 text-xs">{t('accEmpty') || 'No postings yet for this project'}</p>
+                <p className="px-3 py-6 text-center text-slate-400 text-xs">{t('accEmpty') || t("accEmpty")}</p>
               )}
             </div>
             <div className="flex items-center justify-between px-3 py-2 border-t border-line text-xs font-black">
-              <span className="text-ink">{t('accTotalCapitalized') || 'Total Capitalized'}</span>
+              <span className="text-ink">{t('accTotalCapitalized') || t("accTotalCapitalized")}</span>
               <span className="font-mono text-amber-600 dark:text-amber-400">{fmt(capitalizedUSD)}</span>
             </div>
             <div className="flex items-center justify-between px-3 py-1.5 text-xs">
@@ -292,7 +307,7 @@ export const AccountingView: React.FC = () => {
               <span className="font-mono text-rose-600 dark:text-rose-400">({fmt(totalCogs)})</span>
             </div>
             <div className="flex items-center justify-between px-3 py-2 border-t border-line text-xs font-black bg-sky-500/5 rounded-xl">
-              <span className="text-ink">{t('accWipRemaining') || 'Remaining in WIP (unsold work — asset 1500)'}</span>
+              <span className="text-ink">{t('accWipRemaining') || t("accWipRemaining")}</span>
               <span className="font-mono text-sky-600 dark:text-sky-400">{fmt(wipRemainingUSD)}</span>
             </div>
           </div>
@@ -310,7 +325,7 @@ export const AccountingView: React.FC = () => {
               </p>
             </div>
             <p className="text-[11px] text-ink-muted max-w-md">
-              {t('accWipNote') || 'Developer model: construction costs are capitalized into WIP and expensed (COGS) only when a unit sells — so profit reflects sold units, not cash outflow.'}
+              {t('accWipNote') || t("accWipNote")}
             </p>
           </div>
         </div>
@@ -322,11 +337,11 @@ export const AccountingView: React.FC = () => {
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-sm">
-              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitCostPool') || 'Cost Pool (WIP to date)'}</span>
+              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitCostPool') || t("accUnitCostPool")}</span>
               <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1">{fmt(unitProfit.costPoolUSD)}</p>
             </div>
             <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-sm">
-              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitAllocated') || 'Allocated to Sold Units (COGS)'}</span>
+              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitAllocated') || t("accUnitAllocated")}</span>
               <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-1">{fmt(unitProfit.allocatedToSoldUSD)}</p>
             </div>
             <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-sm">
@@ -334,7 +349,7 @@ export const AccountingView: React.FC = () => {
               <p className="text-lg font-black text-sky-600 dark:text-sky-400 mt-1">{fmt(unitProfit.remainingInWipUSD)}</p>
             </div>
             <div className="p-3.5 rounded-2xl bg-surface border border-line shadow-sm">
-              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitTotalMargin') || 'Gross Profit on Sales'}</span>
+              <span className="text-[10px] text-ink-muted font-semibold">{t('accUnitTotalMargin') || t("accUnitTotalMargin")}</span>
               <p className={`text-lg font-black mt-1 ${unitProfit.totals.grossProfitUSD >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                 {fmt(unitProfit.totals.grossProfitUSD)}
                 {unitProfit.totals.marginPct !== null && (
@@ -349,15 +364,15 @@ export const AccountingView: React.FC = () => {
               <table className="w-full text-xs">
                 <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
                   <tr>
-                    <th className="py-3.5 px-4 text-start">{t('accUnitColUnit') || 'Unit'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColArea') || 'Area (m²)'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColShare') || 'Area Share'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColSale') || 'Sale Price'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColReceived') || 'Received'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColCost') || 'Allocated Cost (COGS)'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColProfit') || 'Gross Profit'}</th>
-                    <th className="py-3.5 px-4 text-end">{t('accUnitColMargin') || 'Margin %'}</th>
-                    <th className="py-3.5 px-4 text-center">{t('budgetColStatus') || 'Status'}</th>
+                    <th className="py-3.5 px-4 text-start">{t('accUnitColUnit') || t("accUnitColUnit")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColArea') || t("accUnitColArea")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColShare') || t("accUnitColShare")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColSale') || t("accUnitColSale")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColReceived') || t("accUnitColReceived")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColCost') || t("accUnitColCost")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColProfit') || t("accUnitColProfit")}</th>
+                    <th className="py-3.5 px-4 text-end">{t('accUnitColMargin') || t("accUnitColMargin")}</th>
+                    <th className="py-3.5 px-4 text-center">{t('budgetColStatus') || t("budgetColStatus")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -386,20 +401,20 @@ export const AccountingView: React.FC = () => {
                                 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
                                 : 'bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/30'
                           }`}>
-                            {sold ? (t('accUnitSold') || 'Sold') : r.status === 'reserved' ? (t('accUnitReserved') || 'Reserved') : (t('accUnitAvailable') || 'Available')}
+                            {sold ? (t('accUnitSold') || t("accUnitSold")) : r.status === 'reserved' ? (t('accUnitReserved') || t("accUnitReserved")) : (t('accUnitAvailable') || t("accUnitAvailable"))}
                           </span>
                         </td>
                       </tr>
                     );
                   })}
                   {unitProfit.rows.length === 0 && (
-                    <tr><td colSpan={9} className="py-12 text-center text-slate-400">{t('accEmpty') || 'No postings yet for this project'}</td></tr>
+                    <tr><td colSpan={9} className="py-12 text-center text-slate-400">{t('accEmpty') || t("accEmpty")}</td></tr>
                   )}
                 </tbody>
                 {unitProfit.rows.some(r => r.status === 'sold') && (
                   <tfoot className="bg-surface-2/60 font-black text-ink border-t border-line">
                     <tr>
-                      <td className="py-3 px-4" colSpan={3}>{t('total') || 'Total'} — {t('accUnitSold') || 'Sold'}</td>
+                      <td className="py-3 px-4" colSpan={3}>{t('total') || t("total")} — {t('accUnitSold') || t("accUnitSold")}</td>
                       <td className="py-3 px-4 text-end font-mono">{fmt(unitProfit.totals.saleUSD)}</td>
                       <td className="py-3 px-4 text-end font-mono text-emerald-600 dark:text-emerald-400">{fmt(unitProfit.totals.receivedUSD)}</td>
                       <td className="py-3 px-4 text-end font-mono text-amber-600 dark:text-amber-400">{fmt(unitProfit.totals.cogsUSD)}</td>
@@ -412,7 +427,7 @@ export const AccountingView: React.FC = () => {
               </table>
             </div>
             <div className="px-5 py-3 text-[11px] text-ink-muted border-t border-line">
-              {t('accUnitAllocNote') || 'Allocation method: area-proportional (unit m² ÷ total sellable m²) over the cost pool. Margins refine automatically as more construction costs arrive — final margins are known at project completion.'}
+              {t('accUnitAllocNote') || t("accUnitAllocNote")}
             </div>
           </div>
         </div>
@@ -423,7 +438,7 @@ export const AccountingView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Assets */}
           <div className="bg-surface rounded-3xl border border-line shadow-sm p-4 space-y-2 h-fit">
-            <SectionHeader Icon={Landmark} title={t('accAssets') || 'Assets'} tint="bg-sky-500/10 text-sky-700 dark:text-sky-300" />
+            <SectionHeader Icon={Landmark} title={t('accAssets') || t("accAssets")} tint="bg-sky-500/10 text-sky-700 dark:text-sky-300" />
             {assetRows.map(r => {
               const net = r.debitUSD - r.creditUSD;
               return (
@@ -434,14 +449,14 @@ export const AccountingView: React.FC = () => {
               );
             })}
             <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-line text-xs font-black">
-              <span className="text-ink">{t('accTotalAssets') || 'Total Assets'}</span>
+              <span className="text-ink">{t('accTotalAssets') || t("accTotalAssets")}</span>
               <span className="font-mono text-sky-600 dark:text-sky-400">{fmt(totalAssets)}</span>
             </div>
           </div>
 
           {/* Liabilities + Equity */}
           <div className="bg-surface rounded-3xl border border-line shadow-sm p-4 space-y-2 h-fit">
-            <SectionHeader Icon={Scale} title={t('accLiabilities') || 'Liabilities'} tint="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
+            <SectionHeader Icon={Scale} title={t('accLiabilities') || t("accLiabilities")} tint="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
             {liabRows.map(r => {
               const net = r.creditUSD - r.debitUSD;
               return (
@@ -452,11 +467,11 @@ export const AccountingView: React.FC = () => {
               );
             })}
             <div className="flex items-center justify-between px-3 py-2 border-t border-line text-xs font-black">
-              <span className="text-ink">{t('accTotalLiab') || 'Total Liabilities'}</span>
+              <span className="text-ink">{t('accTotalLiab') || t("accTotalLiab")}</span>
               <span className="font-mono text-rose-600 dark:text-rose-400">{fmt(totalLiab)}</span>
             </div>
 
-            <SectionHeader Icon={Wallet} title={t('accEquity') || 'Equity'} tint="bg-violet-500/10 text-violet-700 dark:text-violet-300" />
+            <SectionHeader Icon={Wallet} title={t('accEquity') || t("accEquity")} tint="bg-violet-500/10 text-violet-700 dark:text-violet-300" />
             {equityRows.map(r => {
               const net = r.creditUSD - r.debitUSD;
               return (
@@ -467,11 +482,11 @@ export const AccountingView: React.FC = () => {
               );
             })}
             <div className="flex items-center justify-between px-3 py-2 text-xs">
-              <span className="text-ink italic">{t('accCurrentIncome') || 'Current period net income'} </span>
+              <span className="text-ink italic">{t('accCurrentIncome') || t("accCurrentIncome")} </span>
               <span className={`font-mono font-bold ${netIncome >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{fmt(netIncome)}</span>
             </div>
             <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-line text-xs font-black">
-              <span className="text-ink">{t('accTotalEquityPlus') || 'Total Liabilities + Equity'}</span>
+              <span className="text-ink">{t('accTotalEquityPlus') || t("accTotalEquityPlus")}</span>
               <span className="font-mono text-violet-600 dark:text-violet-400">{fmt(totalLiab + totalEquity)}</span>
             </div>
           </div>
@@ -482,8 +497,8 @@ export const AccountingView: React.FC = () => {
               : 'text-rose-600 bg-rose-500/5 border-rose-500/25'
           }`}>
             {Math.abs(totalAssets - (totalLiab + totalEquity)) < 1
-              ? `✅ ${t('accEquationOk') || 'Accounting equation holds'}: ${t('accAssets') || 'Assets'} ${fmt(totalAssets)} = ${fmt(totalLiab + totalEquity)}`
-              : `⚠️ ${t('accEquationBad') || 'Equation mismatch detected'}`}
+              ? `✅ ${t('accEquationOk') || t("accEquationOk")}: ${t('accAssets') || t("accAssets")} ${fmt(totalAssets)} = ${fmt(totalLiab + totalEquity)}`
+              : `⚠️ ${t('accEquationBad') || t("accEquationBad")}`}
           </div>
         </div>
       )}
@@ -495,10 +510,10 @@ export const AccountingView: React.FC = () => {
             <table className="w-full text-xs">
               <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
                 <tr>
-                  <th className="py-3.5 px-4 text-start w-24">{t('accColDate') || 'Date'}</th>
-                  <th className="py-3.5 px-4 text-start">{t('accColDescription') || 'Description'}</th>
-                  <th className="py-3.5 px-4 text-start w-28">{t('accColSource') || 'Source'}</th>
-                  <th className="py-3.5 px-4 text-end w-32">{t('accColAmount') || 'Amount ($)'}</th>
+                  <th className="py-3.5 px-4 text-start w-24">{t('accColDate') || t("accColDate")}</th>
+                  <th className="py-3.5 px-4 text-start">{t('accColDescription') || t("accColDescription")}</th>
+                  <th className="py-3.5 px-4 text-start w-28">{t('accColSource') || t("accColSource")}</th>
+                  <th className="py-3.5 px-4 text-end w-32">{t('accColAmount') || t("accColAmount")}</th>
                   <th className="py-3.5 px-4 w-10"></th>
                 </tr>
               </thead>
@@ -513,7 +528,7 @@ export const AccountingView: React.FC = () => {
                       <td className="py-3 px-4 text-ink">{e.description}</td>
                       <td className="py-3 px-4">
                         <span className="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 text-[10px] font-bold">
-                          {e.sourceType}
+                          {localizeText(language, JOURNAL_SOURCE_LABELS[e.sourceType])}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-end font-mono font-bold text-ink whitespace-nowrap">{fmt(e.totalDebitUSD)}</td>
@@ -528,10 +543,14 @@ export const AccountingView: React.FC = () => {
                             {e.lines.map((l, i) => (
                               <div key={i} className="flex items-center justify-between text-[11px] font-mono">
                                 <span className={`${l.debit > 0 ? 'text-ink font-bold' : 'text-ink-muted ps-6'}`}>
-                                  {l.accountCode} — {getAccountDisplayName(l.accountCode, language)} {l.memo ? `(${l.memo})` : ''}
+                                  {l.accountCode} — {getAccountDisplayName(l.accountCode, language)}
+                                  {l.costAccountCode && ` · ${getAccountDisplayName(l.costAccountCode, language)} (${l.costAccountCode})`}
+                                  {l.memo ? ` (${l.memo})` : ''}
                                 </span>
                                 <span className={l.debit > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}>
-                                  {l.debit > 0 ? `Dr ${formatNumber(l.debit, 2)}` : `Cr ${formatNumber(l.credit, 2)}`} {e.currency}
+                                  {l.debit > 0
+                                    ? `${tx('Dr', 'بدهکار', 'ډېبېټ')} ${formatNumber(l.debit, 2)}`
+                                    : `${tx('Cr', 'بستانکار', 'کرېډېټ')} ${formatNumber(l.credit, 2)}`} {e.currency}
                                 </span>
                               </div>
                             ))}
@@ -542,7 +561,7 @@ export const AccountingView: React.FC = () => {
                   </React.Fragment>
                 ))}
                 {projectJournal.length === 0 && (
-                  <tr><td colSpan={5} className="py-12 text-center text-slate-400">{t('accEmpty') || 'No postings yet for this project'}</td></tr>
+                  <tr><td colSpan={5} className="py-12 text-center text-slate-400">{t('accEmpty') || t("accEmpty")}</td></tr>
                 )}
               </tbody>
             </table>
@@ -563,7 +582,7 @@ export const AccountingView: React.FC = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="جستجوی کد ۴ رقمی یا نام حساب..."
+                placeholder={localizeText(language, { en: 'Search account code or name...', fa: 'جستجوی کد حساب یا نام...', ps: 'د حساب کوډ یا نوم ولټوئ...' })}
                 value={coaSearch}
                 onChange={(e) => setCoaSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
@@ -576,14 +595,14 @@ export const AccountingView: React.FC = () => {
                 onChange={(e) => setCoaGroup(e.target.value)}
                 className="px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none"
               >
-                <option value="all">همه طبقات حساب‌ها (All Groups)</option>
-                <option value="1">۱۰۰۰ - دارایی‌ها (Assets)</option>
-                <option value="2">۲۰۰۰ - بدهی‌ها (Liabilities)</option>
-                <option value="3">۳۰۰۰ - حقوق صاحبان سهام و سرمایه (Equity)</option>
-                <option value="4">۴۰۰۰ - درآمدها و فروش (Revenue)</option>
-                <option value="5">۵۰۰۰ - بهای تمام‌شده و مصارف ساخت (Project Costs)</option>
-                <option value="6">۶۰۰۰ - مصارف عمومی و اداری (Operating Expenses)</option>
-                <option value="7">۷۰۰۰ - هزینه‌های مالی (Finance Costs)</option>
+                <option value="all">{tx('All account groups', 'همه طبقات حساب‌ها', 'د حسابونو ټولې ډلې')}</option>
+                <option value="1">۱۰۰۰ - {tx('Assets', 'دارایی‌ها', 'شتمنۍ')}</option>
+                <option value="2">۲۰۰۰ - {tx('Liabilities', 'بدهی‌ها', 'پورونه')}</option>
+                <option value="3">۳۰۰۰ - {tx('Equity and capital', 'حقوق صاحبان سهام و سرمایه', 'ونډه او پانګه')}</option>
+                <option value="4">۴۰۰۰ - {tx('Revenue and sales', 'درآمدها و فروش', 'عواید او پلور')}</option>
+                <option value="5">۵۰۰۰ - {tx('Cost of sales and project costs', 'بهای تمام‌شده و مصارف ساخت', 'د پلور لګښت او د پروژې لګښتونه')}</option>
+                <option value="6">۶۰۰۰ - {tx('General and operating expenses', 'مصارف عمومی و اداری', 'عمومي او اداري لګښتونه')}</option>
+                <option value="7">۷۰۰۰ - {tx('Finance costs', 'هزینه‌های مالی', 'مالي لګښتونه')}</option>
               </select>
 
               <button
@@ -592,7 +611,7 @@ export const AccountingView: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition shrink-0"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>چاپ درخت حساب‌ها</span>
+                <span>{tx('Print chart of accounts', 'چاپ درخت حساب‌ها', 'د حسابونو نوملړ چاپول')}</span>
               </button>
             </div>
           </div>
@@ -602,12 +621,12 @@ export const AccountingView: React.FC = () => {
               <table className="w-full text-xs text-right border-collapse">
                 <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line print:bg-slate-100">
                   <tr>
-                    <th className="py-3 px-3 w-24">کد ۴ رقمی</th>
-                    <th className="py-3 px-3">عنوان حسابداری (دری / فارسی)</th>
-                    <th className="py-3 px-3">نام لاتین (English)</th>
-                    <th className="py-3 px-3 text-center">ماهیت استاندارد</th>
-                    <th className="py-3 px-3 text-center">سطح درخت</th>
-                    <th className="py-3 px-3 text-left">مانده زنده در دفاتر ($)</th>
+                    <th className="py-3 px-3 w-24">{localizeText(language, { en: 'Account Code', fa: 'کد حساب', ps: 'د حساب کوډ' })}</th>
+                    <th className="py-3 px-3">{tx('Account name (Dari / Persian)', 'عنوان حسابداری (دری / فارسی)', 'د حساب نوم (دري / فارسي)')}</th>
+                    <th className="py-3 px-3">{tx('English name', 'نام لاتین (English)', 'انګلیسي نوم')}</th>
+                    <th className="py-3 px-3 text-center">{tx('Normal balance', 'ماهیت استاندارد', 'عادي بیلانس')}</th>
+                    <th className="py-3 px-3 text-center">{tx('Hierarchy level', 'سطح درخت', 'د ونې کچه')}</th>
+                    <th className="py-3 px-3 text-left">{tx('Current ledger balance ($)', 'مانده زنده در دفاتر ($)', 'په دفتر کې اوسنی بیلانس ($)')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -644,14 +663,18 @@ export const AccountingView: React.FC = () => {
                                 ? 'bg-amber-500/10 text-amber-600'
                                 : 'bg-emerald-500/10 text-emerald-600'
                             }`}>
-                              {a.normalBalance === 'debit' ? 'بدهکار (Dr)' : 'بستانکار (Cr)'}
+                              {a.normalBalance === 'debit' ? tx('Debit (Dr)', 'بدهکار (Dr)', 'ډېبېټ (Dr)') : tx('Credit (Cr)', 'بستانکار (Cr)', 'کرېډېټ (Cr)')}
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-center text-[10px] text-slate-400">
-                            {isHeader ? 'گروه / کل' : 'معین'}
+                            {isHeader
+                              ? localizeText(language, { en: 'Group / Header', fa: 'گروه / کل', ps: 'ډله / سرلیک' })
+                              : a.code.length > 4
+                                ? localizeText(language, { en: 'Subaccount', fa: 'حساب فرعی', ps: 'فرعي حساب' })
+                                : localizeText(language, { en: 'Main account', fa: 'حساب معین', ps: 'اصلي حساب' })}
                           </td>
                           <td className="py-2.5 px-3 text-left font-mono font-bold text-ink">
-                            {balance ? fmt(balance.netUSD) : '—'}
+                            {balance ? fmt(balance.balanceUSD) : '—'}
                           </td>
                         </tr>
                       );

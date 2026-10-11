@@ -7,7 +7,7 @@
  *  - One budget line per (project, COA account) — budgets are attached to
  *    real Chart-of-Accounts codes (normally 5xxx project-cost accounts),
  *    never to a parallel category list.
- *  - Actuals are DERIVED live from purchases (expenses / steel / concrete)
+ *  - Actuals are DERIVED live from purchases (expenses / materials / steel / concrete)
  *    through the very same category→account mapping the journal engine uses:
  *
  *        Committed (Actual Spent) = purchases recorded  (accrual basis)
@@ -36,12 +36,13 @@ import {
   Expense,
   SteelRecord,
   ConcreteRecord,
+  MaterialProcurementRecord,
   Project,
   ProjectBudget,
   BudgetLineReport,
   BudgetStatus,
 } from '../types';
-import { ACC, getAccount, resolveExpenseAccount } from '../data/chartOfAccounts';
+import { ACC, getAccount, getAncestorCodes, resolveExpenseAccount, resolveMaterialAccount } from '../data/chartOfAccounts';
 
 export const BUDGET_WARNING_THRESHOLD = 80;
 export const BUDGET_OVER_THRESHOLD = 100;
@@ -66,12 +67,13 @@ export interface BudgetReportInput {
   expenses: Expense[];
   steelRecords: SteelRecord[];
   concreteRecords: ConcreteRecord[];
+  materialProcurements?: MaterialProcurementRecord[];
 }
 
 /**
  * Per-account committed/paid actuals for a project, derived from purchases.
- * Steel → 5100, Concrete → 5200 (they post fixed accounts in the journal),
- * expenses → resolved via the shared category→account map.
+ * Steel → 5100 and concrete → 5200; materials and other expenses resolve
+ * through the shared category→account maps used by the journal engine.
  */
 export function computeBudgetActuals(input: BudgetReportInput): Map<string, BudgetableActual> {
   const { projectId, expenses, steelRecords, concreteRecords } = input;
@@ -103,6 +105,15 @@ export function computeBudgetActuals(input: BudgetReportInput): Map<string, Budg
     push(ACC.CONCRETE, committed, Math.min(paid, committed));
   }
 
+  for (const material of (input.materialProcurements || []).filter(x => x.projectId === projectId)) {
+    const quantityCost = Number(material.quantity || 0) * Number(material.unitPrice || 0);
+    const amount = Number(material.totalCost || 0) || quantityCost;
+    const rate = material.exchangeRate || input.project?.defaultExchangeRate;
+    const committed = toUSD(amount, material.currency, rate);
+    const paid = material.isPaid ? committed : 0;
+    push(resolveMaterialAccount(material.materialCategory), committed, paid);
+  }
+
   return acc;
 }
 
@@ -130,8 +141,18 @@ export function computeBudgetReport(input: BudgetReportInput): BudgetLineReport[
   }
 
   const actuals = computeBudgetActuals(input);
+  const reportActuals = new Map<string, BudgetableActual>();
+  for (const [accountCode, actual] of actuals) {
+    // Keep old broad budgets useful: when a new detail account has no budget,
+    // roll its actual up to the nearest explicitly budgeted ancestor.
+    const reportCode = [accountCode, ...getAncestorCodes(accountCode)].find(code => budgetMap.has(code)) || accountCode;
+    const existing = reportActuals.get(reportCode) || { accountCode: reportCode, committedUSD: 0, paidUSD: 0 };
+    existing.committedUSD = round2(existing.committedUSD + actual.committedUSD);
+    existing.paidUSD = round2(existing.paidUSD + actual.paidUSD);
+    reportActuals.set(reportCode, existing);
+  }
 
-  const allCodes = new Set<string>([...budgetMap.keys(), ...actuals.keys()]);
+  const allCodes = new Set<string>([...budgetMap.keys(), ...reportActuals.keys()]);
   const rows: BudgetLineReport[] = [];
 
   for (const code of allCodes) {
@@ -139,7 +160,7 @@ export function computeBudgetReport(input: BudgetReportInput): BudgetLineReport[
     if (!account) continue;
     const hasBudget = budgetMap.has(code);
     const budget = round2(budgetMap.get(code) || 0);
-    const act = actuals.get(code);
+    const act = reportActuals.get(code);
     const committed = round2(act?.committedUSD || 0);
     const paid = round2(Math.min(act?.paidUSD || 0, committed));
     const payable = round2(Math.max(0, committed - paid));

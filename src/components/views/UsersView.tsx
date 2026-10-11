@@ -1,254 +1,337 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { 
-  Users, 
-  Plus, 
-  Trash2, 
-  ShieldCheck, 
-  Mail, 
-  Phone, 
-  Key, 
-  UserCheck 
-} from 'lucide-react';
-import { User, UserRole } from '../../types';
+import { localizeText } from '../../i18n/localize';
+import {
+  backendApi,
+  type EmployeeAccessData,
+  type EmployeePermissionAction,
+  type EmployeeProjectGrant,
+} from '../../services/backendApi';
+import { Mail, Phone, ShieldAlert, ShieldCheck, Users, Save, RefreshCw } from 'lucide-react';
+
+const ACTION_ORDER: EmployeePermissionAction[] = ['read', 'create', 'update', 'delete', 'report'];
+
+const MODULE_LABELS: Record<string, { en: string; fa: string; ps: string }> = {
+  dashboard: { en: 'Dashboard', fa: 'داشبورد', ps: 'ډشبورډ' },
+  projects: { en: 'Project details', fa: 'معلومات پروژه', ps: 'د پروژې معلومات' },
+  income: { en: 'Income', fa: 'عواید', ps: 'عواید' },
+  materials: { en: 'Materials', fa: 'مصالح', ps: 'توکي' },
+  labor: { en: 'Labor', fa: 'کارگران', ps: 'کارګران' },
+  steel: { en: 'Steel', fa: 'سیخ‌گول', ps: 'سیخ‌ګول' },
+  concrete: { en: 'Concrete', fa: 'کانکریت', ps: 'کانکریټ' },
+  expenses: { en: 'Expenses', fa: 'مصارف', ps: 'لګښتونه' },
+  contractors: { en: 'Contractors', fa: 'قراردادیان', ps: 'قراردادیان' },
+  suppliers: { en: 'Suppliers', fa: 'عرضه‌کنندگان', ps: 'عرضه‌کوونکي' },
+  apartments: { en: 'Apartments', fa: 'پلاک‌ها و آپارتمان‌ها', ps: 'اپارتمانونه' },
+  payments: { en: 'Payments', fa: 'پرداخت‌ها', ps: 'تادیات' },
+  treasury: { en: 'Treasury', fa: 'خزانه', ps: 'خزانه' },
+  petty_cash: { en: 'Petty cash', fa: 'صندوق خُرد', ps: 'وړه نغدي صندوق' },
+  assets: { en: 'Assets', fa: 'دارایی‌ها', ps: 'شتمنۍ' },
+  transfers: { en: 'Transfers', fa: 'انتقالات', ps: 'لېږدونه' },
+  partners: { en: 'Partners', fa: 'شرکا', ps: 'شریکان' },
+  budget: { en: 'Budgets', fa: 'بودجه', ps: 'بودیجه' },
+  accounting: { en: 'Accounting', fa: 'حسابداری', ps: 'محاسبه' },
+  journal: { en: 'Journal', fa: 'روزنامچه', ps: 'ورځپاڼه' },
+  documents: { en: 'Documents', fa: 'اسناد', ps: 'اسناد' },
+  reports: { en: 'Reports', fa: 'گزارش‌ها', ps: 'راپورونه' },
+};
+
+const ACTION_LABELS: Record<EmployeePermissionAction, { en: string; fa: string; ps: string }> = {
+  read: { en: 'Read', fa: 'خواندن', ps: 'لوستل' },
+  create: { en: 'Create', fa: 'ایجاد', ps: 'جوړول' },
+  update: { en: 'Edit', fa: 'ویرایش', ps: 'سمون' },
+  delete: { en: 'Delete', fa: 'حذف', ps: 'ړنګول' },
+  report: { en: 'Generate report', fa: 'تهیهٔ گزارش', ps: 'راپور جوړول' },
+};
+
+const ROLE_LABELS: Record<string, { en: string; fa: string; ps: string }> = {
+  project_manager: { en: 'Project manager', fa: 'مدیر پروژه', ps: 'د پروژې مدیر' },
+  accountant: { en: 'Accountant', fa: 'حسابدار', ps: 'محاسب' },
+  procurement: { en: 'Procurement', fa: 'تدارکات', ps: 'تدارکات' },
+  viewer: { en: 'Read-only', fa: 'فقط‌خواندنی', ps: 'یوازې لوستل' },
+};
+
+const PROJECT_STATUS_LABELS: Record<string, { en: string; fa: string; ps: string }> = {
+  active: { en: 'Active', fa: 'فعال', ps: 'فعال' },
+  planning: { en: 'Planning', fa: 'در حال برنامه‌ریزی', ps: 'د پلان جوړونې' },
+  completed: { en: 'Completed', fa: 'تکمیل‌شده', ps: 'بشپړ شوې' },
+  on_hold: { en: 'On hold', fa: 'متوقف', ps: 'درېدلې' },
+  archived: { en: 'Archived', fa: 'آرشیف', ps: 'آرشیف' },
+};
+
+function grantsSignature(grants: EmployeeProjectGrant[]): string {
+  return [...grants]
+    .map(grant => `${grant.projectId}:${grant.module}:${ACTION_ORDER.filter(action => grant.actions.includes(action)).join(',')}`)
+    .sort()
+    .join('|');
+}
 
 export const UsersView: React.FC = () => {
-  const { users, currentUser, addUser, deleteUser, t, language } = useApp();
+  const { currentUser, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const isOwner = currentUser?.role === 'admin' && !currentUser.ownerAdminId && !currentUser.isMasterSuperAdmin;
 
-  const [isAdding, setIsAdding] = useState(false);
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('accountant');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [accessData, setAccessData] = useState<EmployeeAccessData | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [draftGrants, setDraftGrants] = useState<EmployeeProjectGrant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; success: boolean } | null>(null);
+  const loadErrorText = tx('Employee access settings could not be loaded.', 'بارگذاری تنظیمات دسترسی کارمندان ممکن نشد.', 'د کارکوونکو د لاسرسي امستنې بار نه شوې.');
+  const saveErrorText = tx('Employee permissions could not be saved.', 'ذخیرهٔ مجوزهای کارمندان ممکن نشد.', 'د کارکوونکو اجازې خوندي نه شوې.');
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !username.trim() || !password.trim()) {
-      alert('Please fill name, username and password');
-      return;
-    }
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name,
-      username,
-      password,
-      role,
-      phone,
-      email,
-      active: true,
-      createdAt: new Date().toISOString(),
-      permissions: {
-        allowedTabs: role === 'admin' ? ['*'] : ['dashboard', 'expenses', 'steel', 'concrete', 'contractors', 'suppliers', 'payments', 'documents', 'reports']
+  useEffect(() => {
+    if (!isOwner) return;
+    let active = true;
+    setLoading(true);
+    setError(null);
+    backendApi.getEmployeeAccess().then(result => {
+      if (!active) return;
+      if (!result.success || !result.data) {
+        setError(loadErrorText);
+        return;
       }
-    };
+      setAccessData(result.data);
+      setSelectedEmployeeId(result.data.employees[0]?.id || '');
+    }).catch(() => {
+      if (active) setError(loadErrorText);
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [isOwner, loadErrorText]);
 
-    addUser(newUser);
-    setName('');
-    setUsername('');
-    setPassword('');
-    setPhone('');
-    setEmail('');
-    setIsAdding(false);
+  const selectedEmployee = accessData?.employees.find(employee => employee.id === selectedEmployeeId) || null;
+  const isDirty = Boolean(selectedEmployee) && grantsSignature(draftGrants) !== grantsSignature(selectedEmployee?.grants || []);
+
+  useEffect(() => {
+    setDraftGrants(selectedEmployee?.grants || []);
+    setNotice(null);
+  }, [selectedEmployeeId]);
+
+  const moduleLabel = (module: string) => {
+    const labels = MODULE_LABELS[module] || { en: 'Other module', fa: 'ماژول دیگر', ps: 'بل ماډل' };
+    return localizeText(language, labels);
   };
 
-  const handleDelete = (id: string, userName: string) => {
-    if (id === currentUser?.id) {
-      alert('You cannot delete your own account while logged in');
-      return;
-    }
-    if (confirm(`Are you sure you want to delete user "${userName}"?`)) {
-      deleteUser(id);
+  const employeeRoleLabel = (role: string) => {
+    const labels = ROLE_LABELS[role] || { en: 'Employee', fa: 'کارمند', ps: 'کارکوونکی' };
+    return localizeText(language, labels);
+  };
+
+  const actionLabel = (action: EmployeePermissionAction) => localizeText(language, ACTION_LABELS[action]);
+
+  const projectStatusLabel = (status: string) => {
+    const labels = PROJECT_STATUS_LABELS[status] || { en: 'Project', fa: 'پروژه', ps: 'پروژه' };
+    return localizeText(language, labels);
+  };
+
+  const toggleGrantAction = (
+    projectId: string,
+    module: string,
+    action: EmployeePermissionAction,
+    checked: boolean,
+  ) => {
+    setDraftGrants(current => {
+      const existing = current.find(grant => grant.projectId === projectId && grant.module === module);
+      const actionSet = new Set(existing?.actions || []);
+      if (action === 'read' && !checked) {
+        return current.filter(grant => grant.projectId !== projectId || grant.module !== module);
+      }
+      if (checked) {
+        actionSet.add('read');
+        actionSet.add(action);
+      } else {
+        actionSet.delete(action);
+      }
+      const actions = ACTION_ORDER.filter(item => actionSet.has(item));
+      const next = current.filter(grant => grant.projectId !== projectId || grant.module !== module);
+      if (actions.length) next.push({ projectId, module, actions });
+      return next;
+    });
+    setNotice(null);
+  };
+
+  const saveGrants = async () => {
+    if (!selectedEmployee || !isDirty) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    const grants = [...draftGrants]
+      .map(grant => ({
+        projectId: grant.projectId,
+        module: grant.module,
+        actions: ACTION_ORDER.filter(action => grant.actions.includes(action)),
+      }))
+      .filter(grant => grant.actions.length > 0);
+    try {
+      const result = await backendApi.saveEmployeeProjectGrants(selectedEmployee.id, grants);
+      if (!result.success || !result.data) {
+        setError(saveErrorText);
+        return;
+      }
+      setAccessData(current => current ? {
+        ...current,
+        employees: current.employees.map(employee => employee.id === selectedEmployee.id
+          ? { ...employee, grants: result.data!.grants }
+          : employee),
+      } : current);
+      setDraftGrants(result.data.grants);
+      setNotice({
+        success: true,
+        text: tx('Permissions saved on the server.', 'مجوزها در سرور ذخیره شد.', 'اجازې په سرور کې خوندي شوې.'),
+      });
+    } catch {
+      setError(saveErrorText);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const accountNotice = tx(
+    'Employee sign-in and account creation/editing/deletion remain disabled pending PHP/MySQL integration testing and security review. This screen manages grants only for employee accounts that already exist on the server.',
+    'ورود کارمندان و ایجاد، ویرایش و حذف حساب‌ها تا آزمایش یکپارچهٔ PHP/MySQL و بازبینی امنیتی غیرفعال است. این صفحه فقط مجوز حساب‌های کارمندی را تنظیم می‌کند که از قبل در سرور موجود باشند.',
+    'د کارکوونکو ننوتل او د حسابونو جوړول، سمون او ړنګول تر PHP/MySQL ازموینې او امنیتي بیاکتنې پورې بند دي. دا پاڼه یوازې د هغو کارکوونکو اجازې اداره کوي چې حسابونه یې لا په سرور کې شته.',
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <span>{t('staffManagement') || 'Staff & User Access Management'}</span>
-          </h1>
-          <p className="text-xs text-ink-muted mt-1">
-            {t('staffManagementDesc') || 'Control roles, permissions, accountants, site engineers, and viewers'}
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-500/25 transition active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{isAdding ? t('cancel') || 'Cancel' : t('addUser') || 'New Staff Member'}</span>
-        </button>
+      <div>
+        <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
+          <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <span>{tx('Staff & User Access Management', 'مدیریت کارمندان و دسترسی', 'د کارکوونکو او لاسرسي اداره')}</span>
+        </h1>
+        <p className="text-xs text-ink-muted mt-1">
+          {tx('Owner-managed access by project, module, and action.', 'مدیریت دسترسی توسط مالک بر اساس پروژه، ماژول و عملیات.', 'د پروژې، ماډل او کړنې له مخې د مالک له خوا د لاسرسي اداره.')}
+        </p>
       </div>
 
-      {/* Add User Form */}
-      {isAdding && (
-        <form onSubmit={handleAdd} className="p-6 rounded-3xl bg-surface border border-line shadow-lg space-y-4">
-          <h3 className="font-bold text-sm text-ink mb-2">{t('createNewUser') || 'Create New Staff Account'}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('fullName') || 'Full Name'} *</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="e.g. Ahmad Tariq"
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
-              />
-            </div>
+      <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100 flex items-start gap-3">
+        <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
+        <p>{accountNotice}</p>
+      </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('username') || 'Username (Login)'} *</label>
-              <input
-                type="text"
-                required
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="e.g. tariq_nik"
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('password') || 'Password'} *</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('role') || 'System Role'}</label>
+      {!isOwner ? (
+        <div role="alert" className="rounded-xl border border-line bg-surface p-4 text-sm text-ink-muted">
+          {tx('Only the signed-in company owner can manage employee access.', 'فقط مالک شرکت می‌تواند دسترسی کارمندان را مدیریت کند.', 'یوازې د شرکت مالک د کارکوونکو لاسرسی اداره کولای شي.')}
+        </div>
+      ) : (
+        <section className="rounded-2xl border border-line bg-surface p-4 sm:p-6 space-y-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <label htmlFor="employee-access-select" className="mb-1.5 block text-xs font-bold text-ink-muted">
+                {tx('Existing employee account', 'حساب کارمند موجود', 'د کارکوونکي موجود حساب')}
+              </label>
               <select
-                value={role}
-                onChange={e => setRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
+                id="employee-access-select"
+                value={selectedEmployeeId}
+                onChange={event => setSelectedEmployeeId(event.target.value)}
+                disabled={loading || saving || !accessData?.employees.length}
+                className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink"
               >
-                <option value="accountant">{t('accountant') || 'Accountant / Site Engineer'}</option>
-                <option value="admin">{t('admin') || 'Administrator'}</option>
-                <option value="viewer">{t('viewer') || 'Viewer (Read-only)'}</option>
+                {accessData?.employees.length
+                  ? accessData.employees.map(employee => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.name} · @{employee.username}{employee.isLocked ? (tx(' · Locked', ' · قفل', ' · بند')) : ''}
+                    </option>
+                  ))
+                  : <option value="">{tx('No employee accounts found', 'حساب کارمندی پیدا نشد', 'د کارکوونکو حسابونه ونه موندل شول')}</option>}
               </select>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('phone') || 'Phone'}</label>
-              <input
-                type="text"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="+93 70..."
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">{t('email') || 'Email'}</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="name@gmail.com"
-                className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
-              onClick={() => setIsAdding(false)}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold"
+              onClick={() => void saveGrants()}
+              disabled={!selectedEmployee || !isDirty || saving || loading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {t('cancel')}
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-blue-700"
-            >
-              {t('saveUser') || 'Save User'}
+              {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? (tx('Saving…', 'در حال ذخیره…', 'خوندي کېږي…')) : (tx('Save access', 'ذخیرهٔ دسترسی', 'لاسرسی خوندي کړئ'))}
             </button>
           </div>
-        </form>
+
+          {selectedEmployee && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-canvas/70 px-3 py-2.5 text-xs text-ink-muted">
+              <span className="font-bold text-ink">{selectedEmployee.name}</span>
+              <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" />{employeeRoleLabel(selectedEmployee.role)}</span>
+              {selectedEmployee.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{selectedEmployee.email}</span>}
+              {selectedEmployee.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{selectedEmployee.phone}</span>}
+              <span className={selectedEmployee.isLocked ? 'font-bold text-rose-600' : 'font-bold text-emerald-600'}>
+                {selectedEmployee.isLocked
+                  ? (tx('Locked', 'قفل‌شده', 'بند'))
+                  : (tx('Unlocked', 'قفل‌نشده', 'پرانیستل شوی'))}
+              </span>
+            </div>
+          )}
+
+          {loading && <p role="status" className="text-sm text-ink-muted">{tx('Loading server access settings…', 'در حال بارگذاری دسترسی‌های سرور…', 'د سرور د لاسرسي امستنې بارېږي…')}</p>}
+          {!loading && accessData && !accessData.employees.length && (
+            <div className="rounded-xl border border-dashed border-line p-5 text-sm text-ink-muted">
+              {tx('There are no employee accounts under this owner yet. Employee account provisioning remains disabled.', 'برای این مالک هنوز حساب کارمندی ثبت نشده است. ایجاد حساب کارمند همچنان غیرفعال است.', 'د دې مالک لپاره لا د کارکوونکو حسابونه نشته. د کارکوونکو د حسابونو جوړول لا بند دي.')}
+            </div>
+          )}
+          {!loading && accessData && accessData.employees.length > 0 && !accessData.projects.length && (
+            <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-100">
+              {tx('Save at least one project in the owner workspace before assigning access.', 'پیش از تعیین دسترسی، دست‌کم یک پروژه را در فضای کاری مالک ذخیره کنید.', 'د لاسرسي تر ټاکلو مخکې لږ تر لږه یوه پروژه په کاري‌ځای کې خوندي کړئ.')}
+            </div>
+          )}
+
+          {!loading && selectedEmployee && Boolean(accessData?.projects.length) && (
+            <>
+              <p className="text-xs text-ink-muted">
+                {tx('Saving replaces this employee’s complete grant set. Unchecked rights are revoked. Write and report actions automatically include Read.', 'ذخیره، تمام مجوزهای این کارمند را جایگزین می‌کند؛ گزینه‌های برداشته‌شده لغو می‌شوند. عملیات نوشتن و گزارش‌گیری، مجوز خواندن را نیز لازم می‌سازد.', 'خوندي کول د دې کارکوونکي ټولې اجازې بدلوي. نښه‌نه شوې اجازه لغوه کېږي. د لیکلو او راپور جوړولو کړنې د لوستلو اجازه هم غواړي.')}
+              </p>
+              <div className="space-y-3">
+                {accessData!.projects.map((project, projectIndex) => {
+                  const archived = project.status === 'archived';
+                  return (
+                    <details key={project.id} open={projectIndex === 0} className="group rounded-xl border border-line bg-canvas/50">
+                      <summary className="cursor-pointer list-none px-4 py-3 font-bold text-ink flex flex-wrap items-center justify-between gap-2">
+                        <span>{project.name || project.id}</span>
+                        <span className={`text-[10px] uppercase tracking-wide ${archived ? 'text-amber-700' : 'text-ink-muted'}`}>
+                          {archived ? (tx('Archived · read/report only', 'آرشیف · فقط خواندن و گزارش‌گیری', 'آرشیف · یوازې لوستل او راپور')) : (project.projectCode || projectStatusLabel(project.status))}
+                        </span>
+                      </summary>
+                      <div className="grid grid-cols-1 gap-3 border-t border-line p-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {accessData!.modules.map(module => {
+                          const grant = draftGrants.find(item => item.projectId === project.id && item.module === module);
+                          const grantedActions = grant?.actions || [];
+                          const readOnly = archived || module === 'projects' || accessData!.readOnlyModules.includes(module);
+                          return (
+                            <fieldset key={`${project.id}-${module}`} className="min-w-0 rounded-xl border border-line bg-surface p-3">
+                              <legend className="px-1 text-xs font-bold text-ink">{moduleLabel(module)}</legend>
+                              <div className="flex flex-wrap gap-x-3 gap-y-2">
+                                {ACTION_ORDER.map(action => {
+                                  const disabled = action !== 'read' && action !== 'report' && readOnly;
+                                  return (
+                                    <label key={action} className={`inline-flex items-center gap-1.5 text-[11px] ${disabled ? 'text-ink-muted/50' : 'text-ink-muted'}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={grantedActions.includes(action)}
+                                        disabled={disabled}
+                                        onChange={event => toggleGrantAction(project.id, module, action, event.target.checked)}
+                                        className="h-3.5 w-3.5 accent-blue-600"
+                                      />
+                                      {actionLabel(action)}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </fieldset>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {error && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">{error}</div>}
+          {notice && <div role="status" className={`rounded-xl border px-3 py-2 text-sm ${notice.success ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200' : 'border-rose-300 bg-rose-50 text-rose-900'}`}>{notice.text}</div>}
+        </section>
       )}
-
-      {/* Users Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map(u => (
-          <div 
-            key={u.id}
-            className="p-6 rounded-3xl bg-surface border border-line shadow-sm flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${
-                    u.role === 'admin' 
-                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600' 
-                      : 'bg-blue-50 dark:bg-blue-950/50 text-blue-600'
-                  }`}>
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-ink flex items-center gap-1.5">
-                      <span>{u.name}</span>
-                      {u.isMasterSuperAdmin && (
-                        <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold">Owner</span>
-                      )}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-mono">@{u.username}</p>
-                  </div>
-                </div>
-
-                {!u.isMasterSuperAdmin && u.id !== currentUser?.id && (
-                  <button
-                    onClick={() => handleDelete(u.id, u.name)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2 text-xs text-ink-muted mb-4">
-                <div className="flex justify-between">
-                  <span>{t('role')}:</span>
-                  <span className="font-bold capitalize text-slate-700 dark:text-slate-200">{u.role}</span>
-                </div>
-                {u.phone && (
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{u.phone}</span>
-                  </div>
-                )}
-                {u.email && (
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>{u.email}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-line flex justify-between items-center text-[11px] text-slate-400">
-              <span>{t('status') || 'Status'}: Active</span>
-              {u.id === currentUser?.id && (
-                <span className="text-blue-600 font-bold">Current Session</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };

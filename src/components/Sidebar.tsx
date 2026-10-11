@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { isRtlLanguage, localizeText } from '../i18n/localize';
 import { 
   LayoutDashboard, 
   Building, 
@@ -68,8 +69,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
     setIsMasterAdminOpen
   } = useApp();
 
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const enabled = appSettings.enabledModules || {};
-  const isRtl = language === 'fa' || language === 'ps';
+  const isRtl = isRtlLanguage(language);
 
   const sections: Array<{ title: string; items: NavItemConfig[] }> = [
     {
@@ -292,7 +294,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       items: [
         (currentUser?.isMasterSuperAdmin ? {
           id: 'super_admin',
-          label: language === 'en' ? 'Office 7 (Master)' : language === 'ps' ? 'دفتر اووه' : 'دفتر هفت',
+          label: localizeText(language, { en: 'Office 7 (Master)', fa: 'دفتر هفت', ps: 'دفتر اووه' }),
           icon: ShieldCheck,
           colorName: 'rose',
           iconColor: 'text-rose-600 dark:text-rose-300',
@@ -318,7 +320,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
         },
         { 
           id: 'users', 
-          label: language === 'en' ? 'Staff & Team' : language === 'ps' ? 'کاروونکي' : 'مدیریت کارمندان',
+          label: localizeText(language, { en: 'Staff & Team', fa: 'مدیریت کارمندان', ps: 'کارکوونکي' }),
           icon: Users,
           colorName: 'blue',
           iconColor: 'text-blue-600 dark:text-blue-300',
@@ -372,7 +374,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
                 <span>{t.currentProject}</span>
               </span>
               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                {currentProject.status || 'Active'}
+                {currentProject.status || tx('Active', 'فعال', 'فعال')}
               </span>
             </div>
             <div className="font-extrabold text-sm truncate">{currentProject.name}</div>
@@ -391,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
               <span className={`px-1.5 py-0.2 rounded font-bold ${
                 isGoogleDriveConnected ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
               }`}>
-                {isGoogleDriveConnected ? 'متصل' : 'غیرفعال'}
+                {isGoogleDriveConnected ? tx('Connected', 'متصل', 'نښلول شوی') : tx('Inactive', 'غیرفعال', 'غیرفعال')}
               </span>
             </div>
           </div>
@@ -476,13 +478,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
             type="button"
             onClick={onOpenSystemGuide}
             className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-2xs"
-            title="راهنمای کامل سیستم"
+            title={tx('Complete system guide', 'راهنمای کامل سیستم', 'د سیستم بشپړ لارښود')}
           >
             <div className="flex items-center space-x-2 rtl:space-x-reverse">
               <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>راهنمای استفاده</span>
+              <span>{tx('User guide', 'راهنمای استفاده', 'د کارونې لارښود')}</span>
             </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20">Help</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20">{tx('Help', 'راهنما', 'لارښود')}</span>
           </button>
         )}
 
@@ -500,13 +502,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
             <span>{appSettings.darkMode ? t.lightMode : t.darkMode}</span>
           </div>
           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-            {appSettings.darkMode ? 'شب' : 'روز'}
+            {appSettings.darkMode ? tx('Night', 'شب', 'شپه') : tx('Day', 'روز', 'ورځ')}
           </span>
         </button>
 
         <div className="px-2 pt-1 text-[11px] opacity-75 space-y-0.5 text-center">
           <div className="font-extrabold truncate">{appSettings.companyName || 'NIK SMART COUNT'}</div>
-          <div className="text-[10px] opacity-65">Building Project & Engineering Accounting</div>
+          <div className="text-[10px] opacity-65">{tx('Building project and engineering accounting', 'مدیریت پروژه‌های ساختمانی و حسابداری انجنیری', 'د ودانیزو پروژو مدیریت او انجنیري محاسبه')}</div>
         </div>
       </div>
     </aside>

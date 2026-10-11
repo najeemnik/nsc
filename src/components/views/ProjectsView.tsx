@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   Building2, 
   Plus, 
@@ -80,7 +81,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/25 transition active:scale-95"
         >
           <Plus className="w-4 h-4" />
-          <span>{t('newProject') || 'New Building Project'}</span>
+          <span>{t('newProject') || t("newProject")}</span>
         </button>
       </div>
 
@@ -114,7 +115,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
           }`}
         >
-          {t('completed') || 'Completed'}
+          {t('completed') || t("statusCompleted")}
         </button>
         <button
           onClick={() => setFilter('on_hold')}
@@ -174,13 +175,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <div className="flex items-center gap-1.5 min-w-0">
                     <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                     <span className="truncate">
-                      {language === 'en' ? 'Owner: ' : 'مالک فعلی: '}
-                      <strong>{project.currentOwner || project.clientOwner || (language === 'en' ? 'Initial Owner' : 'مالک اولیه')}</strong>
+                      {localizeText(language, { en: 'Owner: ', fa: 'مالک فعلی: ', ps: 'اوسنی مالک: ' })}
+                      <strong>{project.currentOwner || project.clientOwner || localizeText(language, { en: 'Initial owner', fa: 'مالک اولیه', ps: 'لومړنی مالک' })}</strong>
                     </span>
                   </div>
                   {project.transferHistory && project.transferHistory.length > 0 && (
                     <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-mono shrink-0">
-                      {project.transferHistory.length} {language === 'en' ? 'transfers' : 'واگذاری'}
+                      {project.transferHistory.length} {localizeText(language, { en: 'transfers', fa: 'واگذاری', ps: 'لېږدونه' })}
                     </span>
                   )}
                 </div>
@@ -212,7 +213,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <button
                       onClick={() => onOpenTransfer(project)}
                       className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition"
-                      title={language === 'en' ? 'Transfer & Handover Project' : 'انتقال و واگذاری پروژه'}
+                      title={localizeText(language, { en: 'Transfer & Handover Project', fa: 'انتقال و واگذاری پروژه', ps: 'د پروژې لېږد او سپارل' })}
                     >
                       <ArrowRightLeft className="w-4 h-4" />
                     </button>
@@ -227,14 +228,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     onClick={() => onOpenEditProject(project)}
                     className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition"
-                    title={t('edit') || 'Edit Project'}
+                    title={t('edit') || t("editProject")}
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => handleDelete(project, e)}
                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-xl transition"
-                    title={t('delete') || 'Delete Project'}
+                    title={t('delete') || t("deleteProject")}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -248,7 +249,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                   }`}
                 >
-                  {isSelected ? t('selected') || 'Active' : t('select') || 'Select'}
+                  {isSelected ? t('selected') || t("active") : t('select') || 'Select'}
                 </button>
               </div>
             </div>

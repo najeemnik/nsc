@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { intlLocaleFor, localizeText } from '../../i18n/localize';
 import { CircleDot, X, Calendar, Check, Banknote, AlertCircle } from 'lucide-react';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
 
@@ -9,7 +10,9 @@ interface AddConcreteModalProps {
 }
 
 export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addConcreteRecord, concreteRecords, suppliers, t } = useApp();
+  const { currentProject, addConcreteRecord, concreteRecords, suppliers, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const formatNumber = (value: number) => value.toLocaleString(intlLocaleFor(language));
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [billNumber, setBillNumber] = useState(`CNC-${Date.now().toString().slice(-4)}`);
   const [supplierName, setSupplierName] = useState(suppliers[1]?.name || '');
@@ -77,31 +80,31 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
     setFormError(null);
 
     if (isNaN(parsedQty) || parsedQty <= 0) {
-      setFormError('مقدار حجم (متر مکعب) باید بزرگتر از صفر باشد.');
+      setFormError(tx('Volume in cubic metres must be greater than zero.', 'حجم (متر مکعب) باید بیشتر از صفر باشد.', 'حجم (مکعب متر) باید تر صفر لوړه وي.'));
       return;
     }
     if (isNaN(rawPricePerM3) || rawPricePerM3 <= 0) {
-      setFormError('قیمت فی متر مکعب باید بزرگتر از صفر باشد.');
+      setFormError(tx('Price per cubic metre must be greater than zero.', 'قیمت هر متر مکعب باید بیشتر از صفر باشد.', 'د هر مکعب متر بیه باید تر صفر لوړه وي.'));
       return;
     }
     if (rawPump < 0) {
-      setFormError('کرایه پمپ نامعتبر است.');
+      setFormError(tx('The pump charge is invalid.', 'کرایهٔ پمپ نامعتبر است.', 'د پمپ کرایه ناسمه ده.'));
       return;
     }
     if (!supplierName.trim()) {
-      setFormError('نام شرکت یا بتن‌سازی الزامی است.');
+      setFormError(tx('Supplier or concrete plant name is required.', 'نام شرکت یا کارخانهٔ کانکریت الزامی است.', 'د عرضه‌کوونکي یا د کانکریټو فابریکې نوم اړین دی.'));
       return;
     }
     if (rawPaid < 0) {
-      setFormError('مبلغ پرداختی نامعتبر است.');
+      setFormError(tx('The payment amount is invalid.', 'مبلغ پرداختی نامعتبر است.', 'د تادیې اندازه ناسمه ده.'));
       return;
     }
     if (rawPaid > totalAmountInCurrentCurrency) {
-      setFormError('مبلغ پرداختی نمی‌تواند بیشتر از کل فاکتور باشد.');
+      setFormError(tx('Payment cannot exceed the invoice total.', 'مبلغ پرداختی نمی‌تواند از کل فاکتور بیشتر باشد.', 'تادیه د بل له ټولې اندازې لوړه کېدای نه شي.'));
       return;
     }
     if (!date || isNaN(new Date(date).getTime())) {
-      setFormError('تاریخ نامعتبر است.');
+      setFormError(tx('The date is invalid.', 'تاریخ نامعتبر است.', 'نېټه ناسمه ده.'));
       return;
     }
 
@@ -112,7 +115,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
              c.billNumber.trim().toLowerCase() === billNumber.trim().toLowerCase()
       );
       if (isDuplicate) {
-        setFormError(`تکت با شماره "${billNumber.trim()}" قبلاً در این پروژه ثبت شده است.`);
+        setFormError(tx(`Ticket ${billNumber.trim()} is already registered for this project.`, `تکت شمارهٔ «${billNumber.trim()}» پیش‌تر در این پروژه ثبت شده است.`, `د ${billNumber.trim()} شمېرې ټکټ په دې پروژه کې مخکې ثبت شوی دی.`));
         return;
       }
     }
@@ -124,7 +127,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
       billNumber: billNumber.trim() || `CNC-${Date.now().toString().slice(-4)}`,
       supplierName: supplierName.trim(),
       concreteGrade,
-      elementPoured: elementPoured.trim() || 'Columns & Slab',
+      elementPoured: elementPoured.trim() || tx('Columns and slab', 'پایه‌ها و سقف', 'ستنې او چت'),
       quantityM3: parsedQty,
       pricePerM3: pricePerM3USD,
       pumpCharge: pumpChargeUSD,
@@ -157,7 +160,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
             type="button" 
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -202,7 +205,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
             <input
               type="text"
               required
-              placeholder="مثلاً: شرکت کانکریت پامیر / آسیا"
+              placeholder={tx('e.g. Pamir / Asia Concrete', 'مثلاً: شرکت کانکریت پامیر یا آسیا', 'لکه: د پامیر یا آسیا کانکریټو شرکت')}
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
@@ -224,10 +227,10 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
               </select>
             </div>
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.elementPoured || 'بخش ریخته شده'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Poured element / location', 'بخش کانکریت‌ریزی‌شده', 'کانکریټ شوې برخه / ځای')}</label>
               <input
                 type="text"
-                placeholder="پایه‌ها، سقف منزل سوم، تهداب..."
+                placeholder={tx('e.g. columns, third-floor slab, foundation...', 'مثلاً: پایه‌ها، سقف منزل سوم، تهداب...', 'لکه: ستنې، د درېیم پوړ چت، تهداب...')}
                 value={elementPoured}
                 onChange={(e) => setElementPoured(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
@@ -248,7 +251,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.pumpCharge || 'کرایه پمپ'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Pump charge', 'کرایهٔ پمپ', 'د پمپ کرایه')}</label>
               <input
                 type="number"
                 step="any"
@@ -275,10 +278,10 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
             <span className="font-bold text-slate-700 dark:text-slate-300">{t.totalAmount}:</span>
             <div className="text-end font-mono">
               <span className="text-sm font-extrabold text-ink block">
-                ${totalCalculatedUSD.toLocaleString()}
+                ${formatNumber(totalCalculatedUSD)}
               </span>
               <span className="text-[11px] text-ink-muted">
-                معادل: {(totalCalculatedUSD * exchangeRate).toLocaleString()} افغانی
+                {tx('Equivalent:', 'معادل:', 'معادل:')} {formatNumber(totalCalculatedUSD * exchangeRate)} {tx('AFN', 'افغانی', 'افغانۍ')}
               </span>
             </div>
           </div>
@@ -326,7 +329,7 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
             {settlementMode !== 'credit' && (
               <div className="pt-2">
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.cashPaidNow} ({currency === 'USD' ? '$' : 'افغانی'})
+                  {tx('Paid now', 'پرداخت نقدی فعلی', 'اوسنۍ تادیه')} ({currency === 'USD' ? '$' : tx('AFN', 'افغانی', 'افغانۍ')})
                 </label>
                 <input
                   type="number"
@@ -344,14 +347,14 @@ export const AddConcreteModal: React.FC<AddConcreteModalProps> = ({ isOpen, onCl
                 <span>{t.unpaidDebtBalance}:</span>
               </span>
               <span className={`font-mono font-bold ${remainingDebtUSD > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                ${remainingDebtUSD.toLocaleString()} {remainingDebtUSD > 0 && `(${(remainingDebtUSD * exchangeRate).toLocaleString()} افغانی)`}
+                ${formatNumber(remainingDebtUSD)} {remainingDebtUSD > 0 && `(${formatNumber(remainingDebtUSD * exchangeRate)} ${tx('AFN', 'افغانی', 'افغانۍ')})`}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.mixerTrucks || 'تعداد موترهای مکسر'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Mixer truck count', 'تعداد موترهای میکسر', 'د مکسر موټرو شمېر')}</label>
               <input
                 type="number"
                 value={mixerCount}

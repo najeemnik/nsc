@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Coins, X, Calendar, CheckCircle, Landmark, Wallet, ArrowDownRight, User } from 'lucide-react';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
-import { backendApi } from '../../services/backendApi';
 
 interface AddIncomeModalProps {
   isOpen: boolean;
@@ -17,7 +17,8 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
   defaultPayerName,
   defaultAmount
 }) => {
-  const { currentProject, projects, formatCurrency, t, language } = useApp();
+  const { currentProject, projects, formatCurrency, t, language, addIncomeRecord } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
   const [payerName, setPayerName] = useState(defaultPayerName || '');
   const [incomeType, setIncomeType] = useState<string>('client_installment');
@@ -60,17 +61,17 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
     setFormError(null);
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setFormError(language === 'fa' ? 'لطفاً مبلغ دریافتی معتبر وارد کنید.' : 'Please enter a valid amount.');
+      setFormError(tx('Please enter a valid amount.', 'لطفاً مبلغ دریافتی معتبر وارد کنید.', 'مهرباني وکړئ سمه اندازه ولیکئ.'));
       return;
     }
     if (!payerName.trim()) {
-      setFormError(language === 'fa' ? 'نام پرداخت‌کننده / مشتری الزامی است.' : 'Payer name is required.');
+      setFormError(tx('Payer name is required.', 'نام پرداخت‌کننده / مشتری الزامی است.', 'د پیسې ورکوونکي نوم اړین دی.'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await backendApi.createIncome({
+      addIncomeRecord({
         projectId,
         receivedFrom: payerName.trim(),
         incomeType,
@@ -79,8 +80,8 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
         exchangeRate,
         paymentMethod,
         targetAccountId: targetAccount,
-        referenceDoc: referenceNo,
-        date,
+        referenceDocumentNo: referenceNo,
+        receivedDate: date,
         notes: notes.trim() || undefined,
       });
 
@@ -91,7 +92,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
         onClose();
       }, 1000);
     } catch (err: any) {
-      setFormError(err.message || 'خطا در ثبت عواید');
+      setFormError(tx('Could not save the income record.', 'ثبت عواید انجام نشد.', 'د عاید ثبتول ناکام شول.'));
       setIsSubmitting(false);
     }
   };
@@ -110,10 +111,10 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-ink">
-                {language === 'fa' ? 'ثبت عواید و دریافت وجه (Receipt Voucher)' : 'Record Income / Revenue Receipt'}
+                {tx('Record Income / Revenue Receipt', 'ثبت عواید و دریافت وجه (Receipt Voucher)', 'د عاید ثبت او د رسید صادرول')}
               </h2>
               <p className="text-xs text-ink-muted">
-                {language === 'fa' ? 'شارژ نقدینگی صندوق/بانک و افزایش درآمد پروژه در P&L' : 'Direct credit to treasury and revenue calculation'}
+                {tx('Direct credit to treasury and revenue calculation', 'شارژ نقدینگی صندوق/بانک و افزایش درآمد پروژه در P&L', 'د صندوق یا بانکي حساب زیاتوالی او د پروژې د عاید محاسبه')}
               </p>
             </div>
           </div>
@@ -137,7 +138,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
           {successNotice && (
             <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>{language === 'fa' ? 'عواید با موفقیت ثبت شد و به حساب واریز گردید!' : 'Income voucher recorded successfully!'}</span>
+              <span>{tx('Income voucher recorded successfully!', 'عواید با موفقیت ثبت شد و به حساب واریز گردید!', 'د عاید سند په بریالیتوب ثبت شو!')}</span>
             </div>
           )}
 
@@ -161,18 +162,18 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
             {/* Income Type */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'نوع عاید / منبع' : 'Income Category'}
+                {tx('Income Category', 'نوع عاید / منبع', 'د عاید ډول')}
               </label>
               <select
                 value={incomeType}
                 onChange={e => setIncomeType(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               >
-                <option value="client_installment">{language === 'fa' ? 'قسط پیش‌فروش آپارتمان / مشتری' : 'Apartment Installment'}</option>
-                <option value="partner_equity">{language === 'fa' ? 'سرمایه‌گذاری شریک / افزایش سرمایه' : 'Partner Equity'}</option>
-                <option value="advance_payment">{language === 'fa' ? 'پیش‌پرداخت قرارداد کارفرما' : 'Client Advance'}</option>
-                <option value="scrap_material_sale">{language === 'fa' ? 'فروش ضایعات آهن و مصالح مازاد' : 'Scrap / Material Sale'}</option>
-                <option value="miscellaneous">{language === 'fa' ? 'عواید متفرقه' : 'Other Income'}</option>
+                <option value="client_installment">{tx('Apartment Installment', 'قسط پیش‌فروش آپارتمان / مشتری', 'د اپارتمان قسط')}</option>
+                <option value="partner_equity">{tx('Partner Equity', 'سرمایه‌گذاری شریک / افزایش سرمایه', 'د شریک پانګه')}</option>
+                <option value="advance_payment">{tx('Client Advance', 'پیش‌پرداخت قرارداد کارفرما', 'د پېرودونکي مخکېنۍ ورکړه')}</option>
+                <option value="scrap_material_sale">{tx('Scrap / Material Sale', 'فروش ضایعات آهن و مصالح مازاد', 'د اوسپنې او اضافي توکو پلور')}</option>
+                <option value="miscellaneous">{tx('Other Income', 'عواید متفرقه', 'نور عاید')}</option>
               </select>
             </div>
           </div>
@@ -180,7 +181,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
           {/* Payer Name */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {language === 'fa' ? 'دریافت شده از (نام مشتری / سرمایه‌گذار)' : 'Received From (Customer / Investor)'}
+              {tx('Received From (Customer / Investor)', 'دریافت شده از (نام مشتری / سرمایه‌گذار)', 'له (پېرودونکي / پانګه‌وال) څخه ترلاسه شو')}
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
@@ -189,7 +190,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
                 required
                 value={payerName}
                 onChange={e => setPayerName(e.target.value)}
-                placeholder={language === 'fa' ? 'مثلاً: حاجی احمد مسعود، خریدار واحد ۳۰۲' : 'e.g. Ahmad Khan'}
+                placeholder={tx('e.g. Ahmad Khan', 'مثلاً: حاجی احمد مسعود، خریدار واحد ۳۰۲', 'لکه: احمد خان')}
                 className="w-full ps-9 pe-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
@@ -199,32 +200,32 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {t('amount') || 'Amount'}
+                {t('amount') || t("amount")}
               </label>
               <CurrencyAmountInput
                 amount={amount}
                 currency={currency}
                 exchangeRate={exchangeRate}
-                onAmountChange={setAmount}
-                onCurrencyChange={setCurrency}
-                onExchangeRateChange={setExchangeRate}
+                onChangeAmount={setAmount}
+                onChangeCurrency={setCurrency}
+                onChangeExchangeRate={setExchangeRate}
               />
             </div>
 
             {/* Target Account */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'حساب واریزی (صندوق / بانک)' : 'Deposit Account'}
+                {tx('Deposit Account', 'حساب واریزی (صندوق / بانک)', 'د پیسو د جمع کولو حساب')}
               </label>
               <select
                 value={targetAccount}
                 onChange={e => setTargetAccount(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               >
-                <option value="حساب د افغانستان بانک">حساب جاری د افغانستان بانک (AFN)</option>
-                <option value="صندوق مرکزی کابل پلازا">صندوق مرکزی پول نقد کابل پلازا</option>
-                <option value="حساب عزیزی بانک">حساب ارزی عزیزی بانک (USD)</option>
-                <option value="صرافی سرای شهزاده">حواله / صرافی معتمد سرای شهزاده</option>
+                <option value="حساب د افغانستان بانک">{tx('Central Bank account (AFN)', 'حساب جاری د افغانستان بانک (AFN)', 'د افغانستان بانک حساب (AFN)')}</option>
+                <option value="صندوق مرکزی کابل پلازا">{tx('Central cash box — Kabul Plaza', 'صندوق مرکزی پول نقد کابل پلازا', 'د کابل پلازا مرکزي نغدي صندوق')}</option>
+                <option value="حساب عزیزی بانک">{tx('Azizi Bank foreign-currency account (USD)', 'حساب ارزی عزیزی بانک (USD)', 'د عزیزي بانک د بهرنیو اسعارو حساب (USD)')}</option>
+                <option value="صرافی سرای شهزاده">{tx('Sarai Shahzada exchange / hawala', 'حواله / صرافی معتمد سرای شهزاده', 'د سرای شهزاده د صرافۍ حواله')}</option>
               </select>
             </div>
           </div>
@@ -233,24 +234,24 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
             {/* Payment Method */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'طریقه پرداخت' : 'Payment Method'}
+                {tx('Payment Method', 'طریقه پرداخت', 'د ورکړې لاره')}
               </label>
               <select
                 value={paymentMethod}
                 onChange={e => setPaymentMethod(e.target.value as any)}
                 className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               >
-                <option value="bank_transfer">{language === 'fa' ? 'انتقال بانکی' : 'Bank'}</option>
-                <option value="cash">{language === 'fa' ? 'نقد' : 'Cash'}</option>
-                <option value="hawala">{language === 'fa' ? 'حواله صرافی' : 'Hawala'}</option>
-                <option value="cheque">{language === 'fa' ? 'چک' : 'Cheque'}</option>
+                <option value="bank_transfer">{tx('Bank', 'انتقال بانکی', 'بانکي لېږد')}</option>
+                <option value="cash">{tx('Cash', 'نقد', 'نغدې پیسې')}</option>
+                <option value="hawala">{tx('Hawala', 'حواله صرافی', 'حواله')}</option>
+                <option value="cheque">{tx('Cheque', 'چک', 'چېک')}</option>
               </select>
             </div>
 
             {/* Reference No */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'شماره سند / رسید' : 'Receipt No'}
+                {tx('Receipt No', 'شماره سند / رسید', 'د رسید شمېره')}
               </label>
               <input
                 type="text"
@@ -263,7 +264,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
             {/* Date */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {t('date') || 'Date'}
+                {t('date') || t("accColDate")}
               </label>
               <input
                 type="date"
@@ -277,13 +278,13 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
           {/* Notes */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {t('notes') || 'Notes'}
+              {t('notes') || t("notes")}
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder={language === 'fa' ? 'توضیحات و جزئیات بیشتر...' : 'Additional notes...'}
+              placeholder={tx('Additional notes...', 'توضیحات و جزئیات بیشتر...', 'نور یادښتونه...')}
               className="w-full px-3.5 py-2 bg-surface-2 border border-line rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
           </div>
@@ -295,7 +296,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel') || t("cancel")}
             </button>
             <button
               type="submit"
@@ -303,7 +304,7 @@ export const AddIncomeModal: React.FC<AddIncomeModalProps> = ({
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-lg shadow-emerald-500/25 transition active:scale-95 disabled:opacity-50"
             >
               <Coins className="w-4 h-4" />
-              <span>{isSubmitting ? (language === 'fa' ? 'در حال ثبت...' : 'Saving...') : (language === 'fa' ? 'ثبت و صدور رسید دریافتی' : 'Save & Issue Receipt')}</span>
+              <span>{isSubmitting ? (tx('Saving...', 'در حال ثبت...', 'ثبتېږي...')) : (tx('Save & Issue Receipt', 'ثبت و صدور رسید دریافتی', 'ثبت او رسید صادر کړئ'))}</span>
             </button>
           </div>
         </form>

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Suppliers & Vendor Ledger API
  * Solves Excel Flaw #4: Automatic Calculation of Purchases, Payments & Payable Balances

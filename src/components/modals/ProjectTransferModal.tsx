@@ -1,6 +1,7 @@
-import React, { useState, useId } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Project, ProjectTransferEvent } from '../../types';
+import { isRtlLanguage, localizeText } from '../../i18n/localize';
+import { Project } from '../../types';
 import { 
   ArrowRightLeft, 
   X, 
@@ -35,13 +36,15 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
   project,
   onClose,
 }) => {
-  const { transferProject, formatCurrency, formatNumber, language, t } = useApp();
-  const isRtl = language === 'fa' || language === 'ps';
+  const { transferProject, formatCurrency, formatNumber, language } = useApp();
+  const isRtl = isRtlLanguage(language);
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [activeTab, setActiveTab] = useState<'new_transfer' | 'history'>('new_transfer');
 
   // Form states
-  const currentOwnerName = project?.currentOwner || project?.clientOwner || 'مالک اولیه پروژه';
+  const defaultOwnerNames = ['Initial project owner', 'مالک اولیه پروژه', 'د پروژې لومړنی مالک'];
+  const currentOwnerName = project?.currentOwner || project?.clientOwner || tx('Initial project owner', 'مالک اولیه پروژه', 'د پروژې لومړنی مالک');
   const [previousOwner, setPreviousOwner] = useState(currentOwnerName);
   const [newOwner, setNewOwner] = useState('');
   const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0]);
@@ -61,7 +64,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
   // Sync previousOwner when project opens
   React.useEffect(() => {
     if (project) {
-      setPreviousOwner(project.currentOwner || project.clientOwner || 'مالک اولیه پروژه');
+      setPreviousOwner(project.currentOwner || project.clientOwner || tx('Initial project owner', 'مالک اولیه پروژه', 'د پروژې لومړنی مالک'));
       setNewOwner('');
       setTransferValue('');
       setAmountPaid('');
@@ -74,6 +77,12 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
       setSuccessMessage(null);
     }
   }, [project, isOpen]);
+
+  React.useEffect(() => {
+    if (defaultOwnerNames.includes(previousOwner)) {
+      setPreviousOwner(tx('Initial project owner', 'مالک اولیه پروژه', 'د پروژې لومړنی مالک'));
+    }
+  }, [language, previousOwner]);
 
   // Auto-calculate remaining amount
   const handleValueChange = (val: string) => {
@@ -117,18 +126,18 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOwner.trim()) {
-      alert(isRtl ? 'لطفاً نام مالک یا مسئول جدید را وارد نمایید' : 'Please specify the New Owner / Responsible Person');
+      alert(tx('Enter the name of the new owner or responsible person.', 'نام مالک یا مسئول جدید را وارد کنید.', 'د نوي مالک یا مسؤل نوم ولیکئ.'));
       return;
     }
 
-    const stageValue = projectStage === 'custom' ? (customStage.trim() || 'سفارشی') : projectStage;
+    const stageValue = projectStage === 'custom' ? (customStage.trim() || tx('Custom stage', 'مرحلهٔ سفارشی', 'ځانګړی پړاو')) : projectStage;
     const valueNum = parseFloat(transferValue) || 0;
     const paidNum = parseFloat(amountPaid) || 0;
     const remainingNum = remainingAmount !== '' ? parseFloat(remainingAmount) : Math.max(0, valueNum - paidNum);
 
     transferProject({
       projectId: project.id,
-      previousOwner: previousOwner.trim() || 'مالک قبلی',
+      previousOwner: previousOwner.trim() || tx('Previous owner', 'مالک قبلی', 'پخوانی مالک'),
       newOwner: newOwner.trim(),
       transferDate,
       projectStage: stageValue,
@@ -143,11 +152,11 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
       notes: notes.trim() || undefined,
     });
 
-    setSuccessMessage(
-      isRtl 
-        ? `پروژه با موفقیت از «${previousOwner}» به «${newOwner}» واگذار و در تاریخچه ثبت شد.`
-        : `Project successfully transferred from "${previousOwner}" to "${newOwner}" and logged into history.`
-    );
+    setSuccessMessage(tx(
+      `Project successfully transferred from "${previousOwner}" to "${newOwner}" and recorded in the history.`,
+      `پروژه با موفقیت از «${previousOwner}» به «${newOwner}» واگذار و در تاریخچه ثبت شد.`,
+      `پروژه له «${previousOwner}» څخه «${newOwner}» ته ولېږدول شوه او په تاریخچه کې ثبت شوه.`,
+    ));
 
     setPreviousOwner(newOwner.trim());
     setNewOwner('');
@@ -180,14 +189,14 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-black">
-                  {isRtl ? 'انتقال و واگذاری پروژه (Handover)' : 'Project Transfer & Handover'}
+                  {tx('Project transfer and handover', 'انتقال و واگذاری پروژه', 'د پروژې لېږد او سپارل')}
                 </h2>
                 <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">
                   {project.code}
                 </span>
               </div>
               <p className="text-xs text-indigo-100 mt-0.5">
-                {project.name} • {isRtl ? 'ثبت و حفظ تاریخچه کامل مالکین و انتقال بدون حذف اسناد' : 'Complete ownership transfer history without altering accounting records'}
+                {project.name} • {tx('Complete ownership history; accounting records remain unchanged', 'ثبت تاریخچهٔ کامل مالکیت و انتقال، بدون تغییر اسناد حسابداری', 'د مالکیت بشپړه تاریخچه؛ د حسابدارۍ اسناد نه بدلېږي')}
               </p>
             </div>
           </div>
@@ -204,21 +213,21 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
         <div className="px-6 py-3 bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/40 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-indigo-950 dark:text-indigo-200">
             <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-            <span className="font-semibold">{isRtl ? 'مالک / مسئول فعلی پروژه:' : 'Current Responsible Owner:'}</span>
+            <span className="font-semibold">{tx('Current project owner / responsible person:', 'مالک / مسئول فعلی پروژه:', 'د پروژې اوسنی مالک / مسؤل:')}</span>
             <span className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 bg-surface px-2.5 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800">
-              {project.currentOwner || project.clientOwner || (isRtl ? 'مالک اولیه' : 'Initial Owner')}
+              {project.currentOwner || project.clientOwner || tx('Initial owner', 'مالک اولیه', 'لومړنی مالک')}
             </span>
           </div>
 
           {project.initialOwner && project.initialOwner !== (project.currentOwner || project.clientOwner) && (
             <div className="text-[11px] text-ink-muted">
-              <span>{isRtl ? 'مالک نخستین:' : 'Initial Founder:'} <strong>{project.initialOwner}</strong></span>
+              <span>{tx('Original owner:', 'مالک نخستین:', 'لومړنی مالک:')} <strong>{project.initialOwner}</strong></span>
             </div>
           )}
 
           <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
             <History className="w-3.5 h-3.5" />
-            <span>{historyList.length} {isRtl ? 'سابقه انتقال ثبت‌شده' : 'Transfers on record'}</span>
+            <span>{formatNumber(historyList.length)} {tx('transfers on record', 'سابقهٔ انتقال ثبت‌شده', 'ثبت شوي لېږدونه')}</span>
           </div>
         </div>
 
@@ -233,7 +242,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'ثبت واگذاری جدید (New Transfer)' : 'Record New Transfer'}</span>
+            <span>{tx('Record a new transfer', 'ثبت واگذاری جدید', 'نوی لېږد ثبت کړئ')}</span>
           </button>
 
           <button
@@ -245,7 +254,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>{isRtl ? 'تاریخچه زنجیره‌ای مالکین (Timeline)' : 'Ownership Timeline'}</span>
+            <span>{tx('Ownership timeline', 'تاریخچهٔ زنجیره‌ای مالکیت', 'د مالکیت بهیر')}</span>
             <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">
               {historyList.length}
             </span>
@@ -267,9 +276,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  {isRtl 
-                    ? 'توجه: با انتقال پروژه، تمامی هزینه‌ها، بل‌ها، اسناد و پرداخت‌های قبلی محفوظ می‌مانند. نام مالک فعلی به شخص جدید تغییر می‌یابد و این رویداد در زنجیره تاریخچه پروژه بایگانی می‌شود.'
-                    : 'Notice: Transferring the project preserves all prior expenses, invoices, payments, and documents. The current owner changes to the new party and this handover is permanently appended to the project history.'}
+                  {tx('Transferring the project preserves all previous expenses, invoices, documents, and payments. The current owner changes to the new party, and this transfer is added to the project history.', 'توجه: با انتقال پروژه، تمام مصارف، بل‌ها، اسناد و پرداخت‌های قبلی محفوظ می‌مانند. مالک فعلی به شخص جدید تغییر می‌کند و این انتقال در تاریخچهٔ پروژه ثبت می‌شود.', 'یادونه: د پروژې د لېږد پر مهال ټول پخواني لګښتونه، بلونه، اسناد او تادیې خوندي پاتې کېږي. اوسنی مالک نوي کس ته بدلېږي او لېږد د پروژې په تاریخچه کې ثبتېږي.')}
                 </p>
               </div>
 
@@ -277,7 +284,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    {isRtl ? 'مالک / مسئول واگذارکننده (Previous Owner)' : 'Previous Owner / Handover By'} *
+                    {tx('Previous owner / handover by', 'مالک / مسئول واگذارکننده', 'پخوانی مالک / سپارونکی')} *
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -286,7 +293,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       required
                       value={previousOwner}
                       onChange={e => setPreviousOwner(e.target.value)}
-                      placeholder={isRtl ? 'نام مالک یا مسئول قبلی' : 'Previous owner name'}
+                      placeholder={tx('Previous owner name', 'نام مالک یا مسئول قبلی', 'د پخواني مالک نوم')}
                       className="w-full pr-9 pl-3 py-2.5 bg-surface-2 border border-line rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
@@ -294,7 +301,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1.5">
-                    {isRtl ? 'مالک / مسئول جدید پروژه (New Owner)' : 'New Owner / Recipient'} *
+                    {tx('New project owner / recipient', 'مالک / مسئول جدید پروژه', 'د پروژې نوی مالک / ترلاسه کوونکی')} *
                   </label>
                   <div className="relative">
                     <UserCheck className="w-4 h-4 text-indigo-600 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -303,7 +310,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       required
                       value={newOwner}
                       onChange={e => setNewOwner(e.target.value)}
-                      placeholder={isRtl ? 'نام شخص، شرکت یا سرمایه‌گذار جدید' : 'New owner or entity name'}
+                      placeholder={tx('Name of new owner, company, or investor', 'نام شخص، شرکت یا سرمایه‌گذار جدید', 'د نوي مالک، شرکت یا پانګه‌وال نوم')}
                       className="w-full pr-9 pl-3 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs font-bold text-ink focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
@@ -314,7 +321,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    {isRtl ? 'تاریخ انتقال (Transfer Date)' : 'Transfer Date'} *
+                    {tx('Transfer date', 'تاریخ انتقال', 'د لېږد نېټه')} *
                   </label>
                   <div className="relative">
                     <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -330,28 +337,28 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    {isRtl ? 'مرحله کار هنگام واگذاری (Project Stage)' : 'Project Stage at Transfer'} *
+                    {tx('Project stage at transfer', 'مرحلهٔ کار هنگام واگذاری', 'د لېږد پر مهال د پروژې پړاو')} *
                   </label>
                   <select
                     value={projectStage}
                     onChange={e => setProjectStage(e.target.value)}
                     className="w-full px-3 py-2.5 bg-surface-2 border border-line rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   >
-                    <option value="شروع کار و خاک‌برداری (Excavation & Foundation)">{isRtl ? 'شروع کار، خاک‌برداری و تهداب' : 'Excavation & Foundation'}</option>
-                    <option value="اسکلت و سیخ‌بندی (Structure & Rebar)">{isRtl ? 'اسکلت، قالب‌بندی و سیخ‌بندی' : 'Structure, Framing & Concrete'}</option>
-                    <option value="خشت‌کاری و دیوارچینی (Masonry & Brickwork)">{isRtl ? 'خشت‌کاری، دیوارهای احاطه و پارتیشن‌ها' : 'Masonry & Walls'}</option>
-                    <option value="تأسیسات، برق و نلدوانی (MEP & Plumbing)">{isRtl ? 'تأسیسات برقی، میخانیکی و نلدوانی' : 'MEP, Wiring & Plumbing'}</option>
-                    <option value="سفیدکاری و گچ‌کاری (Plastering & Interior)">{isRtl ? 'سفیدکاری، گچ‌کاری و سرامیک' : 'Plastering, Tiles & Interior'}</option>
-                    <option value="مرحله پایانی و نما (Facade & Finishing)">{isRtl ? 'نمای ساختمان، شیشه‌ها و فینیشینگ' : 'Facade, Windows & Finishing'}</option>
-                    <option value="تکمیل‌شده و کلید به دست (Completed Handover)">{isRtl ? 'پروژه تکمیل‌شده / تسلیمی کلید' : 'Turnkey / Completed'}</option>
-                    <option value="custom">{isRtl ? 'سایر / مرحله سفارشی...' : 'Custom Stage...'}</option>
+                    <option value="شروع کار و خاک‌برداری (Excavation & Foundation)">{tx('Excavation and foundation', 'شروع کار، خاک‌برداری و تهداب', 'کیندنه او تهداب')}</option>
+                    <option value="اسکلت و سیخ‌بندی (Structure & Rebar)">{tx('Structure, formwork, and reinforcement', 'اسکلت، قالب‌بندی و سیخ‌بندی', 'جوړښت، قالب‌بندي او سیخ تړل')}</option>
+                    <option value="خشت‌کاری و دیوارچینی (Masonry & Brickwork)">{tx('Masonry and walls', 'خشت‌کاری، دیوارهای احاطه و پارتیشن‌ها', 'خښته‌کاري او دېوالونه')}</option>
+                    <option value="تأسیسات، برق و نلدوانی (MEP & Plumbing)">{tx('Electrical, mechanical, and plumbing', 'تأسیسات برقی، میخانیکی و نلدوانی', 'برېښنايي، میخانیکي او نلدوانۍ چارې')}</option>
+                    <option value="سفیدکاری و گچ‌کاری (Plastering & Interior)">{tx('Plastering, tiles, and interior', 'سفیدکاری، گچ‌کاری و سرامیک', 'پلستر، کاشي او داخلي چارې')}</option>
+                    <option value="مرحله پایانی و نما (Facade & Finishing)">{tx('Facade, windows, and finishing', 'نمای ساختمان، شیشه‌ها و تکمیل‌کاری', 'بهرنۍ بڼه، کړکۍ او بشپړکاري')}</option>
+                    <option value="تکمیل‌شده و کلید به دست (Completed Handover)">{tx('Completed / turnkey handover', 'پروژهٔ تکمیل‌شده / تسلیمی کلید', 'بشپړه شوې / د کیلي په سپارلو پروژه')}</option>
+                    <option value="custom">{tx('Other / custom stage...', 'سایر / مرحلهٔ سفارشی...', 'نور / ځانګړی پړاو...')}</option>
                   </select>
 
                   {projectStage === 'custom' && (
                     <input
                       type="text"
                       required
-                      placeholder={isRtl ? 'شرح مرحله کار را بنویسید' : 'Specify construction stage'}
+                      placeholder={tx('Describe the construction stage', 'شرح مرحلهٔ کار را بنویسید', 'د ودانیز کار پړاو تشریح کړئ')}
                       value={customStage}
                       onChange={e => setCustomStage(e.target.value)}
                       className="mt-2 w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs"
@@ -365,7 +372,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-emerald-600" />
-                    <span>{isRtl ? 'ارزش مالی انتقال و مبالغ تسویه‌شده' : 'Financial Value & Payment Settlement'}</span>
+                    <span>{tx('Transfer value and payment settlement', 'ارزش مالی انتقال و مبالغ تسویه‌شده', 'د لېږد ارزښت او د تادیاتو تصفیه')}</span>
                   </span>
                   <div className="flex items-center gap-1 text-xs">
                     <button
@@ -388,7 +395,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {isRtl ? 'ارزش کل انتقال (Transfer Value)' : 'Total Transfer Value'}
+                      {tx('Total transfer value', 'ارزش کل انتقال', 'د لېږد ټول ارزښت')}
                     </label>
                     <input
                       type="number"
@@ -403,7 +410,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
-                      {isRtl ? 'مبلغ پرداخت‌شده (Amount Paid)' : 'Amount Paid'}
+                      {tx('Amount paid', 'مبلغ پرداخت‌شده', 'ورکړل شوې اندازه')}
                     </label>
                     <input
                       type="number"
@@ -418,7 +425,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-semibold text-amber-600 dark:text-amber-400 mb-1">
-                      {isRtl ? 'باقی‌داری / ذمت (Remaining Due)' : 'Remaining Amount Due'}
+                      {tx('Remaining amount due', 'باقی‌داری / ذمت', 'پاتې ورکړه')}
                     </label>
                     <input
                       type="number"
@@ -437,11 +444,11 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 transition bg-slate-50/50 dark:bg-slate-800/30">
                   <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {isRtl ? 'سند قرارداد واگذاری (Contract Document)' : 'Contract / Agreement Doc'}
+                    {tx('Transfer contract / agreement', 'سند قرارداد واگذاری', 'د لېږد تړون / سند')}
                   </span>
                   <label className="flex items-center gap-2 cursor-pointer text-xs text-indigo-600 dark:text-indigo-400 py-1.5">
                     <Upload className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{contractDocumentName || (isRtl ? 'انتخاب فایل یا عکس قرارداد' : 'Select contract file')}</span>
+                    <span className="truncate">{contractDocumentName || tx('Select contract file or image', 'انتخاب فایل یا عکس قرارداد', 'د تړون فایل یا انځور وټاکئ')}</span>
                     <input
                       type="file"
                       accept="image/*,.pdf,.doc,.docx"
@@ -452,18 +459,18 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   {contractDocumentUrl && (
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      {isRtl ? 'فایل پیوست شد' : 'File attached'}
+                      {tx('File attached', 'فایل پیوست شد', 'فایل ونښلول شو')}
                     </span>
                   )}
                 </div>
 
                 <div className="p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 transition bg-slate-50/50 dark:bg-slate-800/30">
                   <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {isRtl ? 'رسید یا بل پرداخت (Payment Receipt)' : 'Payment Receipt'}
+                    {tx('Payment receipt or invoice', 'رسید یا بل پرداخت', 'د تادیې رسید یا بل')}
                   </span>
                   <label className="flex items-center gap-2 cursor-pointer text-xs text-indigo-600 dark:text-indigo-400 py-1.5">
                     <Receipt className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{receiptDocumentName || (isRtl ? 'انتخاب رسید پرداخت' : 'Select receipt file')}</span>
+                    <span className="truncate">{receiptDocumentName || tx('Select a receipt file', 'انتخاب رسید پرداخت', 'د رسید فایل وټاکئ')}</span>
                     <input
                       type="file"
                       accept="image/*,.pdf,.doc,.docx"
@@ -474,7 +481,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   {receiptDocumentUrl && (
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      {isRtl ? 'رسید پیوست شد' : 'Receipt attached'}
+                      {tx('Receipt attached', 'رسید پیوست شد', 'رسید ونښلول شو')}
                     </span>
                   )}
                 </div>
@@ -483,13 +490,13 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               {/* Notes */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  {isRtl ? 'یادداشت، شروط و توافقات انتقال (Notes & Terms)' : 'Transfer Notes & Terms'}
+                  {tx('Transfer notes and terms', 'یادداشت، شروط و توافقات انتقال', 'د لېږد یادښتونه او شرطونه')}
                 </label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder={isRtl ? 'شروط تحویل، مهلت پرداخت باقیمانده، تعهدات ساختمانی و نظارت...' : 'Handover conditions, construction guarantees, payment deadlines...'}
+                  placeholder={tx('Handover conditions, payment deadlines, construction obligations, and supervision...', 'شرایط تحویل، مهلت پرداخت باقی‌مانده، تعهدات ساختمانی و نظارت...', 'د سپارلو شرایط، د تادیې نېټې، د ودانیز کار ژمنې او څارنه...')}
                   className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
@@ -501,14 +508,14 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                   onClick={onClose}
                   className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition"
                 >
-                  {isRtl ? 'انصراف' : 'Cancel'}
+                  {tx('Cancel', 'انصراف', 'لغوه کول')}
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 transition transform active:scale-95 flex items-center gap-2"
                 >
                   <ArrowRightLeft className="w-4 h-4" />
-                  <span>{isRtl ? 'ثبت رسمی واگذاری پروژه' : 'Record Project Handover'}</span>
+                  <span>{tx('Record project transfer', 'ثبت رسمی واگذاری پروژه', 'د پروژې لېږد ثبت کړئ')}</span>
                 </button>
               </div>
             </form>
@@ -521,14 +528,14 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
               <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-slate-800/60 dark:to-indigo-950/40 border border-line">
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <span>{isRtl ? 'زنجیره تسلسل مالکین پروژه (Ownership Chain)' : 'Project Ownership Chain'}</span>
+                  <span>{tx('Project ownership chain', 'زنجیرهٔ تسلسل مالکین پروژه', 'د پروژې د مالکیت لړۍ')}</span>
                 </h4>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <div className="px-3 py-1.5 rounded-xl bg-surface border border-line shadow-xs flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
                     <User className="w-3.5 h-3.5 text-slate-400" />
                     <span>{project.initialOwner || (historyList.length > 0 ? historyList[historyList.length - 1].previousOwner : currentOwnerName)}</span>
-                    <span className="text-[10px] text-slate-400 font-normal">({isRtl ? 'مالک اول' : 'Founder'})</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({tx('Founder', 'مالک نخستین', 'بنسټ اېښودونکی')})</span>
                   </div>
 
                   {historyList.slice().reverse().map((ev, idx) => (
@@ -545,7 +552,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                         <span>{ev.newOwner}</span>
                         {idx === historyList.length - 1 && (
                           <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-bold">
-                            {isRtl ? 'مالک فعلی' : 'Current'}
+                            {tx('Current owner', 'مالک فعلی', 'اوسنی مالک')}
                           </span>
                         )}
                       </div>
@@ -559,18 +566,16 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                 <div className="text-center py-12 px-4 border border-dashed border-line rounded-3xl text-xs text-ink-muted">
                   <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                   <p className="font-semibold text-slate-700 dark:text-slate-300">
-                    {isRtl ? 'تاکنون انتقالی برای این پروژه ثبت نشده است' : 'No transfers recorded for this project yet'}
+                    {tx('No transfers have been recorded for this project yet.', 'تاکنون انتقالی برای این پروژه ثبت نشده است.', 'تر اوسه د دې پروژې لپاره کوم لېږد نه دی ثبت شوی.')}
                   </p>
                   <p className="mt-1 text-[11px] text-slate-400">
-                    {isRtl 
-                      ? `پروژه همچنان تحت مسئولیت «${currentOwnerName}» می‌باشد.` 
-                      : `The project remains under the ownership of "${currentOwnerName}".`}
+                    {tx(`The project remains under the responsibility of ${currentOwnerName}.`, `پروژه همچنان تحت مسئولیت «${currentOwnerName}» است.`, `پروژه لا هم د ${currentOwnerName} تر مسؤلیت لاندې ده.`)}
                   </p>
                   <button
                     onClick={() => setActiveTab('new_transfer')}
                     className="mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl text-xs transition"
                   >
-                    {isRtl ? 'ثبت اولین واگذاری' : 'Record First Handover'}
+                    {tx('Record first transfer', 'ثبت نخستین واگذاری', 'لومړی لېږد ثبت کړئ')}
                   </button>
                 </div>
               ) : (
@@ -591,7 +596,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                           </span>
                           {index === 0 && (
                             <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
-                              {isRtl ? 'مالک فعلی' : 'Current Owner'}
+                              {tx('Current owner', 'مالک فعلی', 'اوسنی مالک')}
                             </span>
                           )}
                         </div>
@@ -605,21 +610,21 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       {/* Middle Details Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                          <span className="text-[11px] text-slate-400 block">{isRtl ? 'مرحله کار در زمان انتقال' : 'Stage at Handover'}</span>
+                          <span className="text-[11px] text-slate-400 block">{tx('Stage at transfer', 'مرحلهٔ کار در زمان انتقال', 'د لېږد پر مهال د کار پړاو')}</span>
                           <span className="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block truncate">
                             {item.projectStage}
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                          <span className="text-[11px] text-slate-400 block">{isRtl ? 'ارزش کل واگذاری' : 'Total Transfer Value'}</span>
+                          <span className="text-[11px] text-slate-400 block">{tx('Total transfer value', 'ارزش کل واگذاری', 'د لېږد ټول ارزښت')}</span>
                           <span className="font-extrabold text-ink mt-0.5 block font-mono">
                             {formatCurrency(item.transferValue, item.currency)}
                           </span>
                         </div>
 
                         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                          <span className="text-[11px] text-slate-400 block">{isRtl ? 'تسویه‌شده / باقی‌داری' : 'Paid / Remaining'}</span>
+                          <span className="text-[11px] text-slate-400 block">{tx('Paid / remaining', 'تسویه‌شده / باقی‌داری', 'ورکړل شوي / پاتې')}</span>
                           <div className="mt-0.5 font-bold font-mono flex items-center gap-1 text-[11px]">
                             <span className="text-emerald-600">{formatNumber(item.amountPaid, 0)}</span>
                             <span className="text-slate-400">/</span>
@@ -631,7 +636,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                       {/* Notes if any */}
                       {item.notes && (
                         <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30 p-3 rounded-xl leading-relaxed">
-                          <strong>{isRtl ? 'شروط و توافقات:' : 'Notes:'}</strong> {item.notes}
+                          <strong>{tx('Notes and terms:', 'شروط و توافقات:', 'یادښتونه او شرطونه:')}</strong> {item.notes}
                         </p>
                       )}
 
@@ -646,7 +651,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 rounded-xl transition font-medium"
                             >
                               <FileCheck2 className="w-3.5 h-3.5" />
-                              <span className="truncate max-w-[200px]">{item.contractDocumentName || (isRtl ? 'سند قرارداد انتقال' : 'Contract Doc')}</span>
+                              <span className="truncate max-w-[200px]">{item.contractDocumentName || tx('Transfer contract', 'سند قرارداد انتقال', 'د لېږد تړون')}</span>
                               <Eye className="w-3 h-3 text-indigo-400" />
                             </a>
                           )}
@@ -659,7 +664,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 rounded-xl transition font-medium"
                             >
                               <Receipt className="w-3.5 h-3.5" />
-                              <span className="truncate max-w-[200px]">{item.receiptDocumentName || (isRtl ? 'رسید پرداخت' : 'Payment Receipt')}</span>
+                              <span className="truncate max-w-[200px]">{item.receiptDocumentName || tx('Payment receipt', 'رسید پرداخت', 'د تادیې رسید')}</span>
                               <Eye className="w-3 h-3 text-emerald-400" />
                             </a>
                           )}
@@ -679,7 +684,7 @@ export const ProjectTransferModal: React.FC<ProjectTransferModalProps> = ({
             onClick={onClose}
             className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl text-xs transition"
           >
-            {isRtl ? 'بستن' : 'Close'}
+            {tx('Close', 'بستن', 'بندول')}
           </button>
         </div>
       </div>

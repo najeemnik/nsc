@@ -1,0 +1,114 @@
+name: PHP and MySQL access-control verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: php-mysql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-mysql:
+    name: PHP ${{ matrix.php }} / ${{ matrix.database.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.2", "8.3"]
+        database:
+          - name: mysql-8.0
+            image: mysql:8.0
+          - name: mariadb-10.11
+            image: mariadb:10.11
+    services:
+      db:
+        image: ${{ matrix.database.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: nsc_ci_root
+          MYSQL_DATABASE: nsc_ci
+          MYSQL_USER: nsc_ci
+          MYSQL_PASSWORD: nsc_ci_password
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=nsc_ci_root --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+          --health-start-period=10s
+    env:
+      APP_ENV: test
+      APP_SECRET: nsc-ci-only-secret-never-used-outside-disposable-tests
+      APP_ALLOWED_ORIGINS: ""
+      DB_HOST: 127.0.0.1
+      DB_NAME: nsc_ci
+      DB_USER: nsc_ci
+      DB_PASS: nsc_ci_password
+      NSC_INTEGRATION_TEST: "1"
+      NSC_EMPLOYEE_ACCESS_ENABLED: "false"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, mysqli, pdo_mysql
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends default-mysql-client
+
+      - name: Verify PHP and database service
+        env:
+          DB_PORT: ${{ job.services.db.ports[3306] }}
+        run: |
+          php --version
+          mysql --version
+          mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" -e 'SELECT VERSION() AS database_version'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run PHP syntax and policy checks
+        run: |
+          find api scripts -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+          php scripts/verify-access-control.php
+
+      - name: Apply base schema and migrations to disposable database
+        env:
+          DB_PORT: ${{ job.services.db.ports[3306] }}
+        run: |
+          mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" < database/nsc_schema.sql
+          mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" < database/migrations/001_workspace_persistence.sql
+          mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" < database/migrations/002_construction_material_accounts.sql
+          # A second run checks the migration's idempotent path; this DB is created for this job only.
+          mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" < database/migrations/002_construction_material_accounts.sql
+          test "$(mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" --batch --skip-column-names -e "SELECT COUNT(*) FROM nsc_schema_migrations WHERE version = '001_workspace_persistence'")" = 1
+          test "$(mysql --protocol=TCP --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" --password="$DB_PASS" "$DB_NAME" --batch --skip-column-names -e "SELECT COUNT(*) FROM chart_of_accounts WHERE account_code = '55001'")" = 1
+
+      - name: Run PHP/MySQL HTTP integration and concurrency checks
+        env:
+          DB_PORT: ${{ job.services.db.ports[3306] }}
+        run: npm run verify:access-control-integration
+
+      - name: Run application checks
+        run: |
+          npm audit --audit-level=high
+          npm run lint
+          npm run verify:journal
+          npm run build

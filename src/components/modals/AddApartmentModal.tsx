@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { intlLocaleFor, localizeText } from '../../i18n/localize';
 import { Home, X, Check, Building, User, Phone, FileText, AlertCircle } from 'lucide-react';
 import { ApartmentStatus, UnitType } from '../../types';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
@@ -10,18 +11,20 @@ interface AddApartmentModalProps {
 }
 
 const SECTION_OPTIONS = [
-  'رخ سرک عمومی (رو به سرک)',
-  'آفتاب‌رخ (رو به جنوب)',
-  'شمالی (پشت به سرک)',
-  'بلاک شرقی (Block A)',
-  'بلاک غربی (Block B)',
-];
+  { value: 'رخ سرک عمومی (رو به سرک)', en: 'Street-facing', fa: 'رخ سرک عمومی (رو به سرک)', ps: 'د سړک مخامخ لوری' },
+  { value: 'آفتاب‌رخ (رو به جنوب)', en: 'South-facing', fa: 'آفتاب‌رخ (رو به جنوب)', ps: 'سویل ته مخامخ' },
+  { value: 'شمالی (پشت به سرک)', en: 'North-facing', fa: 'شمالی (پشت به سرک)', ps: 'شمال ته مخامخ' },
+  { value: 'بلاک شرقی (Block A)', en: 'East block (Block A)', fa: 'بلاک شرقی (Block A)', ps: 'ختیځ بلاک (Block A)' },
+  { value: 'بلاک غربی (Block B)', en: 'West block (Block B)', fa: 'بلاک غربی (Block B)', ps: 'لوېدیځ بلاک (Block B)' },
+] as const;
 
 export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addApartment, apartments, t } = useApp();
+  const { currentProject, addApartment, apartments, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const formatNumber = (value: number) => value.toLocaleString(intlLocaleFor(language));
   const [unitNumber, setUnitNumber] = useState('');
   const [floor, setFloor] = useState('3');
-  const [buildingSection, setBuildingSection] = useState('رخ سرک عمومی (رو به سرک)');
+  const [buildingSection, setBuildingSection] = useState<string>(SECTION_OPTIONS[0].value);
   const [customSection, setCustomSection] = useState('');
   const [unitType, setUnitType] = useState<UnitType>('apartment');
   const [areaM2, setAreaM2] = useState('120');
@@ -82,66 +85,79 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
     setFormError(null);
 
     if (!unitNumber.trim()) {
-      setFormError('شماره واحد یا آپارتمان الزامی است.');
+      setFormError(tx('Unit or apartment number is required.', 'شمارهٔ واحد یا آپارتمان الزامی است.', 'د اپارتمان یا واحد شمېره اړینه ده.'));
       return;
     }
     if (isNaN(parsedArea) || parsedArea <= 0) {
-      setFormError('مساحت واحد باید بزرگتر از صفر باشد.');
+      setFormError(tx('Unit area must be greater than zero.', 'مساحت واحد باید بیشتر از صفر باشد.', 'د واحد مساحت باید تر صفر لوړه وي.'));
       return;
     }
     if (finalTotalPriceUSD <= 0) {
-      setFormError('قیمت فروش واحد نامعتبر است.');
+      setFormError(tx('The sale price is invalid.', 'قیمت فروش واحد نامعتبر است.', 'د پلور بیه ناسمه ده.'));
       return;
     }
 
     const isDuplicate = apartments.some(
-      a => a.projectId === currentProject.id && 
+      a => a.projectId === currentProject.id &&
            a.unitNumber.trim().toLowerCase() === unitNumber.trim().toLowerCase()
     );
     if (isDuplicate) {
-      setFormError(`واحدی با شماره "${unitNumber.trim()}" قبلاً در این پروژه ثبت شده است.`);
+      setFormError(tx(`Unit ${unitNumber.trim()} is already registered for this project.`, `واحد شمارهٔ «${unitNumber.trim()}» پیش‌تر در این پروژه ثبت شده است.`, `د ${unitNumber.trim()} شمېرې واحد په دې پروژه کې مخکې ثبت شوی دی.`));
       return;
     }
 
     const initialDown = parseFloat(downPayment) || 0;
     if (initialDown < 0) {
-      setFormError('پیش‌پرداخت نمی‌تواند منفی باشد.');
+      setFormError(tx('The down payment cannot be negative.', 'پیش‌پرداخت نمی‌تواند منفی باشد.', 'مخکېنۍ ورکړه منفي کېدای نه شي.'));
       return;
     }
-    const initialDownUSD = currency === 'USD' 
-      ? initialDown 
+    const initialDownUSD = currency === 'USD'
+      ? initialDown
       : (exchangeRate > 0 ? parseFloat((initialDown / exchangeRate).toFixed(2)) : initialDown);
 
     if (initialDownUSD > finalTotalPriceUSD) {
-      setFormError('مبلغ پیش‌پرداخت نمی‌تواند بیشتر از کل قیمت واحد باشد.');
+      setFormError(tx('The down payment cannot exceed the unit price.', 'مبلغ پیش‌پرداخت نمی‌تواند بیشتر از قیمت کل واحد باشد.', 'مخکېنۍ ورکړه د واحد له ټولې بیې لوړه کېدای نه شي.'));
       return;
     }
 
     if (status !== 'available' && !buyerName.trim()) {
-      setFormError('نام خریدار برای واحدهای فروخته‌شده یا رزرو الزامی است.');
+      setFormError(tx('A buyer name is required for sold or reserved units.', 'برای واحد فروخته‌شده یا رزروشده نام خریدار الزامی است.', 'د پلورل شوي یا ساتل شوي واحد لپاره د پېرودونکي نوم اړین دی.'));
       return;
     }
 
     if (status !== 'available' && (!contractDate || isNaN(new Date(contractDate).getTime()))) {
-      setFormError('تاریخ قرارداد معتبر نیست.');
+      setFormError(tx('The contract date is invalid.', 'تاریخ قرارداد نامعتبر است.', 'د تړون نېټه ناسمه ده.'));
       return;
     }
 
     setIsSubmitting(true);
 
-    const actualSection = buildingSection === 'سایر' && customSection.trim() 
-      ? customSection.trim() 
+    const actualSection = buildingSection === 'custom' && customSection.trim()
+      ? customSection.trim()
       : buildingSection;
 
     const installments = initialDownUSD > 0 && status !== 'available' ? [
       {
         id: `inst_${Date.now()}`,
+        installmentNumber: 1,
         date: contractDate,
+        dueDate: contractDate,
         amount: initialDownUSD,
+        paidAmount: initialDownUSD,
+        remainingAmount: 0,
         currency: 'USD',
+        status: 'Paid' as const,
+        paymentHistory: [{
+          id: `payhist_${Date.now()}`,
+          paymentNumber: 1,
+          amount: initialDownUSD,
+          currency: 'USD',
+          date: contractDate,
+          notes: tx(`Initial purchase down payment (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`, `پیش‌پرداخت اولیهٔ خرید (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`, `د پېرلو لومړنۍ مخکېنۍ ورکړه (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`),
+        }],
         received: true,
         receivedDate: contractDate,
-        notes: `پیش‌پرداخت اولیه خرید (${currency === 'AFN' ? `${initialDown.toLocaleString()} AFN` : `$${initialDown.toLocaleString()}`})`,
+        notes: tx(`Initial purchase down payment (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`, `پیش‌پرداخت اولیهٔ خرید (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`, `د پېرلو لومړنۍ مخکېنۍ ورکړه (${currency === 'AFN' ? `${formatNumber(initialDown)} AFN` : `$${formatNumber(initialDown)}`})`),
       }
     ] : [];
 
@@ -179,15 +195,15 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
   };
 
   const initialDown = parseFloat(downPayment) || 0;
-  const initialDownUSD = currency === 'USD' 
-    ? initialDown 
+  const initialDownUSD = currency === 'USD'
+    ? initialDown
     : (exchangeRate > 0 ? parseFloat((initialDown / exchangeRate).toFixed(2)) : initialDown);
   const remainingInstallmentsUSD = Math.max(0, finalTotalPriceUSD - initialDownUSD);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/75 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto animate-in fade-in">
       <div className="bg-surface rounded-t-3xl sm:rounded-3xl safe-bottom-only shadow-2xl max-w-xl w-full max-h-[92dvh] flex flex-col overflow-hidden border border-line my-0 sm:my-auto">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-slate-900 text-white shrink-0">
           <div className="flex items-center space-x-2.5 rtl:space-x-reverse">
@@ -195,44 +211,44 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               <Home className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm">{t.addApartment || 'ثبت آپارتمان / فروش'}</h3>
+              <h3 className="font-extrabold text-sm">{tx('Register apartment / sale', 'ثبت آپارتمان / فروش', 'اپارتمان ثبت / پلور')}</h3>
               <p className="text-[11px] text-slate-400">{currentProject.name}</p>
             </div>
           </div>
-          <button 
-            type="button" 
-            onClick={onClose} 
+          <button
+            type="button"
+            onClick={onClose}
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs max-h-[80dvh] overflow-y-auto">
-          
+
           {formError && (
             <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span className="font-bold">{formError}</span>
             </div>
           )}
-          
+
           <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-line space-y-3">
             <div className="font-bold text-ink text-xs flex items-center gap-1.5 border-b border-slate-200/80 dark:border-slate-700 pb-2">
               <Building className="w-4 h-4 text-amber-600" />
-              <span>مشخصات ساختمانی واحد</span>
+              <span>{tx('Unit details', 'مشخصات ساختمانی واحد', 'د واحد معلومات')}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  شماره واحد <span className="text-rose-500">*</span>
+                  {tx('Unit number', 'شمارهٔ واحد', 'د واحد شمېره')} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="مثال: 301 یا A-4"
+                  placeholder={tx('e.g. 301 or A-4', 'مثال: ۳۰۱ یا A-4', 'لکه: ۳۰۱ یا A-4')}
                   value={unitNumber}
                   onChange={(e) => setUnitNumber(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-mono font-bold text-ink focus:ring-2 focus:ring-amber-500/20 text-xs"
@@ -240,7 +256,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  منزل <span className="text-rose-500">*</span>
+                  {tx('Floor', 'منزل', 'پوړ')} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -254,7 +270,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  مساحت (m²) <span className="text-rose-500">*</span>
+                  {tx('Area (m²)', 'مساحت (m²)', 'مساحت (m²)')} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -271,7 +287,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  جهت / موقعیت واحد
+                  {tx('Orientation / section', 'جهت / موقعیت واحد', 'لوری / برخه')}
                 </label>
                 <select
                   value={buildingSection}
@@ -279,14 +295,14 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-semibold text-ink"
                 >
                   {SECTION_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                    <option key={opt.value} value={opt.value}>{localizeText(language, { en: opt.en, fa: opt.fa, ps: opt.ps })}</option>
                   ))}
-                  <option value="سایر">موقعیت دیگر (دلخواه)</option>
+                  <option value="custom">{tx('Other (custom)', 'موقعیت دیگر (دلخواه)', 'بل (ځانګړی)')}</option>
                 </select>
-                {buildingSection === 'سایر' && (
+                {buildingSection === 'custom' && (
                   <input
                     type="text"
-                    placeholder="موقعیت دلخواه..."
+                    placeholder={tx('Custom section...', 'موقعیت دلخواه...', 'ځانګړې برخه...')}
                     value={customSection}
                     onChange={(e) => setCustomSection(e.target.value)}
                     className="w-full mt-1.5 px-3 py-1.5 border border-amber-300 rounded-lg text-xs"
@@ -295,18 +311,18 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  نوعیت کاربری
+                  {tx('Unit type', 'نوعیت کاربری', 'د واحد ډول')}
                 </label>
                 <select
                   value={unitType}
                   onChange={(e) => setUnitType(e.target.value as UnitType)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-semibold text-ink"
                 >
-                  <option value="apartment">آپارتمان رهایشی</option>
-                  <option value="penthouse">پنت‌هاوس (طبقه آخر)</option>
-                  <option value="shop">دکان تجارتی</option>
-                  <option value="office">دفتر کار</option>
-                  <option value="parking">پارکینگ اختصاصی</option>
+                  <option value="apartment">{tx('Apartment', 'آپارتمان رهایشی', 'استوګنیز اپارتمان')}</option>
+                  <option value="penthouse">{tx('Penthouse (top floor)', 'پنت‌هاوس (طبقهٔ آخر)', 'پېنټ‌هاوس (وروستی پوړ)')}</option>
+                  <option value="shop">{tx('Retail shop', 'دکان تجارتی', 'سوداګریز دوکان')}</option>
+                  <option value="office">{tx('Office', 'دفتر کار', 'دفتر')}</option>
+                  <option value="parking">{tx('Private parking', 'پارکینگ اختصاصی', 'ځانګړی پارکینګ')}</option>
                 </select>
               </div>
             </div>
@@ -314,7 +330,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
           <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-line space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 pb-2">
-              <span className="font-bold text-ink text-xs">وضعیت فروش و قیمت‌گذاری</span>
+              <span className="font-bold text-ink text-xs">{tx('Sale status and pricing', 'وضعیت فروش و قیمت‌گذاری', 'د پلور حالت او بیه ټاکل')}</span>
               <div className="flex items-center gap-1">
                 {(['sold', 'available', 'reserved'] as ApartmentStatus[]).map((st) => (
                   <button
@@ -331,7 +347,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                         : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
                     }`}
                   >
-                    {st === 'sold' ? 'فروخته شد' : st === 'reserved' ? 'رزرو' : 'آزاد'}
+                    {st === 'sold' ? tx('Sold', 'فروخته شد', 'پلورل شوی') : st === 'reserved' ? tx('Reserved', 'رزرو', 'ساتل شوی') : tx('Available', 'آزاد', 'شته')}
                   </button>
                 ))}
               </div>
@@ -344,15 +360,15 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               onChangeCurrency={setCurrency}
               exchangeRate={exchangeRate}
               onChangeExchangeRate={setExchangeRate}
-              label="قیمت کل فروش واحد"
+              label={tx('Total sale price', 'قیمت کل فروش واحد', 'د پلور ټولیزه بیه')}
               required={true}
               placeholder="75000"
             />
 
             <div className="flex justify-between items-center text-[11px] px-2 text-slate-600 dark:text-slate-400">
-              <span>قیمت فی متر مربع:</span>
+              <span>{tx('Price per square metre:', 'قیمت هر متر مربع:', 'د هر مربع متر بیه:')}</span>
               <span className="font-mono font-bold text-ink">
-                ${finalPricePerM2USD.toLocaleString()} / m²
+                ${formatNumber(finalPricePerM2USD)} / m²
               </span>
             </div>
           </div>
@@ -361,18 +377,18 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
             <div className="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/90 dark:border-amber-800 space-y-3 animate-in fade-in">
               <div className="font-bold text-ink text-xs flex items-center gap-1.5 border-b border-amber-200 dark:border-amber-800 pb-2">
                 <User className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                <span>مشخصات خریدار و پیش‌پرداخت</span>
+                <span>{tx('Buyer details and down payment', 'مشخصات خریدار و پیش‌پرداخت', 'د پېرودونکي معلومات او مخکېنۍ ورکړه')}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    نام و تخلص خریدار <span className="text-rose-500">*</span>
+                    {tx('Buyer name', 'نام و تخلص خریدار', 'د پېرودونکي نوم')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: حاجی عبدالهادی"
+                    placeholder={tx('e.g. Ahmad Khan', 'مثال: حاجی عبدالهادی', 'لکه: احمد خان')}
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink text-xs"
@@ -380,7 +396,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    شماره تماس خریدار
+                    {tx('Buyer phone', 'شماره تماس خریدار', 'د پېرودونکي ټیلیفون')}
                   </label>
                   <input
                     type="tel"
@@ -395,11 +411,11 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    شماره تذکره خریدار
+                    {tx('Buyer ID number', 'شماره تذکره خریدار', 'د پېرودونکي د تذکرې شمېره')}
                   </label>
                   <input
                     type="text"
-                    placeholder="جلد و صفحه یا الکترونیکی"
+                    placeholder={tx('Book/page or electronic ID', 'جلد و صفحه یا تذکرهٔ الکترونیکی', 'د تذکرې کتاب او پاڼه یا برېښنايي تذکره')}
                     value={buyerTazkira}
                     onChange={(e) => setBuyerTazkira(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs text-ink"
@@ -407,7 +423,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    تاریخ عقد قرارداد
+                    {tx('Contract date', 'تاریخ عقد قرارداد', 'د تړون نېټه')}
                   </label>
                   <input
                     type="date"
@@ -420,7 +436,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
 
               <div className="p-2.5 bg-surface rounded-xl border border-amber-300 dark:border-amber-700 space-y-1.5">
                 <label className="block font-bold text-ink">
-                  پیش‌پرداخت دریافت شده ({currency === 'USD' ? 'دالر $' : 'افغانی'})
+                  {tx(`Down payment received (${currency})`, `پیش‌پرداخت دریافت‌شده (${currency === 'USD' ? 'دالر $' : 'افغانی'})`, `ترلاسه شوې مخکېنۍ ورکړه (${currency})`) }
                 </label>
                 <input
                   type="number"
@@ -435,10 +451,10 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
           )}
 
           <div>
-            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">یادداشت</label>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Notes', 'یادداشت', 'یادښتونه')}</label>
             <textarea
               rows={2}
-              placeholder="توضیحات قرارداد یا نحوه اقساط..."
+              placeholder={tx('Contract or installment notes...', 'توضیحات قرارداد یا شیوهٔ پرداخت اقساط...', 'د تړون یا قسطونو په اړه یادښتونه...')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs bg-surface text-ink"
@@ -451,7 +467,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               onClick={onClose}
               className="flex-1 sm:flex-none px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition-colors text-center"
             >
-              <span>{t.cancel}</span>
+              <span>{tx('Cancel', 'لغو', 'لغوه کول')}</span>
               <span className="hidden sm:inline-block text-[10px] text-slate-400 ms-1">(Esc)</span>
             </button>
             <button
@@ -460,7 +476,7 @@ export const AddApartmentModal: React.FC<AddApartmentModalProps> = ({ isOpen, on
               className="flex-1 sm:flex-none px-6 py-2.5 bg-slate-900 dark:bg-amber-600 hover:bg-slate-800 text-amber-400 dark:text-white font-black rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              <span>{isSubmitting ? t.loading : (status === 'available' ? 'ثبت واحد جدید' : 'ثبت فروش واحد')}</span>
+              <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : (status === 'available' ? tx('Register unit', 'ثبت واحد جدید', 'واحد ثبت کړئ') : tx('Record sale', 'ثبت فروش واحد', 'پلور ثبت کړئ'))}</span>
             </button>
           </div>
         </form>

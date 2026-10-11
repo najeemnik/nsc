@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   BarChart3, 
   Printer, 
@@ -45,6 +46,7 @@ export const ReportsView: React.FC = () => {
     language,
     appSettings
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [reportType, setReportType] = useState<'financial' | 'materials' | 'contractors' | 'sales' | 'monthly_pnl'>('financial');
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
@@ -82,18 +84,18 @@ export const ReportsView: React.FC = () => {
 
   // 12 Months Cash Flow & Multi-Year P&L for selectedYear (Solves Excel Flaw #1)
   const monthNames = [
-    { num: 1, fa: 'حمل / جنوری', en: 'January' },
-    { num: 2, fa: 'ثور / فبروری', en: 'February' },
-    { num: 3, fa: 'جوزا / مارچ', en: 'March' },
-    { num: 4, fa: 'سرطان / اپریل', en: 'April' },
-    { num: 5, fa: 'اسد / می', en: 'May' },
-    { num: 6, fa: 'سنبله / جون', en: 'June' },
-    { num: 7, fa: 'میزان / جولای', en: 'July' },
-    { num: 8, fa: 'عقرب / اگست', en: 'August' },
-    { num: 9, fa: 'قوس / سپتمبر', en: 'September' },
-    { num: 10, fa: 'جدی / اکتوبر', en: 'October' },
-    { num: 11, fa: 'دلو / نوامبر', en: 'November' },
-    { num: 12, fa: 'حوت / دسمبر', en: 'December' },
+    { num: 1, fa: 'حمل / جنوری', en: 'January', ps: 'وری / جنوري' },
+    { num: 2, fa: 'ثور / فبروری', en: 'February', ps: 'غویی / فبروري' },
+    { num: 3, fa: 'جوزا / مارچ', en: 'March', ps: 'غبرګولی / مارچ' },
+    { num: 4, fa: 'سرطان / اپریل', en: 'April', ps: 'چنګاښ / اپرېل' },
+    { num: 5, fa: 'اسد / می', en: 'May', ps: 'زمری / مې' },
+    { num: 6, fa: 'سنبله / جون', en: 'June', ps: 'وږی / جون' },
+    { num: 7, fa: 'میزان / جولای', en: 'July', ps: 'تله / جولای' },
+    { num: 8, fa: 'عقرب / اگست', en: 'August', ps: 'لړم / اګست' },
+    { num: 9, fa: 'قوس / سپتمبر', en: 'September', ps: 'لېندۍ / سپټمبر' },
+    { num: 10, fa: 'جدی / اکتوبر', en: 'October', ps: 'مرغومی / اکتوبر' },
+    { num: 11, fa: 'دلو / نوامبر', en: 'November', ps: 'سلواغه / نومبر' },
+    { num: 12, fa: 'حوت / دسمبر', en: 'December', ps: 'کب / ډسمبر' },
   ];
 
   const rateAFN = (appSettings as any)?.exchangeRate || 70;
@@ -123,7 +125,7 @@ export const ReportsView: React.FC = () => {
         if (!p.date) return false;
         const d = new Date(p.date);
         const matches = d.getFullYear() === selectedYear && (d.getMonth() + 1) === m.num;
-        return matches && ((p as any).paymentType === 'income' || (p as any).type === 'income' || p.recipientType === 'apartment_buyer');
+        return matches && ((p as any).paymentType === 'income' || (p as any).type === 'income' || p.relatedType === 'apartment_sale');
       });
       let cashInflowUSD = mInflows.reduce((sum, p) => sum + (p.amountUSD || 0), 0);
       if (cashInflowUSD === 0 && mSales.length > 0) {
@@ -199,7 +201,7 @@ export const ReportsView: React.FC = () => {
 
       {/* Printable Report Header */}
       <div className="hidden print:block text-center border-b pb-4 mb-6">
-        <h1 className="text-2xl font-black text-slate-900">NIK SMART COUNT - EXECUTIVE AUDIT REPORT</h1>
+        <h1 className="text-2xl font-black text-slate-900">{tx('NIK SMART COUNT - EXECUTIVE AUDIT REPORT', 'نیک اسمارت کانت - گزارش حسابرسی اجرایی', 'نیک سمارټ کاونټ - د اجرائیوي پلټنې راپور')}</h1>
         <p className="text-sm font-bold text-slate-700 mt-1">{currentProject?.name} ({currentProject?.code})</p>
         <p className="text-xs text-slate-500">{new Date().toLocaleDateString()}</p>
       </div>
@@ -214,7 +216,7 @@ export const ReportsView: React.FC = () => {
               : 'text-slate-600 dark:text-slate-400'
           }`}
         >
-          {t('financialBalanceSheet') || 'Balance Sheet'}
+          {t('financialBalanceSheet') || t("accTabBalance")}
         </button>
         <button
           onClick={() => setReportType('materials')}
@@ -254,7 +256,7 @@ export const ReportsView: React.FC = () => {
               : 'text-slate-600 dark:text-slate-400'
           }`}
         >
-          {language === 'fa' ? 'سود و زیان و گردش ۱۲ ماهه (P&L)' : 'Monthly P&L & Cash Flow'}
+          {tx('Monthly P&L & Cash Flow', 'سود و زیان و گردش ۱۲ ماهه (P&L)', 'میاشتنی ګټه او زیان او د نغدو پیسو جریان (P&L)')}
         </button>
       </div>
 
@@ -321,7 +323,7 @@ export const ReportsView: React.FC = () => {
                   <Layers className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-ink">{t('steelRebar') || 'Steel / Rebar'}</h3>
+                  <h3 className="font-bold text-base text-ink">{t('steelRebar') || t("navSteel")}</h3>
                   <p className="text-xs text-slate-400">{projectSteel.length} {t('purchasesRecorded') || 'Purchases'}</p>
                 </div>
               </div>
@@ -347,7 +349,7 @@ export const ReportsView: React.FC = () => {
                   <CircleDot className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-ink">{t('concrete') || 'Concrete'}</h3>
+                  <h3 className="font-bold text-base text-ink">{t('concrete') || t("navConcrete")}</h3>
                   <p className="text-xs text-slate-400">{projectConcrete.length} {t('poursRecorded') || 'Pours'}</p>
                 </div>
               </div>
@@ -436,13 +438,11 @@ export const ReportsView: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-black text-sm text-ink flex items-center gap-2">
-                  <span>{language === 'fa' ? 'گزارش سود/زیان و جریان نقدینگی ماهانه (P&L vs Cash Flow)' : 'Annual Cash Flow & Accrual P&L'}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 font-bold">MBA Standard</span>
+                  <span>{tx('Annual Cash Flow & Accrual P&L', 'گزارش سالانه سود/زیان تعهدی و جریان نقدی', 'کلنی راپور: تعهد شوې ګټه او زیان او د نغدو پیسو جریان')}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 font-bold">{tx('MBA standard', 'استاندارد MBA', 'د MBA معیار')}</span>
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  {language === 'fa' 
-                    ? 'تفکیک جریان وجوه نقد (نقد ورودی و خروجی) از سود تعهدی حسابداری با جلوگیری از تداخل سال‌ها' 
-                    : 'Clean monthly breakdown strictly isolating Accrual Net Profit from Cash Movement'}
+                  {tx('Monthly view separating accrual profit from cash movement.', 'تفکیک ماهانهٔ سود تعهدی از جریان نقدی، بدون تداخل سال‌ها.', 'میاشتنی بڼه چې تعهد شوې ګټه د نغدو پیسو له جریان څخه جلا ښيي.')}
                 </p>
               </div>
             </div>
@@ -455,21 +455,21 @@ export const ReportsView: React.FC = () => {
                   onClick={() => setPnlViewMode('all')}
                   className={`px-3 py-1.5 rounded-xl transition ${pnlViewMode === 'all' ? 'bg-surface text-ink shadow-xs' : 'text-slate-500'}`}
                 >
-                  {language === 'fa' ? 'تحلیل تطبیقی کامل' : 'All Comparison'}
+                  {tx('All comparisons', 'تحلیل تطبیقی کامل', 'بشپړه پرتله')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPnlViewMode('cash')}
                   className={`px-3 py-1.5 rounded-xl transition ${pnlViewMode === 'cash' ? 'bg-surface text-ink shadow-xs' : 'text-slate-500'}`}
                 >
-                  {language === 'fa' ? 'فقط جریان نقدینگی' : 'Cash Flow Only'}
+                  {tx('Cash flow only', 'فقط جریان نقدینگی', 'یوازې د نغدو پیسو جریان')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPnlViewMode('accrual')}
                   className={`px-3 py-1.5 rounded-xl transition ${pnlViewMode === 'accrual' ? 'bg-surface text-ink shadow-xs' : 'text-slate-500'}`}
                 >
-                  {language === 'fa' ? 'فقط سود و زیان (P&L)' : 'Accrual P&L Only'}
+                  {tx('Accrual P&L only', 'فقط سود و زیان تعهدی (P&L)', 'یوازې تعهد شوې ګټه او زیان (P&L)')}
                 </button>
               </div>
 
@@ -497,7 +497,7 @@ export const ReportsView: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedYear(y => y - 1)}
                   className="p-1.5 rounded-xl hover:bg-surface text-slate-600 dark:text-slate-300 transition"
-                  title="سال قبل"
+                  title={tx('Previous year', 'سال قبل', 'تېر کال')}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -508,7 +508,7 @@ export const ReportsView: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedYear(y => y + 1)}
                   className="p-1.5 rounded-xl hover:bg-surface text-slate-600 dark:text-slate-300 transition"
-                  title="سال بعد"
+                  title={tx('Next year', 'سال بعد', 'راتلونکی کال')}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -521,70 +521,70 @@ export const ReportsView: React.FC = () => {
             {/* Revenue */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'عواید تعهدی سال' : 'Accrual Revenue'}
+                {tx('Accrual revenue for the year', 'عواید تعهدی سال', 'د کال تعهد شوي عواید')}
               </span>
               <p className="text-lg font-black text-ink mt-1 font-mono">
                 {formatCurrency(yearTotalRevenue, pnlCurrency)}
               </p>
-              <span className="text-[10px] text-indigo-500 font-semibold block mt-0.5">قراردادهای امضاشده</span>
+              <span className="text-[10px] text-indigo-500 font-semibold block mt-0.5">{tx('Signed contracts', 'قراردادهای امضاشده', 'لاسلیک شوي تړونونه')}</span>
             </div>
 
             {/* Expenses */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'مصارف تعهدی سال' : 'Incurred Costs'}
+                {tx('Incurred costs for the year', 'مصارف تعهدی سال', 'د کال واقع شوي لګښتونه')}
               </span>
               <p className="text-lg font-black text-rose-600 mt-1 font-mono">
                 {formatCurrency(yearTotalExpense, pnlCurrency)}
               </p>
-              <span className="text-[10px] text-rose-500 font-semibold block mt-0.5">فاکتورهای تدارکاتی</span>
+              <span className="text-[10px] text-rose-500 font-semibold block mt-0.5">{tx('Supplier invoices', 'فاکتورهای تدارکاتی', 'د عرضه‌کوونکو بلونه')}</span>
             </div>
 
             {/* Accrual Profit */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'سود عملیاتی (P&L)' : 'Net Operating Profit'}
+                {tx('Net operating profit (P&L)', 'سود عملیاتی (P&L)', 'خالصه عملیاتي ګټه (P&L)')}
               </span>
               <p className={`text-lg font-black mt-1 font-mono ${yearTotalAccrualProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {formatCurrency(yearTotalAccrualProfit, pnlCurrency)}
               </p>
               <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                حاشیه سود: {yearProfitMargin.toFixed(1)}%
+                {tx('Profit margin:', 'حاشیه سود:', 'د ګټې کچه:')} {yearProfitMargin.toFixed(1)}%
               </span>
             </div>
 
             {/* Cash Inflow */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'ورودی نقدینگی' : 'Cash Inflow'}
+                {tx('Cash inflow', 'ورودی نقدینگی', 'نغدي داخلېدنه')}
               </span>
               <p className="text-lg font-black text-emerald-600 mt-1 font-mono">
                 {formatCurrency(yearTotalInflow, pnlCurrency)}
               </p>
-              <span className="text-[10px] text-emerald-500 font-semibold block mt-0.5">وصولی نقد و بانک</span>
+              <span className="text-[10px] text-emerald-500 font-semibold block mt-0.5">{tx('Cash and bank receipts', 'وصولی نقد و بانک', 'نغدي او بانکي ترلاسه‌کړې')}</span>
             </div>
 
             {/* Cash Outflow */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'خروجی نقدینگی' : 'Cash Outflow'}
+                {tx('Cash outflow', 'خروجی نقدینگی', 'نغدي وتل')}
               </span>
               <p className="text-lg font-black text-rose-600 mt-1 font-mono">
                 {formatCurrency(yearTotalOutflow, pnlCurrency)}
               </p>
-              <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">پرداخت‌های نقدی</span>
+              <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{tx('Cash payments', 'پرداخت‌های نقدی', 'نغدي ورکړې')}</span>
             </div>
 
             {/* Net Cash Movement */}
             <div className="p-4 rounded-3xl bg-surface border border-line shadow-xs">
               <span className="text-[11px] text-slate-400 font-bold block">
-                {language === 'fa' ? 'خالص گردش نقدینگی' : 'Net Cash Movement'}
+                {tx('Net cash movement', 'خالص گردش نقدینگی', 'د نغدو پیسو خالص جریان')}
               </span>
               <p className={`text-lg font-black mt-1 font-mono ${yearNetCashMovement >= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {formatCurrency(yearNetCashMovement, pnlCurrency)}
               </p>
               <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                پایان سال: {formatCurrency(yearEndingCash, pnlCurrency)}
+                {tx('Year-end balance:', 'ماندهٔ پایان سال:', 'د کال د پای نغدي بیلانس:')} {formatCurrency(yearEndingCash, pnlCurrency)}
               </span>
             </div>
           </div>
@@ -601,31 +601,35 @@ export const ReportsView: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-bold text-xs text-ink flex items-center gap-2">
-                  <span>{language === 'fa' ? 'ارزیابی مهندسی مالی MBA (تحلیل مغایرت سود تعهدی و نقدینگی):' : 'MBA Financial Health Diagnostic:'}</span>
+                  <span>{tx('Financial health check (accrual profit vs cash):', 'ارزیابی وضعیت مالی (مقایسهٔ سود تعهدی و نقدینگی):', 'د مالي حالت ارزونه (تعهد شوې ګټه او نغدي جریان):')}</span>
                   <span className="font-mono text-purple-600">
-                    شکاف نقدینگی: {formatCurrency(totalVarianceProfitVsCash, pnlCurrency)}
+                    {tx('Cash gap:', 'فاصلهٔ نقدی:', 'د نغدو پیسو توپیر:')} {formatCurrency(totalVarianceProfitVsCash, pnlCurrency)}
                   </span>
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                  {yearTotalAccrualProfit > 0 && yearNetCashMovement < 0 ? (
-                    language === 'fa' 
-                      ? '⚠️ هشدار تله نقدینگی (Cash Crunch): پروژه در حسابداری سودآور است، اما به دلیل وصول نشدن اقساط خریداران، مانده جریان نقد منفی است. وصول مطالبات فوری از مشتریان اولویت حیاتی دارد.'
-                      : '⚠️ Working Capital Gap: Project shows accounting profit, but cash movement is negative due to delayed receivables. Expedite customer collections.'
-                  ) : yearTotalAccrualProfit > 0 && yearNetCashMovement >= 0 ? (
-                    language === 'fa'
-                      ? '✅ وضعیت متعادل و باثبات (Optimal Liquidity): هر دو شاخص سود خالص تعهدی و جریان نقدینگی مثبت هستند و پروژه توانایی کامل انجام تعهدات کارگاهی را داراست.'
-                      : '✅ Balanced Financial Health: Both Net Profit and Net Cash Movement are positive. Project maintains excellent solvency.'
-                  ) : (
-                    language === 'fa'
-                      ? 'ℹ️ ورود نقدینگی موقت (Advance Cash): نقدینگی موجود عمدتاً از محل پیش‌دریافت‌ها است در حالی که هزینه‌های واقع‌شده بیشتر از عواید قطعی بوده‌اند.'
-                      : 'ℹ️ Cash advances cushion pending milestones. Monitor cost control to protect target profit margin.'
-                  )}
+                  {yearTotalAccrualProfit > 0 && yearNetCashMovement < 0
+                    ? tx(
+                      '⚠️ Working capital gap: the project is profitable on paper, but cash flow is negative because customer installments are late. Prioritize collecting receivables.',
+                      '⚠️ هشدار کمبود نقدینگی: پروژه در حسابداری سودآور است، اما به دلیل تأخیر اقساط مشتریان، جریان نقدی منفی است. پی‌گیری فوری طلب‌ها را در اولویت بگذارید.',
+                      '⚠️ د کاري پانګې کمښت: پروژه په حسابونو کې ګټوره ده، خو د پېرودونکو د قسطونو د ځنډ له امله نغدي جریان منفي دی. د پورونو راټولول لومړیتوب وګرځوئ.',
+                    )
+                    : yearTotalAccrualProfit > 0 && yearNetCashMovement >= 0
+                      ? tx(
+                        '✅ Balanced finances: both accrual profit and cash flow are positive, so the project can meet its obligations.',
+                        '✅ وضعیت مالی متعادل است: سود تعهدی و جریان نقدی هر دو مثبت‌اند و پروژه توان انجام تعهدات خود را دارد.',
+                        '✅ مالي حالت متوازن دی: تعهد شوې ګټه او نغدي جریان دواړه مثبت دي، نو پروژه خپل مکلفیتونه پوره کولای شي.',
+                      )
+                      : tx(
+                        'ℹ️ Cash is currently supported mainly by advances, while incurred costs exceed confirmed revenue. Monitor costs and milestones.',
+                        'ℹ️ نقدینگی موجود بیشتر از پیش‌دریافت‌ها تأمین شده است، در حالی‌که مصارف واقع‌شده از عواید قطعی بیشتر است. مصارف و مراحل را بررسی کنید.',
+                        'ℹ️ اوسنی نغدي حالت تر ډېره د مخکینیو ورکړو له امله دی، حال دا چې واقع شوي لګښتونه له تایید شویو عوایدو زیات دي. لګښتونه او پړاوونه وڅارئ.',
+                      )}
                 </p>
               </div>
             </div>
 
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 font-bold block">مانده انباشته نقد کارگاه:</span>
+              <span className="text-[10px] text-slate-400 font-bold block">{tx('Cumulative site cash balance:', 'ماندهٔ انباشتهٔ نقد کارگاه:', 'د کارځای د نغدو پیسو ټولیز بیلانس:')}</span>
               <span className={`text-base font-black font-mono ${yearEndingCash >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {formatCurrency(yearEndingCash, pnlCurrency)}
               </span>
@@ -638,13 +642,15 @@ export const ReportsView: React.FC = () => {
               <h3 className="font-bold text-sm sm:text-base text-ink flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-purple-500" />
                 <span>
-                  {language === 'fa' 
-                    ? `جدول ماهانه مهندسی مالی سال ${selectedYear} (${pnlCurrency})` 
-                    : `12-Month Performance Statement for ${selectedYear} (${pnlCurrency})`}
+                  {tx(
+                    `12-month performance statement for ${selectedYear} (${pnlCurrency})`,
+                    `جدول ماهانهٔ مالی سال ${selectedYear} (${pnlCurrency})`,
+                    `د ${selectedYear} کال د مالي فعالیت ۱۲ میاشتنۍ پاڼه (${pnlCurrency})`,
+                  )}
                 </span>
               </h3>
               <span className="text-[11px] text-slate-400 font-mono">
-                نرخ تسعیر: ۱ دلار = {rateAFN} افغانی
+                {tx('Exchange rate:', 'نرخ تبادله:', 'د تبادلې نرخ:')} 1 USD = {rateAFN} AFN
               </span>
             </div>
 
@@ -653,26 +659,26 @@ export const ReportsView: React.FC = () => {
                 <thead className="bg-surface-2/70 font-bold border-b border-line text-slate-500">
                   <tr>
                     <th className="py-3 px-3">#</th>
-                    <th className="py-3 px-3">{language === 'fa' ? 'ماه مالی' : 'Month'}</th>
+                    <th className="py-3 px-3">{tx('Month', 'ماه مالی', 'میاشت')}</th>
 
                     {(pnlViewMode === 'all' || pnlViewMode === 'accrual') && (
                       <>
-                        <th className="py-3 px-3">{language === 'fa' ? 'عواید تعهدی' : 'Revenue'}</th>
-                        <th className="py-3 px-3">{language === 'fa' ? 'مصارف تعهدی' : 'Costs'}</th>
-                        <th className="py-3 px-3">{language === 'fa' ? 'سود/زیان ماه' : 'Net Profit'}</th>
+                        <th className="py-3 px-3">{tx('Revenue', 'عواید تعهدی', 'تعهد شوي عواید')}</th>
+                        <th className="py-3 px-3">{tx('Costs', 'مصارف تعهدی', 'لګښتونه')}</th>
+                        <th className="py-3 px-3">{tx('Net profit', 'سود/زیان ماه', 'خالصه ګټه')}</th>
                       </>
                     )}
 
                     {(pnlViewMode === 'all' || pnlViewMode === 'cash') && (
                       <>
-                        <th className="py-3 px-3">{language === 'fa' ? 'نقد ورودی' : 'Cash In'}</th>
-                        <th className="py-3 px-3">{language === 'fa' ? 'نقد خروجی' : 'Cash Out'}</th>
-                        <th className="py-3 px-3">{language === 'fa' ? 'خالص نقدینگی' : 'Net Cash'}</th>
-                        <th className="py-3 px-3 text-right">{language === 'fa' ? 'مانده تجمعی نقد' : 'Cumul. Cash'}</th>
+                        <th className="py-3 px-3">{tx('Cash in', 'نقد ورودی', 'نغدي داخلېدنه')}</th>
+                        <th className="py-3 px-3">{tx('Cash out', 'نقد خروجی', 'نغدي وتل')}</th>
+                        <th className="py-3 px-3">{tx('Net cash', 'خالص نقدینگی', 'خالص نغدي جریان')}</th>
+                        <th className="py-3 px-3 text-right">{tx('Cumulative cash', 'ماندهٔ تجمعی نقد', 'ټولې شوې نغدې پیسې')}</th>
                       </>
                     )}
 
-                    <th className="py-3 px-3 text-center">{language === 'fa' ? 'وضعیت مالی' : 'Status'}</th>
+                    <th className="py-3 px-3 text-center">{tx('Financial status', 'وضعیت مالی', 'مالي حالت')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -684,7 +690,7 @@ export const ReportsView: React.FC = () => {
                       <tr key={m.num} className="hover:bg-surface-2/40 transition">
                         <td className="py-3 px-3 font-mono text-slate-400">{m.num}</td>
                         <td className="py-3 px-3 font-bold text-slate-800 dark:text-slate-100">
-                          {language === 'fa' ? m.fa : m.en}
+                          {localizeText(language, { en: m.en, fa: m.fa, ps: m.ps })}
                         </td>
 
                         {(pnlViewMode === 'all' || pnlViewMode === 'accrual') && (
@@ -724,7 +730,7 @@ export const ReportsView: React.FC = () => {
                             isCashCrunch ? 'bg-amber-500/10 text-amber-600' :
                             'bg-slate-200 dark:bg-slate-800 text-slate-500'
                           }`}>
-                            {isHealthy ? 'مطلوب' : isCashCrunch ? 'کسری نقد' : 'عادی'}
+                            {isHealthy ? tx('Healthy', 'مطلوب', 'ښه') : isCashCrunch ? tx('Cash deficit', 'کسری نقد', 'د نغدو پیسو کموالی') : tx('Normal', 'عادی', 'عادي')}
                           </span>
                         </td>
                       </tr>

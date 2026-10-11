@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Building2, X, Plus, Trash2, Receipt, ArrowRight, Check, AlertCircle, Users, Coins, PieChart } from 'lucide-react';
 import { GeneralExpenseItem, ProjectPartner } from '../../types';
 
@@ -13,20 +14,28 @@ interface InitialPartnerRow {
   notes: string;
 }
 
+const DEFAULT_GENERAL_EXPENSES = [
+  { en: 'Excavation and truck hire (debris removal)', fa: 'خاک‌برداری و کرایهٔ موتر (انتقال نخاله)', ps: 'کیندنه او د موټر کرایه (د کثافاتو لېږد)' },
+  { en: 'Municipal fees and building permit', fa: 'فیس ناحیه و شاروالی (جواز اعمار)', ps: 'د ناحیې او ښاروالۍ فیس (د ودانۍ جواز)' },
+  { en: 'Meals and food for workers', fa: 'نان، غذا و مصارف کارگران', ps: 'د کارګرانو ډوډۍ او خواړه' },
+] as const;
+
 interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose }) => {
-  const { projects, addProject, t } = useApp();
+  const { projects, addProject, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [activeStep, setActiveStep] = useState<'info' | 'expenses' | 'partners'>('info');
 
   // Basic Information
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('کابل');
+  const [city, setCity] = useState(() => tx('Kabul', 'کابل', 'کابل'));
+  const [cityEdited, setCityEdited] = useState(false);
   const [floors, setFloors] = useState('8');
   const [units, setUnits] = useState('32');
   const [buildingArea, setBuildingArea] = useState('4500');
@@ -79,11 +88,24 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
   };
 
   // General Expenses for this project
-  const [generalExpenses, setGeneralExpenses] = useState<GeneralExpenseItem[]>([
-    { id: '1', title: 'خاکبرداری و کرایه موتر (حمل آوار)', amount: 0, currency: 'USD', notes: '' },
-    { id: '2', title: 'تعرفه ناحیه و شاروالی (جواز اعمار)', amount: 0, currency: 'USD', notes: '' },
-    { id: '3', title: 'نان، غذا و مصارف کارگران', amount: 0, currency: 'USD', notes: '' },
-  ]);
+  const [generalExpenses, setGeneralExpenses] = useState<GeneralExpenseItem[]>(() => DEFAULT_GENERAL_EXPENSES.map((title, index) => ({
+    id: String(index + 1),
+    title: localizeText(language, title),
+    amount: 0,
+    currency: 'USD',
+    notes: '',
+  })));
+  const [editedExpenseIds, setEditedExpenseIds] = useState<Set<string>>(() => new Set());
+
+  React.useEffect(() => {
+    if (!cityEdited) setCity(tx('Kabul', 'کابل', 'کابل'));
+    setGeneralExpenses(current => current.map(expense => {
+      const defaultTitle = DEFAULT_GENERAL_EXPENSES[Number(expense.id) - 1];
+      if (!defaultTitle || editedExpenseIds.has(expense.id)) return expense;
+      const title = localizeText(language, defaultTitle);
+      return expense.title === title ? expense : { ...expense, title };
+    }));
+  }, [language, cityEdited, editedExpenseIds]);
 
   if (!isOpen) return null;
 
@@ -105,6 +127,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
   };
 
   const handleUpdateExpenseRow = (id: string, field: keyof GeneralExpenseItem, value: any) => {
+    if (field === 'title') setEditedExpenseIds(previous => new Set(previous).add(id));
     setGeneralExpenses(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
@@ -113,27 +136,27 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
     setFormError(null);
 
     if (!name.trim()) {
-      setFormError('نام پروژه ساختمانی الزامی است.');
+      setFormError(tx('Project name is required.', 'نام پروژهٔ ساختمانی الزامی است.', 'د ودانیزې پروژې نوم اړین دی.')) ;
       setActiveStep('info');
       return;
     }
 
     const isDuplicate = projects.some(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
     if (isDuplicate) {
-      setFormError(`پروژه‌ای با نام "${name.trim()}" قبلاً ثبت شده است.`);
+      setFormError(tx(`A project named ${name.trim()} already exists.`, `پروژه‌ای با نام «${name.trim()}» پیش‌تر ثبت شده است.`, `د ${name.trim()} په نوم پروژه مخکې ثبت شوې ده.`));
       setActiveStep('info');
       return;
     }
 
     const parsedFloors = parseInt(floors);
     if (isNaN(parsedFloors) || parsedFloors <= 0) {
-      setFormError('تعداد منازل باید عددی معتبر و بزرگتر از صفر باشد.');
+      setFormError(tx('The number of floors must be a valid number greater than zero.', 'تعداد منزل‌ها باید عدد معتبر و بیشتر از صفر باشد.', 'د پوړونو شمېر باید له صفر څخه لوی معتبر عدد وي.'));
       setActiveStep('info');
       return;
     }
 
     if (isNaN(exchangeRate) || exchangeRate <= 0) {
-      setFormError('نرخ تبدیل اسعار باید عددی بزرگتر از صفر باشد.');
+      setFormError(tx('The exchange rate must be a valid number greater than zero.', 'نرخ تبادله باید عدد معتبر و بیشتر از صفر باشد.', 'د تبادلې نرخ باید له صفر څخه لوی معتبر عدد وي.'));
       setActiveStep('info');
       return;
     }
@@ -155,7 +178,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
       .map(p => ({
         id: `part-init-${Date.now()}-${p.id}`,
         projectId: '',
-        name: p.name.trim() || 'شریک',
+        name: p.name.trim() || tx('Partner', 'شریک', 'شریک'),
         phone: p.phone.trim() || undefined,
         initialInvestment: typeof p.initialInvestment === 'number' ? p.initialInvestment : undefined,
         sharePercentage: typeof p.sharePercentage === 'number' ? p.sharePercentage : undefined,
@@ -168,17 +191,17 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
     addProject({
       name: name.trim(),
       code: code.trim() || `PRJ-${Date.now().toString().slice(-4)}`,
-      address: address.trim() || 'کابل',
-      city: city.trim() || 'کابل',
+      address: address.trim() || tx('Kabul', 'کابل', 'کابل'),
+      city: city.trim() || tx('Kabul', 'کابل', 'کابل'),
       floors: parsedFloors,
       units: parseInt(units) || 1,
       buildingArea: parseFloat(buildingArea) || 100,
-      clientOwner: 'صاحب پروژه',
+      clientOwner: tx('Project owner', 'صاحب پروژه', 'د پروژې خاوند'),
       startDate: new Date().toISOString().split('T')[0],
       expectedCompletionDate: new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0],
       projectImage: projectImage || 'https://images.unsplash.com/photo-1541888946425-d0fbb18615f3?w=800&auto=format&fit=crop&q=80',
-      landInfo: landInfo.trim() || 'زمین ملکیت پروژه',
-      description: 'پروژه ساختمانی جدید',
+      landInfo: landInfo.trim() || tx('Project-owned land', 'زمین ملکیت پروژه', 'د پروژې ملکیت ځمکه'),
+      description: tx('New construction project', 'پروژهٔ ساختمانی جدید', 'نوې ودانیزه پروژه'),
       status: 'in_construction',
       currency,
       defaultExchangeRate: exchangeRate,
@@ -201,8 +224,8 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm">{t.newProject || 'ثبت پروژه ساختمانی جدید'}</h3>
-              <p className="text-[11px] text-slate-400">مشخصات تعمیر، مصارف ابتدایی و شرکا</p>
+              <h3 className="font-extrabold text-sm">{tx('Create a new construction project', 'ثبت پروژهٔ ساختمانی جدید', 'نوې ودانیزه پروژه جوړه کړئ')}</h3>
+              <p className="text-[11px] text-slate-400">{tx('Project details, initial costs, and partners', 'مشخصات ساختمان، مصارف ابتدایی و شرکا', 'د ودانۍ معلومات، لومړني لګښتونه او شریکان')}</p>
             </div>
           </div>
           <button 
@@ -225,7 +248,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            مشخصات تعمیر
+            {tx('Project details', 'مشخصات ساختمان', 'د پروژې معلومات')}
           </button>
           <button
             type="button"
@@ -237,7 +260,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
             }`}
           >
             <Receipt className="w-3.5 h-3.5 text-amber-600" />
-            <span>مصارف عمومی اولیه</span>
+            <span>{tx('Initial expenses', 'مصارف عمومی اولیه', 'لومړني لګښتونه')}</span>
           </button>
           <button
             type="button"
@@ -249,7 +272,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
             }`}
           >
             <Users className="w-3.5 h-3.5 text-amber-600" />
-            <span>شرکا (اختیاری)</span>
+            <span>{tx('Partners (optional)', 'شرکا (اختیاری)', 'شریکان (اختیاري)')}</span>
           </button>
         </div>
 
@@ -269,13 +292,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.projectName || 'نام پروژه / ساختمان'} <span className="text-rose-500">*</span>
+                    {t.projectName || tx('Project / building name', 'نام پروژه / ساختمان', 'د پروژې / ودانۍ نوم')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     autoFocus
-                    placeholder="مثال: کابل پلازا"
+                    placeholder={tx('e.g. Kabul Plaza', 'مثال: کابل پلازا', 'لکه: کابل پلازا')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -283,11 +306,11 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.projectCode || 'کد اختصاصی'}
+                    {t.projectCode || tx('Project code', 'کد اختصاصی', 'د پروژې کوډ')}
                   </label>
                   <input
                     type="text"
-                    placeholder="مثال: KP-18"
+                    placeholder={tx('e.g. KP-18', 'مثال: KP-18', 'لکه: KP-18')}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-mono"
@@ -298,25 +321,25 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.city || 'شهر / ولایت'} <span className="text-rose-500">*</span>
+                    {t.city || tx('City / province', 'شهر / ولایت', 'ښار / ولایت')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="کابل / هرات / مزار"
+                    placeholder={tx('Kabul / Herat / Mazar', 'کابل / هرات / مزار', 'کابل / هرات / مزار')}
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => { setCity(e.target.value); setCityEdited(true); }}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.address || 'آدرس و ناحیه'}
+                    {t.address || tx('Address / district', 'آدرس و ناحیه', 'پته / ناحیه')}
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: شهر نو، چهارراهی انصاری"
+                    placeholder={tx('e.g. Shahr-e Naw, Ansari crossroads', 'مثال: شهر نو، چهارراهی انصاری', 'لکه: شهر نو، انصاري څلورلارې')}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -327,7 +350,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.floors || 'تعداد منازل'} <span className="text-rose-500">*</span>
+                    {t.floors || tx('Number of floors', 'تعداد منزل‌ها', 'د پوړونو شمېر')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -340,7 +363,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    {t.units || 'تعداد واحدها'} <span className="text-rose-500">*</span>
+                    {t.units || tx('Number of units', 'تعداد واحدها', 'د واحدونو شمېر')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -353,7 +376,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 </div>
                 <div>
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    مساحت زیربنا (m²)
+                    {tx('Building area (m²)', 'مساحت زیربنا (m²)', 'د ودانۍ مساحت (m²)')}
                   </label>
                   <input
                     type="number"
@@ -367,10 +390,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
               {/* Currency & Exchange Rate Default */}
               <div className="p-3 bg-slate-50 dark:bg-slate-800 border border-line rounded-2xl space-y-2">
-                <span className="font-bold text-slate-800 dark:text-slate-200 block">واحد اسعار پیش‌فرض پروژه:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">{tx('Project default currency:', 'واحد پول پیش‌فرض پروژه:', 'د پروژې اصلي پولي واحد:')}</span>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">اسعار پایه حسابداری</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">{tx('Base accounting currency', 'واحد پول پایهٔ حسابداری', 'د حسابدارۍ بنسټیز پولي واحد')}</label>
                     <div className="flex gap-1">
                       <button
                         type="button"
@@ -379,7 +402,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           currency === 'USD' ? 'bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        دالر ($)
+                        {tx('US dollar ($)', 'دالر ($)', 'امریکايي ډالر ($)')}
                       </button>
                       <button
                         type="button"
@@ -388,12 +411,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                           currency === 'AFN' ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        افغانی (AFN)
+                        {tx('Afghan afghani (AFN)', 'افغانی (AFN)', 'افغانۍ (AFN)')}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">نرخ برابری (۱ دالر به افغانی)</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">{tx('Exchange rate (1 USD to AFN)', 'نرخ تبادله (۱ دالر به افغانی)', 'د تبادلې نرخ (۱ ډالر پر افغانۍ)')}</label>
                     <input
                       type="number"
                       step="any"
@@ -406,10 +429,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.landInfo || 'مشخصات زمین'}</label>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">{t.landInfo || tx('Land details', 'مشخصات زمین', 'د ځمکې معلومات')}</label>
                 <input
                   type="text"
-                  placeholder="سند شرعی قباله، متراژ زمین..."
+                  placeholder={tx('e.g. title deed and land area...', 'مثلاً: قبالهٔ شرعی و مساحت زمین...', 'لکه: شرعي قباله او د ځمکې مساحت...')}
                   value={landInfo}
                   onChange={(e) => setLandInfo(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -422,7 +445,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                   onClick={() => setActiveStep('expenses')}
                   className="px-5 py-2.5 bg-slate-900 dark:bg-amber-600 hover:bg-slate-800 text-amber-400 dark:text-white font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
                 >
-                  <span>مرحله بعدی (مصارف اولیه)</span>
+                  <span>{tx('Next: initial expenses', 'مرحلهٔ بعدی (مصارف اولیه)', 'بل پړاو: لومړني لګښتونه')}</span>
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </button>
               </div>
@@ -433,9 +456,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
           {activeStep === 'expenses' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-3 text-amber-900 dark:text-amber-200 leading-relaxed">
-                <p className="font-bold mb-1">مصارف عمومی اولیه پروژه:</p>
+                <p className="font-bold mb-1">{tx('Initial project expenses:', 'مصارف عمومی اولیهٔ پروژه:', 'د پروژې لومړني لګښتونه:')}</p>
                 <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                  می‌توانید کرایه موتر، خاکبرداری، فیس شاروالی یا نان و غذا را به دالر یا افغانی با نرخ صرافی وارد کنید.
+                  {tx('Enter truck hire, excavation, municipal fees, or worker meals in USD or AFN using the exchange rate.', 'می‌توانید کرایهٔ موتر، خاک‌برداری، فیس شاروالی یا غذای کارگران را به دالر یا افغانی وارد کنید.', 'د موټر کرایه، کیندنه، د ښاروالۍ فیس یا د کارګرانو خواړه په ډالرو یا افغانۍ ثبت کړئ.')}
                 </p>
               </div>
 
@@ -447,7 +470,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                         <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px]">
                           {idx + 1}
                         </span>
-                        <span>شرح مصرف:</span>
+                        <span>{tx('Expense description:', 'شرح مصرف:', 'د لګښت تشریح:')}</span>
                       </span>
                       {generalExpenses.length > 1 && (
                         <button
@@ -462,7 +485,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     <input
                       type="text"
                       required
-                      placeholder="عنوان مصرف (مثلاً کرایه موتر خاکبرداری...)"
+                      placeholder={tx('Expense title (e.g. excavation truck hire...)', 'عنوان مصرف (مثلاً کرایهٔ موتر خاک‌برداری...)', 'د لګښت سرلیک (لکه د کیندنې موټر کرایه...)')}
                       value={expense.title}
                       onChange={(e) => handleUpdateExpenseRow(expense.id, 'title', e.target.value)}
                       className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface font-bold text-ink text-xs"
@@ -470,7 +493,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
                     <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">مبلغ</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Amount', 'مبلغ', 'اندازه')}</label>
                         <div className="relative">
                           <input
                             type="number"
@@ -485,15 +508,15 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                             onClick={() => handleUpdateExpenseRow(expense.id, 'currency', expense.currency === 'USD' ? 'AFN' : 'USD')}
                             className="absolute end-1.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-black bg-surface-2 hover:bg-slate-200 text-slate-800 dark:text-slate-200 border"
                           >
-                            {expense.currency === 'USD' ? 'دالر ($)' : 'افغانی'}
+                            {expense.currency === 'USD' ? tx('US dollars ($)', 'دالر ($)', 'امریکايي ډالر ($)') : tx('Afghan afghani', 'افغانی', 'افغانۍ')}
                           </button>
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">یادداشت</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Notes', 'یادداشت', 'یادښتونه')}</label>
                         <input
                           type="text"
-                          placeholder="توضیح اختیاری..."
+                          placeholder={tx('Optional description...', 'توضیح اختیاری...', 'اختیاري تشریح...')}
                           value={expense.notes || ''}
                           onChange={(e) => handleUpdateExpenseRow(expense.id, 'notes', e.target.value)}
                           className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs text-ink"
@@ -510,7 +533,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 className="w-full py-2.5 border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 rounded-2xl font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Plus className="w-4 h-4 text-amber-700" />
-                <span>+ افزودن ردیف مصرف دیگر</span>
+                <span>+ {tx('Add another expense', 'افزودن ردیف مصرف دیگر', 'بل لګښت زیات کړئ')}</span>
               </button>
 
               <div className="pt-3 border-t border-line flex items-center justify-between">
@@ -519,7 +542,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                   onClick={() => setActiveStep('info')}
                   className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
                 >
-                  بازگشت
+                  {tx('Back', 'بازگشت', 'شاته')}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -527,7 +550,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     onClick={() => setActiveStep('partners')}
                     className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs flex items-center gap-1.5"
                   >
-                    <span>مرحله شرکا (اختیاری)</span>
+                    <span>{tx('Partners (optional)', 'مرحلهٔ شرکا (اختیاری)', 'شریکان (اختیاري)')}</span>
                     <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                   </button>
                   <button
@@ -535,7 +558,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold rounded-xl shadow-xs flex items-center gap-1.5"
                   >
                     <Check className="w-4 h-4" />
-                    <span>ثبت نهایی پروژه</span>
+                    <span>{tx('Create project', 'ثبت نهایی پروژه', 'پروژه ثبت کړئ')}</span>
                   </button>
                 </div>
               </div>
@@ -549,10 +572,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 <Users className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="font-extrabold text-xs text-amber-900 dark:text-amber-200">
-                    تعریف اختیاری شرکای پروژه و سهم سرمایه:
+                    {tx('Optional project partners and ownership shares:', 'تعریف شرکای پروژه و سهم سرمایه (اختیاری):', 'د پروژې اختیاري شریکان او د ونډو سلنه:')}
                   </h4>
                   <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                    در صورتی که پروژه شریک یا سهامدار دارد، می‌توانید نام و درصد سهم و سرمایه‌گذاری را همین حالا یا بعداً در داشبورد ثبت کنید.
+                    {tx('Add partner names, ownership shares, and investments now or later from the dashboard.', 'اگر پروژه شریک یا سهامدار دارد، نام، درصد سهم و سرمایه‌گذاری را اکنون یا بعداً در داشبورد ثبت کنید.', 'که پروژه شریک یا ونډه‌وال لري، نومونه، د ونډو سلنه او پانګونه اوس یا وروسته له ډشبورډ څخه ثبت کړئ.')}
                   </p>
                 </div>
               </div>
@@ -563,7 +586,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-amber-600" />
-                        <span>شریک #{index + 1}</span>
+                        <span>{tx('Partner', 'شریک', 'شریک')} #{index + 1}</span>
                       </span>
                       {initialPartners.length > 1 && (
                         <button
@@ -578,20 +601,20 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">نام شریک (اختیاری)</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Partner name (optional)', 'نام شریک (اختیاری)', 'د شریک نوم (اختیاري)')}</label>
                         <input
                           type="text"
-                          placeholder="مثلاً: حاجی ظاهر"
+                          placeholder={tx('e.g. Zahir Khan', 'مثلاً: حاجی ظاهر', 'لکه: حاجي ظاهر')}
                           value={partner.name}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'name', e.target.value)}
                           className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-bold text-ink"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">شماره تماس</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Phone number', 'شماره تماس', 'د ټیلیفون شمېره')}</label>
                         <input
                           type="text"
-                          placeholder="مثال: 0799123456"
+                          placeholder={tx('e.g. 0799 123 456', 'مثال: ۰۷۹۹۱۲۳۴۵۶', 'لکه: ۰۷۹۹۱۲۳۴۵۶')}
                           value={partner.phone}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'phone', e.target.value)}
                           className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono text-ink"
@@ -601,13 +624,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">مبلغ سرمایه اولیه</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Initial investment', 'مبلغ سرمایهٔ اولیه', 'لومړنۍ پانګونه')}</label>
                         <div className="flex gap-1">
                           <input
                             type="number"
                             min="0"
                             step="any"
-                            placeholder="مثال: 100000"
+                            placeholder={tx('e.g. 100,000', 'مثال: ۱۰۰٬۰۰۰', 'لکه: ۱۰۰٬۰۰۰')}
                             value={partner.initialInvestment}
                             onChange={(e) => handleUpdatePartnerRow(partner.id, 'initialInvestment', e.target.value === '' ? '' : parseFloat(e.target.value))}
                             className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono font-bold text-ink"
@@ -623,13 +646,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">درصد سهم (%)</label>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">{tx('Ownership share (%)', 'درصد سهم (%)', 'د ونډې سلنه (%)')}</label>
                         <input
                           type="number"
                           min="0"
                           max="100"
                           step="any"
-                          placeholder="مثلاً: 50"
+                          placeholder={tx('e.g. 50', 'مثلاً: ۵۰', 'لکه: ۵۰')}
                           value={partner.sharePercentage}
                           onChange={(e) => handleUpdatePartnerRow(partner.id, 'sharePercentage', e.target.value === '' ? '' : parseFloat(e.target.value))}
                           className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-xs font-mono font-bold text-ink"
@@ -646,7 +669,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                 className="w-full py-2.5 border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 rounded-2xl font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Plus className="w-4 h-4 text-amber-700" />
-                <span>+ افزودن شریک دیگر</span>
+                <span>+ {tx('Add another partner', 'افزودن شریک دیگر', 'بل شریک زیات کړئ')}</span>
               </button>
 
               <div className="pt-3 border-t border-line flex items-center justify-between">
@@ -655,7 +678,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                   onClick={() => setActiveStep('expenses')}
                   className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
                 >
-                  بازگشت
+                  {tx('Back', 'بازگشت', 'شاته')}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -663,7 +686,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     onClick={onClose}
                     className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 font-bold"
                   >
-                    انصراف
+                    {tx('Cancel', 'انصراف', 'لغوه کول')}
                   </button>
                   <button
                     type="submit"
@@ -671,7 +694,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClos
                     className="px-6 py-2 bg-slate-900 dark:bg-amber-600 hover:bg-slate-800 text-amber-400 dark:text-white font-bold rounded-xl shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Check className="w-4 h-4" />
-                    <span>{isSubmitting ? 'در حال ثبت...' : 'تایید و ثبت نهایی پروژه'}</span>
+                    <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : tx('Confirm and create project', 'تأیید و ثبت نهایی پروژه', 'تایید او پروژه ثبت کړئ')}</span>
                   </button>
                 </div>
               </div>

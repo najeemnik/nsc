@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Subcontractors & Trade Contracts API
  * Manages Subcontractors, Certified Work, Paid Amounts, Retention & Balances

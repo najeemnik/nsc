@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { intlLocaleFor, localizeText } from '../../i18n/localize';
 import { 
   History, 
   Search, 
@@ -13,6 +14,7 @@ import {
 
 export const AuditLogView: React.FC = () => {
   const { auditLogs, clearAuditLogs, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredLogs = auditLogs.filter(log => {
@@ -49,7 +51,7 @@ export const AuditLogView: React.FC = () => {
 
           <button
             onClick={() => {
-              if (confirm('Clear audit history?')) clearAuditLogs();
+              if (confirm(tx('Clear audit history?', 'تاریخچه بررسی پاک شود؟', 'د ارزونې تاریخچه پاکه شي؟'))) clearAuditLogs();
             }}
             className="flex items-center gap-2 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-semibold transition"
           >
@@ -81,7 +83,7 @@ export const AuditLogView: React.FC = () => {
               <tr>
                 <th className="py-3.5 px-4">{t('timestamp') || 'Timestamp'}</th>
                 <th className="py-3.5 px-4">{t('user') || 'Operator'}</th>
-                <th className="py-3.5 px-4">{t('action') || 'Action'}</th>
+                <th className="py-3.5 px-4">{t('action') || t("auditAction")}</th>
                 <th className="py-3.5 px-4">{t('entity') || 'Module'}</th>
                 <th className="py-3.5 px-4">{t('details') || 'Activity Details'}</th>
               </tr>
@@ -90,7 +92,7 @@ export const AuditLogView: React.FC = () => {
               {filteredLogs.map(log => (
                 <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3 px-4 text-slate-400 whitespace-nowrap text-[11px]">
-                    {log.timestamp ? new Date(log.timestamp).toLocaleString(language === 'en' ? 'en-US' : 'fa-AF') : '—'}
+                    {log.timestamp ? new Date(log.timestamp).toLocaleString(intlLocaleFor(language)) : '—'}
                   </td>
                   <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 font-sans">
                     {log.userName}

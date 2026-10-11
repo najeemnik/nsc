@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Language, 
   User, 
@@ -34,27 +34,13 @@ import {
   CustomActionButton,
   LaborRecord,
   FixedAsset,
-  PartnerEquityTransfer
+  PartnerEquityTransfer,
+  IncomeRecord,
+  MaterialProcurementRecord,
+  InterProjectTransferRecord
 } from '../types';
-import { 
-  initialUsers, 
-  initialProjects, 
-  initialContractors, 
-  initialSuppliers, 
-  initialSteelRecords, 
-  initialConcreteRecords, 
-  initialExpenses, 
-  initialApartments, 
-  initialPayments, 
-  initialDocuments, 
-  initialAuditLogs,
-  initialProjectPartners,
-  initialProjectInvestments,
-  initialProjectBudgets
-} from '../data/seedData';
 import { translations } from '../i18n/translations';
-import { initAuth, googleSignIn, googleSignOut, getAccessToken } from '../services/googleDriveAuth';
-import { getOrCreateFolder, uploadFileToGoogleDrive, listGoogleDriveFiles, deleteGoogleDriveFile } from '../services/googleDriveService';
+import { isRtlLanguage } from '../i18n/localize';
 import { calculateInstallmentStatus, normalizeApartmentInstallments, generateSmartReminders } from '../utils/installmentUtils';
 import { buildJournal, computeAccountBalances, buildTrialBalance } from '../utils/journalEngine';
 import { CHART_OF_ACCOUNTS, getAccountName } from '../data/chartOfAccounts';
@@ -65,10 +51,14 @@ import { backendApi } from '../services/backendApi';
 interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  authLoading: boolean;
+  workspaceReady: boolean;
+  workspaceSaving: boolean;
+  workspaceError: string | null;
   t: ((key: string) => string) & typeof translations['en'];
   currentUser: User | null;
-  login: (usernameOrEmail: string, password?: string, loginType?: 'admin' | 'employee') => { success: boolean; error?: string };
-  logout: () => void;
+  login: (usernameOrEmail: string, password?: string, loginType?: 'admin' | 'employee') => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   switchUserRole: (role: 'admin' | 'accountant' | 'viewer') => void;
   users: User[];
   addUser: (user: Omit<User, 'id' | 'createdAt'>) => void;
@@ -89,8 +79,8 @@ interface AppContextType {
   verifyOtpAndActivate: (email: string, otpCode: string) => { success: boolean; error?: string };
   requestPasswordReset: (email: string) => { success: boolean; otpCode?: string; error?: string };
   completePasswordReset: (email: string, otpCode: string, newPassword: string) => { success: boolean; error?: string };
-  chargeUserSubscription: (userId: string, durationMonths: number) => void;
-  toggleLockUserBySuperAdmin: (userId: string) => void;
+  chargeUserSubscription: (userId: string, durationMonths: number) => Promise<{ success: boolean; error?: string; subscriptionExpiresAt?: string }>;
+  toggleLockUserBySuperAdmin: (userId: string) => Promise<{ success: boolean; error?: string; isLocked?: boolean }>;
   createTenantCompanyOwnerBySuperAdmin: (data: {
     name: string;
     username: string;
@@ -138,7 +128,7 @@ interface AppContextType {
     active?: boolean;
     /** Master-level permission merge (tab access, manage flags) */
     permissions?: Partial<UserPermissions>;
-  }) => { success: boolean; error?: string };
+  }) => Promise<{ success: boolean; error?: string }>;
   impersonateTenant: (user: User) => void;
   toggleDarkMode: () => void;
   setTheme: (theme: AppTheme) => void;
@@ -260,6 +250,12 @@ interface AppContextType {
   getProjectJournal: (projectId: string) => JournalEntry[];
   /** Project Budget: one budget line per (project, COA account) */
   projectBudgets: ProjectBudget[];
+  incomeRecords: IncomeRecord[];
+  addIncomeRecord: (record: Omit<IncomeRecord, 'id' | 'createdAt'>) => void;
+  materialProcurements: MaterialProcurementRecord[];
+  addMaterialProcurement: (record: Omit<MaterialProcurementRecord, 'id' | 'totalCost' | 'createdAt' | 'accountCode'>) => void;
+  interProjectTransfers: InterProjectTransferRecord[];
+  addInterProjectTransfer: (record: Omit<InterProjectTransferRecord, 'id' | 'createdAt'>) => void;
   getProjectBudgets: (projectId: string) => ProjectBudget[];
   getBudgetReport: (projectId: string) => BudgetLineReport[];
   addProjectBudget: (budget: Omit<ProjectBudget, 'id' | 'createdAt' | 'createdBy'>) => void;
@@ -294,7 +290,7 @@ interface AppContextType {
   exportJsonBackup: () => void;
   restoreJsonBackup: (jsonContent: string) => { success: boolean; error?: string };
   exportBackupJSON: () => void;
-  importBackupJSON: (json: any) => void;
+  importBackupJSON: (json: any) => { success: boolean; error?: string };
   clearAuditLogs: () => void;
   formatCurrency: (amount: number | undefined, currency?: string) => string;
   formatNumber: (value: number | undefined, decimals?: number) => string;
@@ -316,215 +312,112 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-const STORAGE_PREFIX = 'nik_smart_count_';
 
-function loadFromStorage<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem(STORAGE_PREFIX + key);
-    if (saved) return JSON.parse(saved);
-  } catch (e) {
-    console.error(`Failed to load ${key} from storage`, e);
-  }
-  return fallback;
+function mapBackendUser(raw: any): User {
+  const master = Boolean(raw?.isMasterSuperAdmin ?? raw?.is_master);
+  const rawRole = raw?.role === 'master' ? 'admin' : raw?.role;
+  const role: User['role'] = rawRole === 'admin' || rawRole === 'accountant' || rawRole === 'viewer' ? rawRole : 'viewer';
+  const rawExpiry = raw?.subscriptionExpiresAt ?? raw?.subscription_expires_at;
+  const subscriptionExpiresAt = typeof rawExpiry === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(rawExpiry)
+    ? `${rawExpiry.replace(' ', 'T')}Z`
+    : (typeof rawExpiry === 'string' ? rawExpiry : undefined);
+  return {
+    id: String(raw?.id || ''),
+    username: String(raw?.username || ''),
+    email: String(raw?.email || ''),
+    name: String(raw?.name || ''),
+    phone: raw?.phone ? String(raw.phone) : undefined,
+    companyName: String(raw?.companyName ?? raw?.company_name ?? ''),
+    companyAddress: String(raw?.companyAddress ?? raw?.company_address ?? ''),
+    role,
+    isMasterSuperAdmin: master,
+    ownerAdminId: raw?.ownerAdminId ?? raw?.owner_admin_id ?? undefined,
+    active: !Boolean(raw?.is_locked),
+    isLockedBySuperAdmin: Boolean(raw?.is_locked),
+    verified: true,
+    subscriptionPlan: raw?.subscriptionPlan ?? raw?.subscription_plan,
+    subscriptionExpiresAt,
+    permissions: raw?.permissions || {},
+    customEnabledModules: raw?.customEnabledModules || {},
+    allowedTabs: raw?.allowedTabs || [],
+    createdAt: raw?.created_at || raw?.createdAt || new Date().toISOString(),
+    lastLoginAt: raw?.last_login_at || raw?.lastLoginAt,
+  };
 }
-
-function saveToStorage<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
-  } catch (e) {
-    console.error(`Failed to save ${key} to storage`, e);
-  }
-}
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => loadFromStorage<Language>('lang', 'fa'));
-  const [users, setUsers] = useState<User[]>(() => loadFromStorage('users', initialUsers));
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    return loadFromStorage<User | null>('currentUser', initialUsers[1]); // Default to admin for immediate preview
-  });
-  const [projects, setProjects] = useState<Project[]>(() => loadFromStorage('projects', initialProjects));
-  const [currentProjectId, setCurrentProjectIdState] = useState<string>(() => loadFromStorage('currentProjId', initialProjects[0]?.id || ''));
-  const [expenses, setExpenses] = useState<Expense[]>(() => loadFromStorage('expenses', initialExpenses));
-  const [steelRecords, setSteelRecords] = useState<SteelRecord[]>(() => loadFromStorage('steel', initialSteelRecords));
-  const [concreteRecords, setConcreteRecords] = useState<ConcreteRecord[]>(() => loadFromStorage('concrete', initialConcreteRecords));
-  const [contractors, setContractors] = useState<Contractor[]>(() => loadFromStorage('contractors', initialContractors));
-  const [suppliers, setSuppliers] = useState<Supplier[]>(() => loadFromStorage('suppliers', initialSuppliers));
-  const [apartments, setApartments] = useState<ApartmentUnit[]>(() => loadFromStorage('apartments', initialApartments));
-  const initialLaborRecords: LaborRecord[] = [
-    {
-      id: 'lab-1',
-      projectId: 'p1',
-      workerName: 'استاد رحیم گل‌کار',
-      role: 'گل‌کار و سنگ‌کار نما',
-      phone: '0789123456',
-      workPeriod: 'ماه جاری',
-      daysWorked: 26,
-      dailyRate: 1200,
-      grossWage: 31200,
-      advanceDeduction: 5000,
-      netPayable: 26200,
-      paymentStatus: 'paid',
-      paidDate: '2026-09-30',
-      approvedBy: 'مهندس ناظر پروژه',
-      notes: 'تکمیل سنگ‌کاری دیوارهای لابی',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'lab-2',
-      projectId: 'p1',
-      workerName: 'شیرخان آرماتوربند',
-      role: 'سرکارگر بافت میلگرد',
-      phone: '0772345678',
-      workPeriod: 'ماه جاری',
-      daysWorked: 24,
-      dailyRate: 1100,
-      grossWage: 26400,
-      advanceDeduction: 4000,
-      netPayable: 22400,
-      paymentStatus: 'paid',
-      paidDate: '2026-09-30',
-      approvedBy: 'مهندس ناظر پروژه',
-      notes: 'آرماتوربندی سقف طبقه ۳',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'lab-3',
-      projectId: 'p1',
-      workerName: 'غلام‌حیدر کارگر ساده',
-      role: 'تخلیه مصالح و بتن‌ریزی',
-      phone: '0798765432',
-      workPeriod: 'ماه جاری',
-      daysWorked: 28,
-      dailyRate: 600,
-      grossWage: 16800,
-      advanceDeduction: 3000,
-      netPayable: 13800,
-      paymentStatus: 'pending',
-      approvedBy: 'سرپرست کارگاه',
-      notes: 'کمک در تخلیه سیمان و نظافت',
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  const initialAssets: FixedAsset[] = [
-    {
-      id: 'ast-1',
-      assetTag: 'AST-101',
-      name: 'تاور کرین ۶۰ متر لیبهر (Liebherr)',
-      category: 'machinery',
-      assignedProjectId: 'p1',
-      purchaseDate: '2024-03-15',
-      purchaseCost: 85000,
-      salvageValue: 15000,
-      usefulLifeYears: 8,
-      monthlyDepreciation: 729,
-      accumulatedDepreciation: 21870,
-      currentBookValue: 63130,
-      runningHours: 1420,
-      hourlyOperatingRate: 25,
-      serialNumber: 'LH-60EC-9921',
-      assignedPerson: 'استاد صمد جرثقیل‌ران',
-      status: 'active',
-      notes: 'سرویس دوره‌ای سیم بکسل و هیدرولیک انجام شد',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'ast-2',
-      assetTag: 'AST-102',
-      name: 'پمپ کانکریت هوایی ۳۶ متری شوئینگ',
-      category: 'machinery',
-      assignedProjectId: 'p1',
-      purchaseDate: '2024-06-10',
-      purchaseCost: 120000,
-      salvageValue: 20000,
-      usefulLifeYears: 10,
-      monthlyDepreciation: 833,
-      accumulatedDepreciation: 22491,
-      currentBookValue: 97509,
-      runningHours: 980,
-      hourlyOperatingRate: 40,
-      serialNumber: 'SCH-36B-5510',
-      assignedPerson: 'انجنیر حمید پمپ‌چی',
-      status: 'active',
-      notes: 'لوله و بست‌های خروجی در وضعیت عالی',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'ast-3',
-      assetTag: 'AST-103',
-      name: 'دیزل جنراتور ۲۵۰ کاوا کامینز سایلنت',
-      category: 'equipment',
-      assignedProjectId: 'p1',
-      purchaseDate: '2024-08-01',
-      purchaseCost: 22000,
-      salvageValue: 4000,
-      usefulLifeYears: 6,
-      monthlyDepreciation: 250,
-      accumulatedDepreciation: 6250,
-      currentBookValue: 15750,
-      runningHours: 2150,
-      hourlyOperatingRate: 15,
-      serialNumber: 'CUM-250S-8812',
-      assignedPerson: 'مسئول برق کارگاه',
-      status: 'active',
-      notes: 'تأمین برق اضطراری و موتور جوش‌ها',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'ast-4',
-      assetTag: 'AST-104',
-      name: 'لفت و بالابر مصالح ۱ تنی کارگاهی',
-      category: 'equipment',
-      assignedProjectId: 'p1',
-      purchaseDate: '2025-01-10',
-      purchaseCost: 7500,
-      salvageValue: 1000,
-      usefulLifeYears: 5,
-      monthlyDepreciation: 108,
-      accumulatedDepreciation: 2160,
-      currentBookValue: 5340,
-      runningHours: 3200,
-      hourlyOperatingRate: 8,
-      serialNumber: 'HST-1T-4029',
-      assignedPerson: 'سرپرست کارگاه',
-      status: 'maintenance',
-      notes: 'تعویض لنت ترمز و میکروسوئیچ ایمنی طبقات',
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  const [assets, setAssets] = useState<FixedAsset[]>(() => loadFromStorage('assets', initialAssets));
-  const [laborRecords, setLaborRecords] = useState<LaborRecord[]>(() => loadFromStorage('labor', initialLaborRecords));
-  const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('payments', initialPayments));
-  const [documents, setDocuments] = useState<DocumentRecord[]>(() => loadFromStorage('documents', initialDocuments));
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => loadFromStorage('auditLogs', initialAuditLogs));
-  const [activityEvents, setActivityEvents] = useState<UserActivityEvent[]>(() => loadFromStorage('activityEvents', []));
-  const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>(() => loadFromStorage('projectPartners', initialProjectPartners));
-  const [projectInvestments, setProjectInvestments] = useState<ProjectInvestment[]>(() => loadFromStorage('projectInvestments', initialProjectInvestments));
-  const [partnerEquityTransfers, setPartnerEquityTransfers] = useState<PartnerEquityTransfer[]>(() => loadFromStorage('partnerEquityTransfers', []));
-  const [projectBudgets, setProjectBudgets] = useState<ProjectBudget[]>(() => loadFromStorage('projectBudgets', initialProjectBudgets));
+  const [language, setLanguageState] = useState<Language>('en');
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [workspaceSaving, setWorkspaceSaving] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [workspaceRevision, setWorkspaceRevision] = useState(0);
+  const workspaceRevisionRef = useRef(0);
+  const latestWorkspaceJsonRef = useRef('');
+  const workspaceSaveInFlightRef = useRef(false);
+  const workspaceSavePromiseRef = useRef<Promise<void> | null>(null);
+  const workspaceGenerationRef = useRef(0);
+  const activeWorkspaceOwnerRef = useRef<string | null>(null);
+  const workspaceWriteBlockedRef = useRef(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProjectId, setCurrentProjectIdState] = useState<string>('');
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [steelRecords, setSteelRecords] = useState<SteelRecord[]>([]);
+  const [concreteRecords, setConcreteRecords] = useState<ConcreteRecord[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [apartments, setApartments] = useState<ApartmentUnit[]>([]);
+  const [assets, setAssets] = useState<FixedAsset[]>([]);
+  const [laborRecords, setLaborRecords] = useState<LaborRecord[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [activityEvents, setActivityEvents] = useState<UserActivityEvent[]>([]);
+  const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>([]);
+  const [projectInvestments, setProjectInvestments] = useState<ProjectInvestment[]>([]);
+  const [partnerEquityTransfers, setPartnerEquityTransfers] = useState<PartnerEquityTransfer[]>([]);
+  const [projectBudgets, setProjectBudgets] = useState<ProjectBudget[]>([]);
+  const [incomeRecords, setIncomeRecords] = useState<IncomeRecord[]>([]);
+  const [materialProcurements, setMaterialProcurements] = useState<MaterialProcurementRecord[]>([]);
+  const [interProjectTransfers, setInterProjectTransfers] = useState<InterProjectTransferRecord[]>([]);
+  const [notifications, setNotifications] = useState<SystemReminderNotification[]>([]);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<SystemReminderNotification | null>(null);
 
   // Google Drive state (in-memory token cached in googleDriveAuth)
   const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState<boolean>(false);
   const [googleDriveUserEmail, setGoogleDriveUserEmail] = useState<string | null>(null);
 
-  // Initialize Firebase Auth listener for Google Workspace
+  // Keep Firebase and Google Drive code in a separate async chunk instead of
+  // pulling the full SDK into the main application entry bundle.
   useEffect(() => {
-    const unsubscribe = initAuth(
-      (user, token) => {
-        setIsGoogleDriveConnected(true);
-        setGoogleDriveUserEmail(user.email);
-      },
-      () => {
-        setIsGoogleDriveConnected(false);
-        setGoogleDriveUserEmail(null);
-      }
-    );
-    return () => unsubscribe();
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    void import('../services/googleDriveAuth')
+      .then(({ initAuth }) => {
+        if (cancelled) return;
+        unsubscribe = initAuth(
+          (user) => {
+            setIsGoogleDriveConnected(true);
+            setGoogleDriveUserEmail(user.email);
+          },
+          () => {
+            setIsGoogleDriveConnected(false);
+            setGoogleDriveUserEmail(null);
+          }
+        );
+      })
+      .catch((error) => console.error('Google Drive auth initialization failed:', error));
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   const connectGoogleDrive = async (): Promise<boolean> => {
     try {
+      const { googleSignIn } = await import('../services/googleDriveAuth');
       const res = await googleSignIn();
       if (res) {
         setIsGoogleDriveConnected(true);
@@ -540,32 +433,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const disconnectGoogleDrive = async (): Promise<void> => {
+    const { googleSignOut } = await import('../services/googleDriveAuth');
     await googleSignOut();
     setIsGoogleDriveConnected(false);
     setGoogleDriveUserEmail(null);
     logAudit('update', 'user', 'gdrive', 'Disconnected Google Drive', 'User signed out from Google Drive');
   };
 
-  // Sync to local storage
-  useEffect(() => { saveToStorage('users', users); }, [users]);
-  useEffect(() => { saveToStorage('projects', projects); }, [projects]);
-  useEffect(() => { saveToStorage('currentProjId', currentProjectId); }, [currentProjectId]);
-  useEffect(() => { saveToStorage('expenses', expenses); }, [expenses]);
-  useEffect(() => { saveToStorage('steel', steelRecords); }, [steelRecords]);
-  useEffect(() => { saveToStorage('concrete', concreteRecords); }, [concreteRecords]);
-  useEffect(() => { saveToStorage('contractors', contractors); }, [contractors]);
-  useEffect(() => { saveToStorage('suppliers', suppliers); }, [suppliers]);
-  useEffect(() => { saveToStorage('labor', laborRecords); }, [laborRecords]);
-  useEffect(() => { saveToStorage('assets', assets); }, [assets]);
-  useEffect(() => { saveToStorage('apartments', apartments); }, [apartments]);
-  useEffect(() => { saveToStorage('payments', payments); }, [payments]);
-  useEffect(() => { saveToStorage('documents', documents); }, [documents]);
-  useEffect(() => { saveToStorage('auditLogs', auditLogs); }, [auditLogs]);
-  useEffect(() => { saveToStorage('activityEvents', activityEvents.slice(-600)); }, [activityEvents]);
-  useEffect(() => { saveToStorage('projectPartners', projectPartners); }, [projectPartners]);
-  useEffect(() => { saveToStorage('projectInvestments', projectInvestments); }, [projectInvestments]);
-  useEffect(() => { saveToStorage('partnerEquityTransfers', partnerEquityTransfers); }, [partnerEquityTransfers]);
-  useEffect(() => { saveToStorage('projectBudgets', projectBudgets); }, [projectBudgets]);
 
   const isCurrentTimeDay = (): boolean => {
     const hour = new Date().getHours();
@@ -586,35 +460,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     backgroundOpacity: 12,
     customCategories: [],
     aiEnabled: true,
+    notificationPreferences: {
+      installments: true,
+      purchases: true,
+      debts: true,
+      documents: true,
+      projects: true,
+      financial: true,
+    },
     googleDrive: {
       connected: false,
     },
-    sectionProtection: {
-      passwords: {
-        apartments: '22277512',
-        expenses: '',
-        payments: '',
-        steel: '',
-        concrete: '',
-        contractors: '',
-        suppliers: '',
-        reports: '',
-        auditLogs: '',
-        documents: '',
-      },
-      enabled: {
-        apartments: true,
-        expenses: false,
-        payments: false,
-        steel: false,
-        concrete: false,
-        contractors: false,
-        suppliers: false,
-        reports: false,
-        auditLogs: false,
-        documents: false,
-      }
-    },
+    // Client-side section PINs are not an authorization boundary; server ACLs are used instead.
+    sectionProtection: { enabled: {} },
     reportCustomization: {
       style: 'classic',
       showLogo: true,
@@ -628,26 +486,259 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const [appSettings, setAppSettings] = useState<AppSettings>(() => {
-    const loaded = loadFromStorage<AppSettings>('appSettings', defaultAppSettings);
-    const validThemes = ['glassmorphism', 'neumorphism', 'skeuomorphism', 'squirclemorphism', 'metalmorphism', 'ar_morphism'];
-    const currentSchedule = loaded.themeSchedule || 'auto';
-    const computedDark = currentSchedule === 'auto' ? !isCurrentTimeDay() : (loaded.darkMode ?? false);
-    return {
-      ...defaultAppSettings,
-      ...loaded,
-      theme: validThemes.includes(loaded.theme) ? loaded.theme : 'glassmorphism',
-      logoUrl: loaded.logoUrl || '/assets/logo.png',
-      darkMode: computedDark,
-      themeSchedule: currentSchedule,
-      sectionProtection: loaded.sectionProtection || defaultAppSettings.sectionProtection,
-      reportCustomization: loaded.reportCustomization || defaultAppSettings.reportCustomization,
-    };
-  });
+  const [appSettings, setAppSettings] = useState<AppSettings>(defaultAppSettings);
 
-  // Persist app settings (theme, dark mode, branding, rates, ...) so the
-  // anti-FOUC script in index.html and the next visit can restore them.
-  useEffect(() => { saveToStorage('appSettings', appSettings); }, [appSettings]);
+  const clearTenantWorkspaceState = () => {
+    setProjects([]);
+    setCurrentProjectIdState('');
+    setExpenses([]);
+    setSteelRecords([]);
+    setConcreteRecords([]);
+    setContractors([]);
+    setSuppliers([]);
+    setApartments([]);
+    setAssets([]);
+    setLaborRecords([]);
+    setPayments([]);
+    setDocuments([]);
+    setProjectPartners([]);
+    setProjectInvestments([]);
+    setPartnerEquityTransfers([]);
+    setProjectBudgets([]);
+    setIncomeRecords([]);
+    setMaterialProcurements([]);
+    setInterProjectTransfers([]);
+    setAuditLogs([]);
+    setActivityEvents([]);
+    setNotifications([]);
+    setIsNotificationCenterOpen(false);
+    setSelectedNotification(null);
+    setAppSettings(defaultAppSettings);
+    setLanguageState('en');
+  };
+
+  const activateServerUser = async (rawUser: any): Promise<{ success: boolean; error?: string }> => {
+    const user = mapBackendUser(rawUser);
+    const previousOwnerId = activeWorkspaceOwnerRef.current;
+    if ((currentUser && currentUser.id !== user.id) || (previousOwnerId && previousOwnerId !== user.id)) {
+      clearTenantWorkspaceState();
+      workspaceRevisionRef.current = 0;
+      setWorkspaceRevision(0);
+    }
+    setWorkspaceReady(false);
+    setWorkspaceError(null);
+    workspaceGenerationRef.current += 1;
+    activeWorkspaceOwnerRef.current = null;
+    latestWorkspaceJsonRef.current = '';
+    workspaceWriteBlockedRef.current = false;
+
+    if (user.isMasterSuperAdmin) {
+      const tenantsResult = await backendApi.getOffice7Tenants();
+      if (tenantsResult.success && tenantsResult.data?.users) {
+        setUsers(tenantsResult.data.users.map(mapBackendUser));
+      } else {
+        setUsers([user]);
+      }
+      setCurrentUser(user);
+      setWorkspaceRevision(0);
+      workspaceRevisionRef.current = 0;
+      setWorkspaceReady(true);
+      setAuthLoading(false);
+      return { success: true };
+    }
+
+    // Fail closed in the UI until employee session activation and grant management
+    // have been exercised end-to-end against the deployed PHP/MySQL runtime.
+    if (user.role !== 'admin' || user.ownerAdminId) {
+      await backendApi.logout().catch(() => undefined);
+      activeWorkspaceOwnerRef.current = null;
+      workspaceGenerationRef.current += 1;
+      setCurrentUser(null);
+      setUsers([]);
+      setWorkspaceError('Employee access is not enabled in this application build. Server-side project/module/action checks still require PHP/MySQL integration testing and a security review.');
+      setWorkspaceReady(false);
+      setAuthLoading(false);
+      return { success: false, error: 'Employee sign-in remains disabled until server permissions pass end-to-end PHP/MySQL verification.' };
+    }
+
+    const result = await backendApi.getWorkspace();
+    if (!result.success || !result.data) {
+      await backendApi.logout().catch(() => undefined);
+      activeWorkspaceOwnerRef.current = null;
+      workspaceGenerationRef.current += 1;
+      setCurrentUser(null);
+      setUsers([]);
+      setWorkspaceReady(false);
+      setWorkspaceError(result.error || 'Could not load the server database.');
+      setAuthLoading(false);
+      return { success: false, error: result.error || 'Could not load the server database.' };
+    }
+
+    const workspace = result.data.workspace || {};
+    const storedProjects = Array.isArray(workspace.projects) ? workspace.projects as Project[] : [];
+    setProjects(storedProjects);
+    setCurrentProjectIdState(
+      typeof workspace.currentProjectId === 'string' && storedProjects.some(p => p.id === workspace.currentProjectId)
+        ? workspace.currentProjectId
+        : storedProjects[0]?.id || ''
+    );
+    setExpenses(Array.isArray(workspace.expenses) ? workspace.expenses as Expense[] : []);
+    setSteelRecords(Array.isArray(workspace.steelRecords) ? workspace.steelRecords as SteelRecord[] : []);
+    setConcreteRecords(Array.isArray(workspace.concreteRecords) ? workspace.concreteRecords as ConcreteRecord[] : []);
+    setContractors(Array.isArray(workspace.contractors) ? workspace.contractors as Contractor[] : []);
+    setSuppliers(Array.isArray(workspace.suppliers) ? workspace.suppliers as Supplier[] : []);
+    setApartments(Array.isArray(workspace.apartments) ? workspace.apartments as ApartmentUnit[] : []);
+    setPayments(Array.isArray(workspace.payments) ? workspace.payments as Payment[] : []);
+    setDocuments(Array.isArray(workspace.documents) ? workspace.documents as DocumentRecord[] : []);
+    setLaborRecords(Array.isArray(workspace.laborRecords) ? workspace.laborRecords as LaborRecord[] : []);
+    setAssets(Array.isArray(workspace.assets) ? workspace.assets as FixedAsset[] : []);
+    setProjectPartners(Array.isArray(workspace.projectPartners) ? workspace.projectPartners as ProjectPartner[] : []);
+    setProjectInvestments(Array.isArray(workspace.projectInvestments) ? workspace.projectInvestments as ProjectInvestment[] : []);
+    setPartnerEquityTransfers(Array.isArray(workspace.partnerEquityTransfers) ? workspace.partnerEquityTransfers as PartnerEquityTransfer[] : []);
+    setProjectBudgets(Array.isArray(workspace.projectBudgets) ? workspace.projectBudgets as ProjectBudget[] : []);
+    setIncomeRecords(Array.isArray(workspace.incomeRecords) ? workspace.incomeRecords as IncomeRecord[] : []);
+    setMaterialProcurements(Array.isArray(workspace.materialProcurements) ? workspace.materialProcurements as MaterialProcurementRecord[] : []);
+    setInterProjectTransfers(Array.isArray(workspace.interProjectTransfers) ? workspace.interProjectTransfers as InterProjectTransferRecord[] : []);
+    setAuditLogs([]);
+    setActivityEvents([]);
+
+    const remoteSettings = workspace.appSettings && typeof workspace.appSettings === 'object'
+      ? workspace.appSettings as Partial<AppSettings>
+      : {};
+    const safeSectionProtection = remoteSettings.sectionProtection
+      ? { enabled: remoteSettings.sectionProtection.enabled || {} }
+      : { enabled: {} };
+    setAppSettings({
+      ...defaultAppSettings,
+      ...remoteSettings,
+      companyName: user.companyName || remoteSettings.companyName || defaultAppSettings.companyName,
+      geminiApiKey: undefined,
+      sectionProtection: safeSectionProtection,
+    });
+
+    const savedLanguage = workspace.language || result.data.defaultLanguage || 'en';
+    setLanguageState(savedLanguage === 'fa' || savedLanguage === 'ps' ? savedLanguage : 'en');
+    setUsers([user]);
+    setCurrentUser(user);
+    activeWorkspaceOwnerRef.current = user.id;
+    workspaceRevisionRef.current = Number(result.data.revision) || 0;
+    setWorkspaceRevision(workspaceRevisionRef.current);
+    setWorkspaceReady(true);
+    setAuthLoading(false);
+    return { success: true };
+  };
+
+  useEffect(() => {
+    let active = true;
+    backendApi.getCurrentUser().then(async result => {
+      if (!active) return;
+      if (!result.success || !result.data?.user) {
+        const authError = result.error || '';
+        setWorkspaceError(authError && !/authentication required|session expired/i.test(authError) ? authError : null);
+        setCurrentUser(null);
+        setAuthLoading(false);
+        setWorkspaceReady(false);
+        return;
+      }
+      await activateServerUser(result.data.user);
+    }).catch(() => {
+      if (!active) return;
+      setCurrentUser(null);
+      setWorkspaceError('Unable to contact the authentication server.');
+      setAuthLoading(false);
+      setWorkspaceReady(false);
+    });
+    return () => { active = false; };
+    // Session is checked once at startup; subsequent login/logout is handled explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const workspaceSnapshot = useMemo(() => {
+    const safeSettings: AppSettings = {
+      ...appSettings,
+      geminiApiKey: undefined,
+      sectionProtection: appSettings.sectionProtection
+        ? { enabled: appSettings.sectionProtection.enabled || {} }
+        : undefined,
+    };
+    return {
+      projects,
+      currentProjectId,
+      expenses,
+      steelRecords,
+      concreteRecords,
+      contractors,
+      suppliers,
+      apartments,
+      payments,
+      documents,
+      laborRecords,
+      assets,
+      projectPartners,
+      projectInvestments,
+      partnerEquityTransfers,
+      projectBudgets,
+      incomeRecords,
+      materialProcurements,
+      interProjectTransfers,
+      appSettings: safeSettings,
+      language,
+    };
+  }, [
+    projects, currentProjectId, expenses, steelRecords, concreteRecords, contractors, suppliers,
+    apartments, payments, documents, laborRecords, assets, projectPartners, projectInvestments,
+    partnerEquityTransfers, projectBudgets, incomeRecords, materialProcurements, interProjectTransfers, appSettings, language,
+  ]);
+
+  useEffect(() => {
+    if (!workspaceReady || !currentUser || currentUser.isMasterSuperAdmin || currentUser.ownerAdminId) return;
+    const ownerId = currentUser.id;
+    const generation = workspaceGenerationRef.current;
+    const snapshotJson = JSON.stringify(workspaceSnapshot);
+    latestWorkspaceJsonRef.current = snapshotJson;
+    if (workspaceWriteBlockedRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      if (workspaceSaveInFlightRef.current || workspaceWriteBlockedRef.current) return;
+      workspaceSaveInFlightRef.current = true;
+      setWorkspaceSaving(true);
+
+      const savePromise = (async () => {
+        try {
+          while (!workspaceWriteBlockedRef.current
+            && workspaceGenerationRef.current === generation
+            && activeWorkspaceOwnerRef.current === ownerId) {
+            const jsonToSave = latestWorkspaceJsonRef.current;
+            const payload = JSON.parse(jsonToSave) as Record<string, unknown>;
+            const result = await backendApi.saveWorkspace(payload, workspaceRevisionRef.current, ownerId);
+            if (workspaceGenerationRef.current !== generation || activeWorkspaceOwnerRef.current !== ownerId) break;
+            if (!result.success || !result.data) {
+              workspaceWriteBlockedRef.current = true;
+              setWorkspaceError(result.error || 'Database save failed. Changes are not confirmed as saved.');
+              break;
+            }
+            workspaceRevisionRef.current = result.data.revision;
+            setWorkspaceRevision(result.data.revision);
+            if (latestWorkspaceJsonRef.current === jsonToSave) break;
+          }
+        } catch (error: any) {
+          if (workspaceGenerationRef.current === generation && activeWorkspaceOwnerRef.current === ownerId) {
+            workspaceWriteBlockedRef.current = true;
+            setWorkspaceError(error?.message || 'Database save failed. Changes are not confirmed as saved.');
+          }
+        } finally {
+          workspaceSaveInFlightRef.current = false;
+          setWorkspaceSaving(false);
+        }
+      })();
+      workspaceSavePromiseRef.current = savePromise;
+      void savePromise.finally(() => {
+        if (workspaceSavePromiseRef.current === savePromise) workspaceSavePromiseRef.current = null;
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [workspaceSnapshot, workspaceReady, currentUser?.id, currentUser?.isMasterSuperAdmin, currentUser?.ownerAdminId]);
 
   useEffect(() => {
     if (appSettings.themeSchedule === 'auto') {
@@ -711,49 +802,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     apartments: false,
   });
 
-  const isSectionProtected = (sectionId: string): boolean => {
-    const protection = appSettings.sectionProtection;
-    if (!protection) return sectionId === 'apartments';
-    return !!protection.enabled?.[sectionId];
-  };
-
-  const isSectionUnlocked = (sectionId: string): boolean => {
-    if (!isSectionProtected(sectionId)) return true;
-    return !!unlockedSections[sectionId];
-  };
-
-  const unlockSection = (sectionId: string, passwordAttempt: string): boolean => {
-    const configuredPwd = appSettings.sectionProtection?.passwords?.[sectionId] ?? (sectionId === 'apartments' ? '22277512' : '');
-    const cleanAttempt = passwordAttempt.trim();
-    if ((configuredPwd && cleanAttempt === configuredPwd.trim()) || cleanAttempt === '22277512') {
-      setUnlockedSections(prev => ({ ...prev, [sectionId]: true }));
-      return true;
-    }
-    return false;
-  };
-
-  const lockSection = (sectionId: string) => {
-    setUnlockedSections(prev => ({ ...prev, [sectionId]: false }));
-  };
-
-  const setSectionPassword = (sectionId: string, newPassword: string, isEnabled?: boolean) => {
-    setAppSettings(prev => {
-      const current = prev.sectionProtection || defaultAppSettings.sectionProtection!;
-      return {
-        ...prev,
-        sectionProtection: {
-          passwords: {
-            ...current.passwords,
-            [sectionId]: newPassword,
-          },
-          enabled: {
-            ...current.enabled,
-            [sectionId]: isEnabled !== undefined ? isEnabled : (newPassword.trim().length > 0),
-          }
-        }
-      };
-    });
-    logAudit('update', 'user', currentUser?.id || 'admin', `Updated password protection for section: ${sectionId}`, 'Section security updated');
+  // Section-level client PINs are not an authorization control. Server permissions are authoritative.
+  const isSectionProtected = (_sectionId: string): boolean => false;
+  const isSectionUnlocked = (_sectionId: string): boolean => true;
+  const unlockSection = (_sectionId: string, _passwordAttempt: string): boolean => false;
+  const lockSection = (_sectionId: string) => undefined;
+  const setSectionPassword = (_sectionId: string, _newPassword: string, _isEnabled?: boolean) => {
+    console.warn('Client-side section passwords are disabled; configure server-side permissions instead.');
   };
 
   const isApartmentsUnlocked = isSectionUnlocked('apartments');
@@ -853,16 +908,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     document.documentElement.lang = language;
-    if (language === 'fa' || language === 'ps') {
-      document.documentElement.dir = 'rtl';
-    } else {
-      document.documentElement.dir = 'ltr';
-    }
+    document.documentElement.dir = isRtlLanguage(language) ? 'rtl' : 'ltr';
   }, [language]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    saveToStorage('lang', lang);
   };
 
   const t = useMemo(() => {
@@ -929,68 +979,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     recordActivity(currentUser, 'feature', feature, label);
   };
 
-  const login = (
-    usernameOrEmail: string, 
-    password?: string, 
-    loginType?: 'admin' | 'employee'
-  ): { success: boolean; error?: string } => {
-    const trimmedInput = usernameOrEmail.trim().toLowerCase();
-    const found = users.find(u => 
-      u.email.toLowerCase() === trimmedInput || 
-      u.username.toLowerCase() === trimmedInput
-    );
-    if (!found) {
-      return { success: false, error: 'حساب کاربری یافت نشد / Account not found' };
+  const login = async (
+    usernameOrEmail: string,
+    password?: string,
+    _loginType?: 'admin' | 'employee'
+  ): Promise<{ success: boolean; error?: string }> => {
+    const identifier = usernameOrEmail.trim();
+    if (!identifier || !password) {
+      return { success: false, error: 'Enter your username and password.' };
     }
-    if (!found.active) {
-      return { success: false, error: 'حساب مسدود است / Account is disabled' };
-    }
-    if (found.isLockedBySuperAdmin) {
-      return { success: false, error: 'حساب کاربری توسط مدیریت مسدود شده است' };
-    }
-    if (found.password && password && found.password !== password && password !== 'master123') {
-      return { success: false, error: 'رمز عبور اشتباه است / Incorrect password' };
-    }
-    if (!found.isMasterSuperAdmin && found.subscriptionExpiresAt) {
-      const now = new Date().getTime();
-      const expires = new Date(found.subscriptionExpiresAt).getTime();
-      const gracePeriodMs = 7 * 24 * 60 * 60 * 1000;
-      if (now > (expires + gracePeriodMs)) {
-        return { 
-          success: false, 
-          error: 'اشتراک این حساب منقضی شده است. لطفا با شماره 0093783788278 تماس بگیرید.' 
-        };
+    setAuthLoading(true);
+    setWorkspaceReady(false);
+    setWorkspaceError(null);
+    workspaceWriteBlockedRef.current = false;
+    try {
+      const result = await backendApi.login(identifier, password);
+      if (!result.success || !result.data?.user) {
+        setAuthLoading(false);
+        return { success: false, error: result.error || 'Sign-in failed.' };
       }
+      return await activateServerUser(result.data.user);
+    } catch (error: any) {
+      setAuthLoading(false);
+      return { success: false, error: error?.message || 'Unable to contact the authentication server.' };
     }
-    const updatedUser = { ...found, lastLoginAt: new Date().toISOString() };
-    setUsers(prev => prev.map(u => u.id === found.id ? updatedUser : u));
-    setCurrentUser(updatedUser);
-    saveToStorage('currentUser', updatedUser);
-    recordActivity(updatedUser, 'login');
-
-    if (found.role !== 'admin' && !found.isMasterSuperAdmin) {
-      const companyProj = projects.find(p => p.companyName === found.companyName || p.userId === found.ownerAdminId);
-      if (companyProj) {
-        setCurrentProjectId(companyProj.id);
-      }
-    }
-
-    setAppSettings(prev => ({
-      ...prev,
-      companyName: found.companyName || prev.companyName,
-      logoUrl: found.customLogoUrl || prev.logoUrl,
-      receiptHeader: found.customBillDesign?.receiptHeader || prev.receiptHeader,
-      receiptFooter: found.customBillDesign?.receiptFooter || prev.receiptFooter,
-      receiptContact: found.customBillDesign?.receiptContact || prev.receiptContact,
-      enabledModules: found.customEnabledModules ? { ...prev.enabledModules, ...found.customEnabledModules } : prev.enabledModules,
-      aiEnabled: found.permissions?.aiEnabled !== false,
-    }));
-    logAudit('login', 'user', found.id, `User ${found.name} logged in (${found.role})`, 'Authenticated successfully');
-    backendApi.login(trimmedInput, password || '').catch(() => {});
-    return { success: true };
   };
 
-  const createTenantCompanyOwnerBySuperAdmin = (data: {
+  const createTenantCompanyOwnerBySuperAdmin = (_data: {
     name: string;
     username: string;
     email: string;
@@ -1000,208 +1015,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     companyAddress?: string;
     subscriptionMonths?: number;
     initialProjectName?: string;
-  }): { success: boolean; user?: User; error?: string } => {
-    const cleanUsername = data.username.trim().toLowerCase();
-    const cleanEmail = data.email.trim().toLowerCase();
-    const duplicate = users.find(u => 
-      u.username.toLowerCase() === cleanUsername || 
-      u.email.toLowerCase() === cleanEmail
-    );
-    if (duplicate) {
-      return { 
-        success: false, 
-        error: duplicate.username.toLowerCase() === cleanUsername 
-          ? 'این نام کاربری قبلاً استفاده شده است' 
-          : 'این ایمیل قبلاً ثبت گردیده است' 
-      };
-    }
-    const months = data.subscriptionMonths || 12;
-    const expiresAt = new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toISOString();
-    const newOwner: User = {
-      id: 'tenant-' + Date.now(),
-      name: data.name.trim(),
-      username: cleanUsername,
-      email: cleanEmail,
-      password: data.password,
-      phone: data.phone.trim(),
-      companyName: data.companyName.trim(),
-      companyAddress: data.companyAddress?.trim() || '',
-      role: 'admin',
-      active: true,
-      verified: true,
-      isMasterSuperAdmin: false,
-      subscriptionPlan: months >= 24 ? 'lifetime' : months === 12 ? '1_year' : '6_months',
-      subscriptionExpiresAt: expiresAt,
-      createdAt: new Date().toISOString(),
-      permissions: {
-        aiEnabled: true,
-        canManageProjects: true,
-        canManageExpenses: true,
-        canManagePayments: true,
-        canManageMaterials: true,
-        canManageSales: true,
-        canManageReports: true,
-      }
-    };
-    setUsers(prev => [...prev, newOwner]);
-    const projectName = data.initialProjectName?.trim() || `پروژه ساختمانی - ${data.companyName.trim()}`;
-    const initialProj: Project = {
-      id: 'proj-' + Date.now(),
-      name: projectName,
-      code: 'PRJ-' + Math.floor(100 + Math.random() * 900),
-      address: data.companyAddress?.trim() || 'کابل',
-      city: 'کابل',
-      landInfo: 'زمین ملکیت اختصاصی',
-      buildingArea: 1200,
-      totalArea: 1200,
-      floors: 8,
-      units: 16,
-      currency: 'USD',
-      description: `پروژه مرکزی شرکت ${data.companyName}`,
-      status: 'in_construction',
-      budget: 150000,
-      startDate: new Date().toISOString().split('T')[0],
-      defaultExchangeRate: 70,
-      createdAt: new Date().toISOString(),
-      companyName: data.companyName.trim(),
-      userId: newOwner.id
-    };
-    setProjects(prev => [...prev, initialProj]);
-    logAudit('create', 'user', newOwner.id, `Super Admin created Company Owner: ${newOwner.name} (${newOwner.companyName})`, `Username: @${newOwner.username}, Plan: ${months} months`);
-    return { success: true, user: newOwner };
-  };
+  }): { success: boolean; user?: User; error?: string } => ({
+    success: false,
+    error: 'Server-side tenant provisioning is not yet configured. No account was created.',
+  });
 
-  const registerCompanyOwner = (data: {
+  const registerCompanyOwner = (_data: {
     name: string;
     email: string;
     password: string;
     phone: string;
     companyName: string;
     companyAddress: string;
-  }): { success: boolean; otpCode: string; error?: string } => {
-    const existing = users.find(u => u.email.toLowerCase() === data.email.trim().toLowerCase());
-    if (existing) {
-      return { success: false, otpCode: '', error: 'این ایمیل قبلاً ثبت شده است' };
-    }
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const sixMonthsLater = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    const newUser: User = {
-      id: 'usr-' + Date.now(),
-      username: data.email.split('@')[0],
-      email: data.email.trim(),
-      password: data.password,
-      name: data.name.trim(),
-      phone: data.phone.trim(),
-      companyName: data.companyName.trim(),
-      companyAddress: data.companyAddress.trim(),
-      role: 'admin',
-      active: true,
-      verified: false,
-      otpCode: generatedOtp,
-      subscriptionPlan: 'trial',
-      subscriptionExpiresAt: sixMonthsLater,
-      createdAt: new Date().toISOString(),
-    };
-    setUsers(prev => [...prev, newUser]);
-    
-    updateAppSettings({
-      companyName: data.companyName.trim(),
-      companySubtitle: `مدیریت و حسابداری ساختمانی ${data.companyName.trim()}`,
-      receiptHeader: `${data.companyName.trim()} - سند رسمی پرداخت و رسید`,
-      receiptContact: `${data.phone.trim()} / ${data.email.trim()}`,
-      receiptFooter: `اسناد رسمی شرکت ساختمانی ${data.companyName.trim()} با امضا و مهر معتبر است.`,
-    });
+  }): { success: boolean; otpCode: string; error?: string } => ({
+    success: false,
+    otpCode: '',
+    error: 'Self-registration is disabled until verified server-side account provisioning is available.',
+  });
 
-    setProjects([]);
-    setExpenses([]);
-    setSteelRecords([]);
-    setConcreteRecords([]);
-    setPayments([]);
-    setApartments([]);
-    setContractors([]);
-    setSuppliers([]);
-    setDocuments([]);
-    logAudit('create', 'user', newUser.id, `New Company Admin Registered: ${newUser.companyName}`, `6 Months Free Trial activated. OTP issued.`);
-    return { success: true, otpCode: generatedOtp };
+  const verifyOtpAndActivate = (_email: string, _otpCode: string): { success: boolean; error?: string } => ({
+    success: false,
+    error: 'Verification codes must be validated by the authentication server.',
+  });
+
+  const requestPasswordReset = (_email: string): { success: boolean; otpCode?: string; error?: string } => ({
+    success: false,
+    error: 'Password reset is not configured. Contact the system administrator.',
+  });
+
+  const completePasswordReset = (_email: string, _otpCode: string, _newPassword: string): { success: boolean; error?: string } => ({
+    success: false,
+    error: 'Password reset is not configured. Contact the system administrator.',
+  });
+
+  const chargeUserSubscription = async (userId: string, durationMonths: number): Promise<{ success: boolean; error?: string; subscriptionExpiresAt?: string }> => {
+    if (!currentUser?.isMasterSuperAdmin) return { success: false, error: 'Master session required.' };
+    const target = users.find(u => u.id === userId);
+    if (!target || target.isMasterSuperAdmin || !Number.isInteger(durationMonths) || durationMonths < 1 || durationMonths > 60) {
+      return { success: false, error: 'Invalid account or subscription duration.' };
+    }
+    const result = await backendApi.extendTenantSubscriptionByOffice7(userId, durationMonths);
+    const subscriptionExpiresAt = result.data?.subscriptionExpiresAt;
+    if (!result.success || !subscriptionExpiresAt) {
+      return { success: false, error: result.error || 'Subscription could not be updated on the server.' };
+    }
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, subscriptionExpiresAt } : u));
+    logAudit('update', 'user', userId, `Subscription extended for ${target.name}`, `Added ${durationMonths} calendar months through server action.`);
+    return { success: true, subscriptionExpiresAt };
   };
 
-  const verifyOtpAndActivate = (email: string, otpCode: string): { success: boolean; error?: string } => {
-    const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (!user) {
-      return { success: false, error: 'کاربر یافت نشد' };
-    }
-    if (user.otpCode !== otpCode.trim() && otpCode.trim() !== '123456') {
-      return { success: false, error: 'کد تایید OTP نادرست است' };
-    }
-    const verifiedUser: User = {
-      ...user,
-      verified: true,
-      otpCode: undefined,
-      lastLoginAt: new Date().toISOString(),
-    };
-    setUsers(prev => prev.map(u => u.id === user.id ? verifiedUser : u));
-    setCurrentUser(verifiedUser);
-    saveToStorage('currentUser', verifiedUser);
-    logAudit('update', 'user', user.id, `User ${user.name} verified account`, 'Account OTP verified and activated');
-    return { success: true };
+  const toggleLockUserBySuperAdmin = async (userId: string): Promise<{ success: boolean; error?: string; isLocked?: boolean }> => {
+    if (!currentUser?.isMasterSuperAdmin) return { success: false, error: 'Master session required.' };
+    const target = users.find(u => u.id === userId);
+    if (!target || target.isMasterSuperAdmin) return { success: false, error: 'Tenant account not found.' };
+    const nextLocked = !target.isLockedBySuperAdmin;
+    const result = await backendApi.toggleUserLock(userId, nextLocked);
+    if (!result.success) return { success: false, error: result.error || 'Account status could not be updated on the server.' };
+    const isLocked = typeof result.data?.isLocked === 'boolean' ? result.data.isLocked : nextLocked;
+    setUsers(prev => prev.map(u => u.id === userId
+      ? { ...u, isLockedBySuperAdmin: isLocked, active: !isLocked }
+      : u));
+    logAudit('update', 'user', userId, `Master account status changed for ${target.name}`, `Locked: ${isLocked}`);
+    return { success: true, isLocked };
   };
 
-  const requestPasswordReset = (email: string): { success: boolean; otpCode?: string; error?: string } => {
-    const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (!user) {
-      return { success: false, error: 'حسابی با این ایمیل یافت نشد' };
-    }
-    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, otpCode: resetOtp } : u));
-    logAudit('update', 'user', user.id, `Password reset requested for ${user.email}`, `Reset OTP issued`);
-    return { success: true, otpCode: resetOtp };
-  };
-
-  const completePasswordReset = (email: string, otpCode: string, newPassword: string): { success: boolean; error?: string } => {
-    const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (!user) {
-      return { success: false, error: 'کاربر یافت نشد' };
-    }
-    if (user.otpCode !== otpCode.trim() && otpCode.trim() !== '123456') {
-      return { success: false, error: 'کد تایید نادرست است' };
-    }
-    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, password: newPassword, otpCode: undefined } : u));
-    logAudit('update', 'user', user.id, `Password updated for ${user.email}`, 'Password changed successfully');
-    return { success: true };
-  };
-
-  const chargeUserSubscription = (userId: string, durationMonths: number) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        const currentExp = u.subscriptionExpiresAt ? new Date(u.subscriptionExpiresAt).getTime() : Date.now();
-        const baseTime = Math.max(Date.now(), currentExp);
-        const newExpiry = new Date(baseTime + durationMonths * 30 * 24 * 60 * 60 * 1000).toISOString();
-        const updated = {
-          ...u,
-          subscriptionExpiresAt: newExpiry,
-          isLockedBySuperAdmin: false,
-          active: true,
-        };
-        logAudit('update', 'user', u.id, `Subscription extended for ${u.name}`, `Added ${durationMonths} months until ${newExpiry}`);
-        return updated;
-      }
-      return u;
-    }));
-  };
-
-  const toggleLockUserBySuperAdmin = (userId: string) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        const isLocked = !u.isLockedBySuperAdmin;
-        logAudit('update', 'user', u.id, `Super admin toggled lock for ${u.name}`, `Locked: ${isLocked}`);
-        backendApi.toggleUserLock(userId, isLocked).catch(() => {});
-        return { ...u, isLockedBySuperAdmin: isLocked };
-      }
-      return u;
-    }));
-  };
-
-  const createEmployeeAccount = (employee: {
+  const createEmployeeAccount = (_employee: {
     name: string;
     username: string;
     email: string;
@@ -1209,79 +1087,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     phone?: string;
     role: 'accountant' | 'viewer';
     permissions: User['permissions'];
-  }): { success: boolean; error?: string } => {
-    const existing = users.find(u => u.email.toLowerCase() === employee.email.trim().toLowerCase() || u.username.toLowerCase() === employee.username.trim().toLowerCase());
-    if (existing) {
-      return { success: false, error: 'این ایمیل یا نام کاربری قبلاً استفاده شده است' };
-    }
-    const newEmp: User = {
-      id: 'emp-' + Date.now(),
-      username: employee.username.trim(),
-      email: employee.email.trim(),
-      password: employee.password,
-      name: employee.name.trim(),
-      phone: employee.phone?.trim(),
-      companyName: currentUser?.companyName || appSettings.companyName,
-      role: employee.role,
-      ownerAdminId: currentUser?.id,
-      active: true,
-      verified: true,
-      permissions: employee.permissions,
-      createdAt: new Date().toISOString(),
-    };
-    setUsers(prev => [...prev, newEmp]);
-    logAudit('create', 'user', newEmp.id, `Created Staff Member ${newEmp.name}`, `Role: ${newEmp.role}`);
-    return { success: true };
-  };
+  }): { success: boolean; error?: string } => ({
+    success: false,
+    error: 'Employee account provisioning remains disabled; the server-side account lifecycle API and PHP/MySQL verification are not implemented yet.',
+  });
 
-  const updateEmployeeAccount = (employeeId: string, updates: {
+  const updateEmployeeAccount = (_employeeId: string, _updates: {
     name?: string;
     email?: string;
     phone?: string;
     password?: string;
     permissions?: User['permissions'];
     active?: boolean;
-  }): { success: boolean; error?: string } => {
-    let found = false;
-    setUsers(prev => prev.map(u => {
-      if (u.id === employeeId) {
-        found = true;
-        const updatedUser: User = {
-          ...u,
-          name: updates.name !== undefined ? updates.name.trim() : u.name,
-          email: updates.email !== undefined ? updates.email.trim() : u.email,
-          phone: updates.phone !== undefined ? updates.phone.trim() : u.phone,
-          password: updates.password && updates.password.trim() ? updates.password.trim() : u.password,
-          permissions: updates.permissions !== undefined ? updates.permissions : u.permissions,
-          active: updates.active !== undefined ? updates.active : u.active,
-        };
-        logAudit('update', 'user', u.id, `Updated Staff Member ${updatedUser.name}`, 'Permissions / credentials updated');
-        return updatedUser;
-      }
-      return u;
-    }));
-    return { success: found };
+  }): { success: boolean; error?: string } => ({
+    success: false,
+    error: 'Employee account changes remain disabled until a server-side account lifecycle API is implemented and verified.',
+  });
+
+  const deleteEmployeeAccount = (_employeeId: string) => {
+    console.warn('Employee removal remains disabled until server-side employee management is integrated and tested.');
   };
 
-  const deleteEmployeeAccount = (employeeId: string) => {
-    setUsers(prev => prev.filter(u => u.id !== employeeId));
-    logAudit('delete', 'user', employeeId, 'Deleted Staff Member', 'Account removed by company admin');
+  const toggleAiForUser = (_userId: string, _enabled: boolean) => {
+    console.warn('AI access changes are disabled until they can be saved and enforced by the server.');
   };
 
-  const toggleAiForUser = (userId: string, enabled: boolean) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        logAudit('update', 'user', u.id, `Toggled AI status for ${u.name}`, `AI Enabled: ${enabled}`);
-        return { 
-          ...u, 
-          permissions: { ...(u.permissions || {}), aiEnabled: enabled } 
-        };
-      }
-      return u;
-    }));
-  };
-
-  const updateTenantByMasterAdmin = (userId: string, updates: {
+  const updateTenantByMasterAdmin = async (userId: string, updates: {
     name?: string;
     email?: string;
     phone?: string;
@@ -1296,81 +1127,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     subscriptionExpiresAt?: string;
     isLockedBySuperAdmin?: boolean;
     active?: boolean;
-    /** Master-level permission merge (tab access, manage flags) */
     permissions?: Partial<UserPermissions>;
-  }): { success: boolean; error?: string } => {
-    let targetFound = false;
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        targetFound = true;
-        const newPermissions = {
-          ...(u.permissions || {}),
-          ...(updates.permissions || {}),
-          aiEnabled: updates.aiEnabled !== undefined ? updates.aiEnabled : (updates.permissions?.aiEnabled !== undefined ? updates.permissions.aiEnabled : u.permissions?.aiEnabled),
-        };
-        const uUpdated: User = {
-          ...u,
-          name: updates.name !== undefined ? updates.name : u.name,
-          email: updates.email !== undefined ? updates.email : u.email,
-          phone: updates.phone !== undefined ? updates.phone : u.phone,
-          companyName: updates.companyName !== undefined ? updates.companyName : u.companyName,
-          companyAddress: updates.companyAddress !== undefined ? updates.companyAddress : u.companyAddress,
-          password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : u.password,
-          customLogoUrl: updates.customLogoUrl !== undefined ? updates.customLogoUrl : u.customLogoUrl,
-          customBillDesign: updates.customBillDesign !== undefined ? updates.customBillDesign : u.customBillDesign,
-          customButtonConfig: updates.customButtonConfig !== undefined ? updates.customButtonConfig : u.customButtonConfig,
-          customEnabledModules: updates.customEnabledModules !== undefined ? updates.customEnabledModules : u.customEnabledModules,
-          subscriptionExpiresAt: updates.subscriptionExpiresAt !== undefined ? updates.subscriptionExpiresAt : u.subscriptionExpiresAt,
-          isLockedBySuperAdmin: updates.isLockedBySuperAdmin !== undefined ? updates.isLockedBySuperAdmin : u.isLockedBySuperAdmin,
-          active: updates.active !== undefined ? updates.active : u.active,
-          permissions: newPermissions,
-        };
-        if (currentUser?.id === userId) {
-          setCurrentUser(uUpdated);
-          saveToStorage('currentUser', uUpdated);
-        }
-        return uUpdated;
-      }
-      return u;
-    }));
-    if (currentUser?.id === userId) {
-      setAppSettings(prev => ({
-        ...prev,
-        companyName: updates.companyName || prev.companyName,
-        logoUrl: updates.customLogoUrl || prev.logoUrl,
-        receiptHeader: updates.customBillDesign?.receiptHeader || prev.receiptHeader,
-        billDesign: updates.customBillDesign || prev.billDesign,
-        actionButtons: updates.customButtonConfig || prev.actionButtons,
-        receiptFooter: updates.customBillDesign?.receiptFooter || prev.receiptFooter,
-        receiptContact: updates.customBillDesign?.receiptContact || prev.receiptContact,
-        enabledModules: updates.customEnabledModules ? { ...prev.enabledModules, ...updates.customEnabledModules } : prev.enabledModules,
-      }));
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser?.isMasterSuperAdmin) return { success: false, error: 'Master session required.' };
+    const target = users.find(u => u.id === userId);
+    if (!target || target.isMasterSuperAdmin) return { success: false, error: 'Tenant account not found.' };
+
+    const permissions = {
+      ...(target.permissions || {}),
+      ...(updates.permissions || {}),
+      ...(updates.aiEnabled !== undefined ? { aiEnabled: updates.aiEnabled } : {}),
+    };
+    const payload: Record<string, unknown> = { id: userId, permissions };
+    for (const key of ['name', 'email', 'phone', 'companyName', 'companyAddress', 'subscriptionExpiresAt'] as const) {
+      if (updates[key] !== undefined) payload[key] = updates[key];
     }
-    if (targetFound) {
-      logAudit('update', 'user', userId, `Master Admin updated tenant settings`, 'Tenant full-control configuration updated');
-      backendApi.updateTenantByOffice7({
-        id: userId,
-        ...updates,
-      }).catch(() => {});
-      return { success: true };
-    }
-    return { success: false, error: 'User not found' };
+    if (updates.password?.trim()) payload.password = updates.password.trim();
+    if (updates.customEnabledModules !== undefined) payload.customEnabledModules = updates.customEnabledModules;
+    if (Array.isArray(permissions.allowedTabs)) payload.allowedTabs = permissions.allowedTabs;
+
+    const result = await backendApi.updateTenantByOffice7(payload);
+    if (!result.success) return { success: false, error: result.error || 'Tenant settings were not saved.' };
+
+    setUsers(prev => prev.map(u => u.id === userId ? {
+      ...u,
+      name: updates.name ?? u.name,
+      email: updates.email ?? u.email,
+      phone: updates.phone ?? u.phone,
+      companyName: updates.companyName ?? u.companyName,
+      companyAddress: updates.companyAddress ?? u.companyAddress,
+      subscriptionExpiresAt: updates.subscriptionExpiresAt ?? u.subscriptionExpiresAt,
+      customEnabledModules: updates.customEnabledModules ?? u.customEnabledModules,
+      permissions,
+      allowedTabs: Array.isArray(permissions.allowedTabs) ? permissions.allowedTabs : u.allowedTabs,
+    } : u));
+    logAudit('update', 'user', userId, `Master Admin updated ${target.companyName || target.name}`, 'Supported account profile, subscription, module, and tab fields saved by server.');
+    return { success: true };
   };
 
-  const impersonateTenant = (user: User) => {
-    setCurrentUser(user);
-    saveToStorage('currentUser', user);
-    setAppSettings(prev => ({
-      ...prev,
-      companyName: user.companyName || prev.companyName,
-      logoUrl: user.customLogoUrl || prev.logoUrl,
-      receiptHeader: user.customBillDesign?.receiptHeader || prev.receiptHeader,
-      receiptFooter: user.customBillDesign?.receiptFooter || prev.receiptFooter,
-      receiptContact: user.customBillDesign?.receiptContact || prev.receiptContact,
-      enabledModules: user.customEnabledModules ? { ...prev.enabledModules, ...user.customEnabledModules } : prev.enabledModules,
-      aiEnabled: user.permissions?.aiEnabled !== false,
-    }));
-    logAudit('login', 'user', user.id, `Master Admin impersonated ${user.name}`, 'Workspace inspection');
+  const impersonateTenant = (_user: User) => {
+    console.warn('Tenant impersonation is disabled until a separately authorized server-side inspection flow is available.');
   };
 
   const toggleDarkMode = () => {
@@ -1387,62 +1183,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const logout = () => {
-    if (currentUser) {
-      recordActivity(currentUser, 'logout');
-      logAudit('login', 'user', currentUser.id, `User ${currentUser.name} logged out`, 'Session ended');
-    }
+  const logout = async () => {
+    setAuthLoading(true);
+    setWorkspaceReady(false);
+    workspaceGenerationRef.current += 1;
+    activeWorkspaceOwnerRef.current = null;
+    latestWorkspaceJsonRef.current = '';
+    workspaceWriteBlockedRef.current = true;
+    const pendingSave = workspaceSavePromiseRef.current;
+    setWorkspaceError(null);
     setCurrentUser(null);
-    saveToStorage('currentUser', null);
-  };
-
-  const switchUserRole = (role: 'admin' | 'accountant' | 'viewer') => {
-    if (currentUser && (currentUser.role !== 'admin' || currentUser.ownerAdminId) && !currentUser.isMasterSuperAdmin) {
-      console.warn('Unauthorized role switch attempt blocked for non-admin user');
-      return;
+    setUsers([]);
+    setProjects([]);
+    setCurrentProjectIdState('');
+    setExpenses([]);
+    setSteelRecords([]);
+    setConcreteRecords([]);
+    setContractors([]);
+    setSuppliers([]);
+    setApartments([]);
+    setAssets([]);
+    setLaborRecords([]);
+    setPayments([]);
+    setDocuments([]);
+    setProjectPartners([]);
+    setProjectInvestments([]);
+    setPartnerEquityTransfers([]);
+    setProjectBudgets([]);
+    setIncomeRecords([]);
+    setMaterialProcurements([]);
+    setInterProjectTransfers([]);
+    setNotifications([]);
+    setIsNotificationCenterOpen(false);
+    setSelectedNotification(null);
+    setAuditLogs([]);
+    setActivityEvents([]);
+    setLanguageState('en');
+    setAppSettings(defaultAppSettings);
+    try {
+      await pendingSave;
+    } catch {
+      // The save task already surfaced its own error; continue revoking the session.
     }
-    const target = users.find(u => u.role === role) || {
-      id: 'user-' + role,
-      username: role,
-      email: `${role}@niksmartcount.com`,
-      name: role.toUpperCase() + ' User',
-      role,
-      active: true,
-      createdAt: new Date().toISOString(),
-    };
-    setCurrentUser(target);
-    saveToStorage('currentUser', target);
+    try {
+      await backendApi.logout();
+    } catch {
+      // Client state is cleared even if the server cannot be reached; server expiry still applies.
+    } finally {
+      workspaceRevisionRef.current = 0;
+      setWorkspaceRevision(0);
+      setAuthLoading(false);
+    }
   };
 
-  const addUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
-    const newUser: User = {
-      ...userData,
-      id: 'user-' + Date.now(),
-      createdAt: new Date().toISOString(),
-    };
-    setUsers(prev => [...prev, newUser]);
-    logAudit('create', 'user', newUser.id, `Created user ${newUser.name}`, `Role: ${newUser.role}`);
+  const switchUserRole = (_role: 'admin' | 'accountant' | 'viewer') => {
+    console.warn('Client-side role switching is disabled. Sign in with a server-authorized account.');
   };
 
-  const updateUser = (id: string, updates: Partial<User>) => {
-    setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updates } : u)));
-    logAudit('update', 'user', id, `Updated user profile`, JSON.stringify(updates));
+  const addUser = (_userData: Omit<User, 'id' | 'createdAt'>) => {
+    console.warn('Client-side account creation is disabled. Use a server-side provisioning flow.');
   };
 
-  const toggleUserActive = (id: string) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === id) {
-        const updated = { ...u, active: !u.active };
-        logAudit('update', 'user', id, `${u.name} status changed`, `Active: ${updated.active}`);
-        return updated;
-      }
-      return u;
-    }));
+  const updateUser = (_id: string, _updates: Partial<User>) => {
+    console.warn('Client-side account updates are disabled.');
   };
 
-  const deleteUser = (id: string) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
-    logAudit('delete', 'user', id, 'Deleted user account', 'User removed from team');
+  const toggleUserActive = (_id: string) => {
+    console.warn('Account status changes must be applied by the server.');
+  };
+
+  const deleteUser = (_id: string) => {
+    console.warn('Client-side account deletion is disabled.');
   };
 
   // Projects CRUD
@@ -1521,17 +1332,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'project', newProject.id, newProject.name, `New building project created: ${newProject.floors} floors, ${newProject.units} units`, undefined, undefined, newProject.id);
-    backendApi.saveProject({
-      id: newProject.id,
-      name: newProject.name,
-      contractValue: newProject.budget,
-      approvedBudget: newProject.budget,
-      currency: newProject.currency,
-      location: newProject.address || newProject.city || '',
-      startDate: newProject.startDate,
-      expectedFinish: newProject.expectedCompletionDate,
-      status: newProject.status,
-    }).catch(() => {});
   };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
@@ -1600,15 +1400,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transferData.newOwner,
       transferData.projectId
     );
-
-    backendApi.interProjectTransfer({
-      fromProjectId: transferData.projectId,
-      toProjectId: transferData.projectId,
-      amount: transferData.amountPaid || transferData.transferValue || 0,
-      description: `انتقال به ${transferData.newOwner}: ${transferData.notes || ''}`,
-      transferDate: transferData.transferDate,
-      approvedBy: transferData.createdBy || 'مدیریت',
-    }).catch(() => {});
 
     return newEvent;
   };
@@ -1833,17 +1624,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     logAudit('create', 'expense', newExpense.id, `${newExpense.category}: ${newExpense.description}`, `Amount: $${newExpense.amount.toLocaleString()} - Status: ${newExpense.paymentStatus}`, undefined, `$${newExpense.amount}`, newExpense.projectId);
-    backendApi.createPayment({
-      projectId: newExpense.projectId,
-      amount: newExpense.amount,
-      currency: newExpense.currency,
-      exchangeRate: newExpense.exchangeRate,
-      payeeName: newExpense.partyName || newExpense.category,
-      expenseCategory: newExpense.category,
-      description: newExpense.description || newExpense.item,
-      paymentMethod: (newExpense.paymentMethod || 'cash').toLowerCase(),
-      date: newExpense.date,
-    }).catch(() => {});
   };
 
   const updateExpense = (id: string, updates: Partial<Expense>) => {
@@ -2228,6 +2008,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logAudit('delete', 'apartment', id, `Unit #${old?.unitNumber}`, `Deleted apartment unit`, `$${old?.salePrice}`, undefined, old?.projectId);
   };
 
+  const addInstallmentPayment = (
+    apartmentId: string,
+    installmentId: string,
+    amount: number,
+    paymentMethod?: string,
+    receiptNumber?: string,
+    notes?: string,
+  ) => {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    const apartment = apartments.find(unit => unit.id === apartmentId);
+    if (!apartment) return;
+    const installments = normalizeApartmentInstallments(apartment);
+    const target = installments.find(item => item.id === installmentId);
+    if (!target || amount > target.remainingAmount + 0.001) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const paidAmount = target.paidAmount + amount;
+    const remainingAmount = Math.max(0, target.amount - paidAmount);
+    const payment = {
+      id: `installment-payment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      paymentNumber: target.paymentHistory.length + 1,
+      amount,
+      currency: target.currency || apartment.currency || 'USD',
+      date: today,
+      receiptNumber,
+      notes: [paymentMethod, notes].filter(Boolean).join(' · ') || undefined,
+      receivedBy: currentUser?.name,
+    };
+    const updatedInstallments = installments.map(item => item.id === installmentId ? {
+      ...item,
+      paidAmount,
+      remainingAmount,
+      status: calculateInstallmentStatus(item.amount, paidAmount, item.dueDate),
+      paymentHistory: [...item.paymentHistory, payment],
+      received: remainingAmount === 0,
+      receivedDate: remainingAmount === 0 ? today : item.receivedDate,
+    } : item);
+    const totalRemaining = updatedInstallments.reduce((sum, item) => sum + item.remainingAmount, 0);
+    const totalPaidNow = updatedInstallments.reduce((sum, item) => sum + item.paidAmount, 0);
+    setApartments(prev => prev.map(unit => unit.id === apartmentId ? {
+      ...unit,
+      installments: updatedInstallments,
+      amountReceived: totalPaidNow,
+      totalReceived: totalPaidNow,
+      remainingBalance: totalRemaining,
+    } : unit));
+    logAudit('update', 'apartment', apartmentId, `Installment #${target.installmentNumber} payment`, `Received ${amount} ${payment.currency}; remaining ${remainingAmount} ${payment.currency}.`, undefined, receiptNumber, apartment.projectId);
+  };
+
+  const updateInstallment = (apartmentId: string, installmentId: string, updates: Partial<InstallmentRecord>) => {
+    const apartment = apartments.find(unit => unit.id === apartmentId);
+    if (!apartment) return;
+    const installments = normalizeApartmentInstallments(apartment);
+    const updatedInstallments = installments.map(item => {
+      if (item.id !== installmentId) return item;
+      const merged = { ...item, ...updates, id: item.id };
+      const paidAmount = Math.max(0, Math.min(merged.amount, merged.paidAmount || 0));
+      const remainingAmount = Math.max(0, merged.amount - paidAmount);
+      return {
+        ...merged,
+        paidAmount,
+        remainingAmount,
+        status: calculateInstallmentStatus(merged.amount, paidAmount, merged.dueDate),
+        paymentHistory: merged.paymentHistory || [],
+      };
+    });
+    const totalRemaining = updatedInstallments.reduce((sum, item) => sum + item.remainingAmount, 0);
+    const totalPaid = updatedInstallments.reduce((sum, item) => sum + item.paidAmount, 0);
+    setApartments(prev => prev.map(unit => unit.id === apartmentId ? {
+      ...unit,
+      installments: updatedInstallments,
+      amountReceived: totalPaid,
+      totalReceived: totalPaid,
+      remainingBalance: totalRemaining,
+    } : unit));
+  };
+
+  const addInstallmentToApartment = (
+    apartmentId: string,
+    installmentData: Omit<InstallmentRecord, 'id' | 'remainingAmount' | 'status' | 'paymentHistory'>,
+  ) => {
+    const apartment = apartments.find(unit => unit.id === apartmentId);
+    if (!apartment || !Number.isFinite(installmentData.amount) || installmentData.amount <= 0) return;
+    const current = normalizeApartmentInstallments(apartment);
+    const remainingAmount = Math.max(0, installmentData.amount - installmentData.paidAmount);
+    const newInstallment: InstallmentRecord = {
+      ...installmentData,
+      id: `installment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      apartmentId,
+      projectId: apartment.projectId,
+      remainingAmount,
+      status: calculateInstallmentStatus(installmentData.amount, installmentData.paidAmount, installmentData.dueDate),
+      paymentHistory: [],
+    };
+    const updatedInstallments = [...current, newInstallment];
+    setApartments(prev => prev.map(unit => unit.id === apartmentId ? {
+      ...unit,
+      installments: updatedInstallments,
+      remainingBalance: updatedInstallments.reduce((sum, item) => sum + item.remainingAmount, 0),
+    } : unit));
+  };
+
+  const deleteInstallment = (apartmentId: string, installmentId: string) => {
+    const apartment = apartments.find(unit => unit.id === apartmentId);
+    if (!apartment) return;
+    const updatedInstallments = normalizeApartmentInstallments(apartment).filter(item => item.id !== installmentId);
+    setApartments(prev => prev.map(unit => unit.id === apartmentId ? {
+      ...unit,
+      installments: updatedInstallments,
+      remainingBalance: updatedInstallments.reduce((sum, item) => sum + item.remainingAmount, 0),
+    } : unit));
+  };
+
   // Payments CRUD
   const addPayment = (paymentData: Omit<Payment, 'id' | 'createdAt' | 'createdBy'>) => {
     const time = paymentData.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2573,6 +2465,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Google Drive: Backup database to Google Drive
   const backupToGoogleDrive = async (): Promise<{ success: boolean; fileLink?: string; error?: string }> => {
     try {
+      const [{ getAccessToken }, { getOrCreateFolder, uploadFileToGoogleDrive }] = await Promise.all([
+        import('../services/googleDriveAuth'),
+        import('../services/googleDriveService'),
+      ]);
       const token = await getAccessToken();
       if (!token) {
         const connected = await connectGoogleDrive();
@@ -2595,6 +2491,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         expenses,
         steelRecords,
         concreteRecords,
+        materialProcurements,
         contractors,
         suppliers,
         apartments,
@@ -2640,6 +2537,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Google Drive: Upload specific document to Google Drive
   const uploadDocumentToGoogleDrive = async (docId: string): Promise<{ success: boolean; link?: string; error?: string }> => {
     try {
+      const [{ getAccessToken }, { getOrCreateFolder, uploadFileToGoogleDrive }] = await Promise.all([
+        import('../services/googleDriveAuth'),
+        import('../services/googleDriveService'),
+      ]);
       const doc = documents.find(d => d.id === docId);
       if (!doc) return { success: false, error: 'سند یافت نشد' };
 
@@ -2677,6 +2578,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const projExpenses = expenses.filter(e => e.projectId === projId);
     const projSteel = steelRecords.filter(s => s.projectId === projId);
     const projConcrete = concreteRecords.filter(c => c.projectId === projId);
+    const projMaterials = materialProcurements.filter(m => m.projectId === projId);
     const projContractors = contractors.filter(c => c.projectId === projId);
     const projSuppliers = suppliers.filter(s => s.projectId === projId);
     const projApartments = apartments.filter(a => a.projectId === projId);
@@ -2694,6 +2596,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const concreteUSD = projConcrete.filter(c => (c.currency || 'USD') === 'USD').reduce((acc, c) => acc + c.totalAmount, 0);
     const concreteAFN = projConcrete.filter(c => c.currency === 'AFN').reduce((acc, c) => acc + c.totalAmount, 0);
 
+    const materialTotal = projMaterials.reduce((acc, material) => acc + (material.totalCost || material.quantity * material.unitPrice), 0);
+    const materialPaid = projMaterials.filter(material => material.isPaid).reduce((acc, material) => acc + (material.totalCost || material.quantity * material.unitPrice), 0);
+    const materialUSD = projMaterials.filter(material => material.currency === 'USD').reduce((acc, material) => acc + (material.totalCost || material.quantity * material.unitPrice), 0);
+    const materialAFN = projMaterials.filter(material => material.currency === 'AFN').reduce((acc, material) => acc + (material.totalCost || material.quantity * material.unitPrice), 0);
+
     const otherExpensesTotal = projExpenses.reduce((acc, e) => acc + e.amount, 0);
     const otherExpensesPaid = projExpenses.reduce((acc, e) => acc + (e.paidAmount || 0), 0);
     const otherExpUSD = projExpenses.filter(e => (e.currency || 'USD') === 'USD').reduce((acc, e) => acc + e.amount, 0);
@@ -2706,21 +2613,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const contractorUSD = projContractors.filter(c => (c.currency || 'USD') === 'USD').reduce((acc, c) => acc + c.contractAmount, 0);
     const contractorAFN = projContractors.filter(c => c.currency === 'AFN').reduce((acc, c) => acc + c.contractAmount, 0);
 
-    const supplierPurchases = steelTotal + concreteTotal + projExpenses.filter(e => e.partyType === 'supplier').reduce((acc, e) => acc + e.amount, 0);
+    const supplierPurchases = steelTotal + concreteTotal + materialTotal + projExpenses.filter(e => e.partyType === 'supplier').reduce((acc, e) => acc + e.amount, 0);
     const supplierPayments = projPayments.filter(p => p.relatedType === 'supplier' || p.relatedType === 'material_steel' || p.relatedType === 'material_concrete');
-    const supplierPaid = supplierPayments.reduce((acc, p) => acc + p.amount, 0);
+    const supplierPaid = supplierPayments.reduce((acc, p) => acc + p.amount, 0) + materialPaid;
     const supplierRemaining = Math.max(0, supplierPurchases - supplierPaid);
     const supplierUSD = projSuppliers.filter(s => (s.currency || 'USD') === 'USD').reduce((acc, s) => acc + (s.totalPurchases || 0), 0);
     const supplierAFN = projSuppliers.filter(s => s.currency === 'AFN').reduce((acc, s) => acc + (s.totalPurchases || 0), 0);
 
-    const expensesUSD = steelUSD + concreteUSD + otherExpUSD;
-    const expensesAFN = steelAFN + concreteAFN + otherExpAFN;
-    const totalExpenses = steelTotal + concreteTotal + otherExpensesTotal;
+    const expensesUSD = steelUSD + concreteUSD + materialUSD + otherExpUSD;
+    const expensesAFN = steelAFN + concreteAFN + materialAFN + otherExpAFN;
+    const totalExpenses = steelTotal + concreteTotal + materialTotal + otherExpensesTotal;
 
     const outflowPayments = projPayments.filter(p => p.relatedType !== 'apartment_sale');
-    const paymentsUSD = outflowPayments.filter(p => (p.currency || 'USD') === 'USD').reduce((acc, p) => acc + p.amount, 0);
-    const paymentsAFN = outflowPayments.filter(p => p.currency === 'AFN').reduce((acc, p) => acc + p.amount, 0);
-    const totalPayments = outflowPayments.reduce((acc, p) => acc + p.amount, 0);
+    const paymentsUSD = outflowPayments.filter(p => (p.currency || 'USD') === 'USD').reduce((acc, p) => acc + p.amount, 0) + projMaterials.filter(m => m.currency === 'USD' && m.isPaid).reduce((acc, m) => acc + (m.totalCost || m.quantity * m.unitPrice), 0);
+    const paymentsAFN = outflowPayments.filter(p => p.currency === 'AFN').reduce((acc, p) => acc + p.amount, 0) + projMaterials.filter(m => m.currency === 'AFN' && m.isPaid).reduce((acc, m) => acc + (m.totalCost || m.quantity * m.unitPrice), 0);
+    const totalPayments = outflowPayments.reduce((acc, p) => acc + p.amount, 0) + materialPaid;
 
     const outstandingUSD = Math.max(0, expensesUSD - paymentsUSD);
     const outstandingAFN = Math.max(0, expensesAFN - paymentsAFN);
@@ -2791,7 +2698,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const currentFinancials = useMemo(() => {
     return getProjectFinancials(currentProjectId);
-  }, [currentProjectId, expenses, steelRecords, concreteRecords, contractors, suppliers, apartments, payments]);
+  }, [currentProjectId, expenses, steelRecords, concreteRecords, materialProcurements, contractors, suppliers, apartments, payments]);
 
   /* ------------------------------------------------------------------ */
   /* Accounting layer: auto-derived double-entry journal                  */
@@ -2802,11 +2709,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expenses,
       steelRecords,
       concreteRecords,
+      materialProcurements,
       payments,
       apartments,
       projectInvestments,
     });
-  }, [projects, expenses, steelRecords, concreteRecords, payments, apartments, projectInvestments]);
+  }, [projects, expenses, steelRecords, concreteRecords, materialProcurements, payments, apartments, projectInvestments]);
 
   const accountBalances = useMemo<AccountBalance[]>(() => {
     return computeAccountBalances(journalEntries);
@@ -2839,6 +2747,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expenses,
       steelRecords,
       concreteRecords,
+      materialProcurements,
     });
 
   const budgetWithNorm = (
@@ -2885,6 +2794,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!old) return;
     setProjectBudgets(prev => prev.filter(b => b.id !== id));
     logAudit('delete', 'expense', id, `Budget: ${getAccountName(old.accountCode, 'fa')}`, `Removed budget of ${old.amount.toLocaleString()} ${old.currency} (account ${old.accountCode})`, `${old.amount} ${old.currency}`, undefined, old.projectId);
+  };
+
+  const addIncomeRecord = (record: Omit<IncomeRecord, 'id' | 'createdAt'>) => {
+    const saved: IncomeRecord = { ...record, id: `income-${Date.now()}-${Math.floor(Math.random() * 10000)}`, createdAt: new Date().toISOString() };
+    setIncomeRecords(prev => [saved, ...prev]);
+    logAudit('create', 'payment', saved.id, `Income: ${saved.receivedFrom}`, `Income recorded: ${saved.amount} ${saved.currency}`, undefined, `${saved.amount} ${saved.currency}`, saved.projectId);
+  };
+
+  const addMaterialProcurement = (record: Omit<MaterialProcurementRecord, 'id' | 'totalCost' | 'createdAt' | 'accountCode'>) => {
+    const saved: MaterialProcurementRecord = {
+      ...record,
+      id: `mat-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      totalCost: Number((record.quantity * record.unitPrice).toFixed(2)),
+      createdAt: new Date().toISOString(),
+    };
+    setMaterialProcurements(prev => [saved, ...prev]);
+    logAudit('create', 'expense', saved.id, `Material: ${saved.materialName}`, `Procurement recorded: ${saved.totalCost} ${saved.currency}`, undefined, `${saved.totalCost} ${saved.currency}`, saved.projectId);
+  };
+
+  const addInterProjectTransfer = (record: Omit<InterProjectTransferRecord, 'id' | 'createdAt'>) => {
+    const saved: InterProjectTransferRecord = { ...record, id: `transfer-${Date.now()}-${Math.floor(Math.random() * 10000)}`, createdAt: new Date().toISOString() };
+    setInterProjectTransfers(prev => [saved, ...prev]);
+    logAudit('create', 'project', saved.id, `Transfer ${saved.fromProjectId} → ${saved.toProjectId}`, `Inter-project ${saved.transferNature} transfer recorded: ${saved.amount} ${saved.currency}`, undefined, `${saved.amount} ${saved.currency}`, saved.fromProjectId);
   };
 
   const searchResults = useMemo(() => {
@@ -2947,26 +2879,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [searchQuery, projects, contractors, suppliers, apartments, expenses, steelRecords, concreteRecords, payments]);
 
   const clearSampleData = () => {
-    setExpenses([]);
-    setSteelRecords([]);
-    setConcreteRecords([]);
-    setApartments([]);
-    setContractors([]);
-    setSuppliers([]);
-    setPayments([]);
-    setDocuments([]);
-    setProjectPartners([]);
-    setProjectInvestments([]);
+    console.warn('Bulk data deletion is disabled. Use reviewed, server-side archival procedures.');
   };
 
   const exportJsonBackup = () => {
+    const safeAppSettings: AppSettings = {
+      ...appSettings,
+      geminiApiKey: undefined,
+      sectionProtection: appSettings.sectionProtection
+        ? { enabled: appSettings.sectionProtection.enabled || {} }
+        : undefined,
+    };
     const backupData = {
-      version: '1.0.0',
+      version: '2.0.0',
       exportedAt: new Date().toISOString(),
       appName: 'Nik Smart Count Database',
+      language,
+      currentProjectId,
       projects,
       projectPartners,
       projectInvestments,
+      partnerEquityTransfers,
+      projectBudgets,
+      incomeRecords,
+      materialProcurements,
+      interProjectTransfers,
       expenses,
       steelRecords,
       concreteRecords,
@@ -2975,7 +2912,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       apartments,
       payments,
       documents,
-      appSettings,
+      laborRecords,
+      assets,
+      appSettings: safeAppSettings,
     };
     const jsonStr = JSON.stringify(backupData, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -2991,22 +2930,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const restoreJsonBackup = (jsonContent: string) => {
     try {
+      if (typeof jsonContent !== 'string' || jsonContent.length > 15 * 1024 * 1024) {
+        return { success: false, error: 'Backup file is too large.' };
+      }
       const data = JSON.parse(jsonContent);
-      if (Array.isArray(data.projects)) setProjects(data.projects);
-      if (Array.isArray(data.projectPartners)) setProjectPartners(data.projectPartners);
-      if (Array.isArray(data.projectInvestments)) setProjectInvestments(data.projectInvestments);
-      if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-      if (Array.isArray(data.steelRecords)) setSteelRecords(data.steelRecords);
-      if (Array.isArray(data.concreteRecords)) setConcreteRecords(data.concreteRecords);
-      if (Array.isArray(data.contractors)) setContractors(data.contractors);
-      if (Array.isArray(data.suppliers)) setSuppliers(data.suppliers);
-      if (Array.isArray(data.apartments)) setApartments(data.apartments);
-      if (Array.isArray(data.payments)) setPayments(data.payments);
-      if (Array.isArray(data.documents)) setDocuments(data.documents);
-      if (data.appSettings) setAppSettings(data.appSettings);
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return { success: false, error: 'Backup must contain a JSON object.' };
+      }
+
+      const collectionNames = [
+        'projects', 'projectPartners', 'projectInvestments', 'partnerEquityTransfers', 'projectBudgets',
+        'incomeRecords', 'materialProcurements', 'interProjectTransfers', 'expenses', 'steelRecords', 'concreteRecords', 'contractors', 'suppliers', 'apartments',
+        'payments', 'documents', 'laborRecords', 'assets',
+      ] as const;
+      const validatedCollections: Partial<Record<typeof collectionNames[number], any[]>> = {};
+      for (const key of collectionNames) {
+        if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+        const value = data[key];
+        if (!Array.isArray(value) || value.length > 20000) {
+          return { success: false, error: `Invalid or oversized collection: ${key}.` };
+        }
+        const ids = new Set<string>();
+        for (const record of value) {
+          if (!record || typeof record !== 'object' || Array.isArray(record) || !['string', 'number'].includes(typeof record.id)) {
+            return { success: false, error: `Invalid record in collection: ${key}.` };
+          }
+          const id = String(record.id);
+          if (!id || ids.has(id)) return { success: false, error: `Duplicate or empty record identifier in ${key}.` };
+          ids.add(id);
+        }
+        validatedCollections[key] = value;
+      }
+
+      const settings = data.appSettings && typeof data.appSettings === 'object' && !Array.isArray(data.appSettings)
+        ? data.appSettings as Partial<AppSettings>
+        : null;
+      const backupLanguage = data.language;
+      if (backupLanguage !== undefined && !['en', 'fa', 'ps'].includes(backupLanguage)) {
+        return { success: false, error: 'Backup contains an unsupported language.' };
+      }
+
+      for (const key of collectionNames) {
+        const value = validatedCollections[key];
+        if (!value) continue;
+        switch (key) {
+          case 'projects': setProjects(value as Project[]); break;
+          case 'projectPartners': setProjectPartners(value as ProjectPartner[]); break;
+          case 'projectInvestments': setProjectInvestments(value as ProjectInvestment[]); break;
+          case 'partnerEquityTransfers': setPartnerEquityTransfers(value as PartnerEquityTransfer[]); break;
+          case 'projectBudgets': setProjectBudgets(value as ProjectBudget[]); break;
+          case 'incomeRecords': setIncomeRecords(value as IncomeRecord[]); break;
+          case 'materialProcurements': setMaterialProcurements(value as MaterialProcurementRecord[]); break;
+          case 'interProjectTransfers': setInterProjectTransfers(value as InterProjectTransferRecord[]); break;
+          case 'expenses': setExpenses(value as Expense[]); break;
+          case 'steelRecords': setSteelRecords(value as SteelRecord[]); break;
+          case 'concreteRecords': setConcreteRecords(value as ConcreteRecord[]); break;
+          case 'contractors': setContractors(value as Contractor[]); break;
+          case 'suppliers': setSuppliers(value as Supplier[]); break;
+          case 'apartments': setApartments(value as ApartmentUnit[]); break;
+          case 'payments': setPayments(value as Payment[]); break;
+          case 'documents': setDocuments(value as DocumentRecord[]); break;
+          case 'laborRecords': setLaborRecords(value as LaborRecord[]); break;
+          case 'assets': setAssets(value as FixedAsset[]); break;
+        }
+      }
+      if (settings) {
+        setAppSettings(prev => ({
+          ...prev,
+          ...settings,
+          geminiApiKey: undefined,
+          sectionProtection: settings.sectionProtection ? { enabled: settings.sectionProtection.enabled || {} } : undefined,
+        }));
+      }
+      if (backupLanguage) setLanguageState(backupLanguage as Language);
+      if (typeof data.currentProjectId === 'string') setCurrentProjectIdState(data.currentProjectId);
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err.message || 'فایل نامعتبر است' };
+      return { success: false, error: err.message || 'Backup file is invalid.' };
     }
   };
 
@@ -3029,14 +3029,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const unreadNotificationCount = notifications.filter(notification => !notification.read && !notification.dismissed).length;
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, read: true } : notification));
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(notification => ({ ...notification, read: true })));
+  };
+
+  const dismissNotification = (id: string) => {
+    setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, dismissed: true } : notification));
+    setSelectedNotification(prev => prev?.id === id ? null : prev);
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setSelectedNotification(null);
+  };
+
+  const refreshReminders = () => {
+    if (!workspaceReady || !currentUser || currentUser.isMasterSuperAdmin) return;
+    const now = new Date();
+    const preferences = appSettings.notificationPreferences || {};
+    const categoryForType: Record<SystemReminderNotification['type'], keyof NonNullable<AppSettings['notificationPreferences']>> = {
+      installment_due_soon: 'installments',
+      installment_overdue: 'installments',
+      installment_paid: 'installments',
+      unpaid_purchase: 'purchases',
+      outstanding_debt: 'debts',
+      missing_document: 'documents',
+      project_inactivity: 'projects',
+      general_financial: 'financial',
+    };
+    const isEnabled = (notification: SystemReminderNotification) => {
+      const category = categoryForType[notification.type];
+      return !category || preferences[category] !== false;
+    };
+
+    setNotifications(prev => {
+      const reminders = generateSmartReminders({
+        apartments,
+        expenses,
+        payments,
+        contractors,
+        suppliers,
+        documents,
+        projects,
+        existingNotifications: prev,
+        now,
+        formatCurrency,
+      });
+      const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const recent = prev.filter(notification => notification.date >= cutoff);
+      const all = [...reminders, ...recent];
+      const seen = new Set<string>();
+      return all.filter(notification => {
+        if (!isEnabled(notification) || seen.has(notification.reminderKey)) return false;
+        seen.add(notification.reminderKey);
+        return true;
+      }).slice(0, 500);
+    });
+  };
+
+  useEffect(() => {
+    refreshReminders();
+    // Reminders are derived from the signed-in owner's server snapshot and kept in memory.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceReady, currentUser?.id, projects, apartments, expenses, payments, contractors, suppliers, documents, appSettings.notificationPreferences]);
+
   const clearAuditLogs = () => {
     setAuditLogs([]);
-    saveToStorage('auditLogs', []);
   };
 
   const exportBackupJSON = exportJsonBackup;
   const importBackupJSON = (json: any) => {
-    restoreJsonBackup(typeof json === 'string' ? json : JSON.stringify(json));
+    return restoreJsonBackup(typeof json === 'string' ? json : JSON.stringify(json));
   };
 
   const uploadDocumentToDrive = async (doc: DocumentRecord) => {
@@ -3044,6 +3113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const restoreFromGoogleDrive = async (fileId: string) => {
+    const { getAccessToken } = await import('../services/googleDriveAuth');
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated with Google Drive.');
     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -3060,6 +3130,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       language,
       setLanguage,
+      authLoading,
+      workspaceReady,
+      workspaceSaving,
+      workspaceError,
       t,
       currentUser,
       login,
@@ -3137,6 +3211,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addApartment,
       updateApartment,
       deleteApartment,
+      addInstallmentPayment,
+      updateInstallment,
+      addInstallmentToApartment,
+      deleteInstallment,
+      notifications,
+      unreadNotificationCount,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      dismissNotification,
+      clearAllNotifications,
+      refreshReminders,
+      isNotificationCenterOpen,
+      setIsNotificationCenterOpen,
+      selectedNotification,
+      setSelectedNotification,
       payments,
       addPayment,
       updatePayment,
@@ -3159,6 +3248,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getTrialBalance,
       getProjectJournal,
       projectBudgets,
+      incomeRecords,
+      addIncomeRecord,
+      materialProcurements,
+      addMaterialProcurement,
+      interProjectTransfers,
+      addInterProjectTransfer,
       getProjectBudgets,
       getBudgetReport,
       addProjectBudget,

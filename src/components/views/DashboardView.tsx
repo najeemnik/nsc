@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   Building2, 
   Receipt, 
@@ -60,6 +61,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     isGoogleDriveConnected,
     backupToGoogleDrive
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [backingUp, setBackingUp] = useState(false);
   const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
@@ -97,7 +99,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setBackupSuccess(res.name);
       setTimeout(() => setBackupSuccess(null), 4000);
     } catch (e: any) {
-      alert(e.message || 'Backup failed');
+      alert(e.message || tx('Backup failed', 'پشتیبان‌گیری ناموفق بود', 'بیک اپ ناکام شو'));
     } finally {
       setBackingUp(false);
     }
@@ -155,8 +157,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <Cloud className={`w-4 h-4 ${backingUp ? 'animate-bounce' : ''}`} />
               <span>
-                {backingUp 
-                  ? 'Backing up...' 
+                {backingUp
+                  ? tx('Backing up...', 'در حال پشتیبان‌گیری...', 'بیک اپ روان دی...')
                   : isGoogleDriveConnected 
                   ? t('backupToDrive') || 'Google Drive Backup' 
                   : t('connectDrive') || 'Connect Drive'}

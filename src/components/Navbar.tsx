@@ -32,7 +32,11 @@ import {
   Wallet,
   Scale
 } from 'lucide-react';
-import { Language, DEFAULT_ACTION_BUTTONS, CustomActionButton } from '../types';
+import { DEFAULT_ACTION_BUTTONS } from '../types';
+import type { CustomActionButton } from '../types';
+import { intlLocaleFor, isCurrentLanguage, localizeActionButtonLabel, localizeText } from '../i18n/localize';
+
+const NATIVE_LANGUAGE_NAMES = { en: 'English', fa: 'دری', ps: 'پښتو' } as const;
 
 interface NavbarProps {
   onOpenNewProject: () => void;
@@ -81,7 +85,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     setLanguage, 
     currentUser, 
     logout, 
-    switchUserRole,
     projects, 
     currentProject, 
     setCurrentProjectId,
@@ -98,6 +101,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     disconnectGoogleDrive,
     setIsMasterAdminOpen
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const formatNumber = (value: number) => value.toLocaleString(intlLocaleFor(language));
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -246,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {searchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full mt-1.5 start-0 w-full bg-surface rounded-2xl shadow-2xl border border-line py-2 z-50 max-h-96 overflow-y-auto animate-in fade-in zoom-in-95">
                 <div className="px-3 py-1 text-[11px] font-bold text-slate-400 flex items-center justify-between border-b border-line pb-1.5 mb-1">
-                  <span>یافت شده ({totalResultsCount})</span>
+                  <span>{tx(`Found (${totalResultsCount})`, `یافت‌شده (${totalResultsCount})`, `موندل شوي (${totalResultsCount})`)}</span>
                 </div>
                 {totalResultsCount === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-500">{t.noRecords}</div>
@@ -259,7 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="p-2 text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between"
                       >
                         <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{e.category}: {e.description}</span>
-                        <span className="text-slate-500 font-mono">${e.amount.toLocaleString()}</span>
+                        <span className="text-slate-500 font-mono">${formatNumber(e.amount)}</span>
                       </div>
                     ))}
                     {searchResults.apartments.slice(0, 3).map(a => (
@@ -268,7 +273,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onClick={() => { setActiveTab('apartments'); setSearchFocused(false); }}
                         className="p-2 text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between"
                       >
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">واحد #{a.unitNumber}</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{tx(`Unit #${a.unitNumber}`, `واحد شمارهٔ ${a.unitNumber}`, `د ${a.unitNumber} شمېره واحد`)}</span>
                         <span className="text-slate-500">{a.buyerName || a.status}</span>
                       </div>
                     ))}
@@ -350,15 +355,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               const handler = actionHandlers[topButton.id] || actionHandlers[(topButton as any).actionKey];
               const IconComponent = actionIcons[topButton.id] || actionIcons[(topButton as any).actionKey] || Plus;
 
-              const colorClass = topButton.color === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                topButton.color === 'info' ? 'bg-blue-600 hover:bg-blue-700' :
-                                topButton.color === 'danger' ? 'bg-rose-600 hover:bg-rose-700' :
-                                topButton.color === 'warning' ? 'bg-orange-500 hover:bg-orange-600' :
+              const colorClass = topButton.color === 'success' || topButton.color === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                topButton.color === 'info' || topButton.color === 'blue' || topButton.color === 'indigo' ? 'bg-blue-600 hover:bg-blue-700' :
+                                topButton.color === 'danger' || topButton.color === 'rose' ? 'bg-rose-600 hover:bg-rose-700' :
+                                topButton.color === 'warning' || topButton.color === 'orange' ? 'bg-orange-500 hover:bg-orange-600' :
+                                topButton.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
                                 topButton.color === 'slate' ? 'bg-slate-700 hover:bg-slate-800' :
                                 'bg-amber-600 hover:bg-amber-700';
 
               const shapeClass = topButton.shape === 'pill' ? 'rounded-full' :
-                                topButton.shape === 'square' ? 'rounded-lg' : 'rounded-xl';
+                                topButton.shape === 'square' ? 'rounded-md' :
+                                topButton.shape === 'rounded-md' ? 'rounded-md' : 'rounded-xl';
 
               return (
                 <button
@@ -367,7 +374,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`hidden xl:flex items-center space-x-1.5 rtl:space-x-reverse ${colorClass} ${shapeClass} text-white px-3 py-1.5 text-xs font-bold shadow-xs transition-colors`}
                 >
                   <IconComponent className="w-3.5 h-3.5" />
-                  <span className="whitespace-nowrap">{language === 'en' ? topButton.labelEn : topButton.labelFa}</span>
+                  <span className="whitespace-nowrap">{localizeActionButtonLabel(topButton, language)}</span>
                 </button>
               );
             })()}
@@ -380,7 +387,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center space-x-1.5 rtl:space-x-reverse bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline whitespace-nowrap">{t.quickNewEntry || 'ثبت سریع'}</span>
+                <span className="hidden lg:inline whitespace-nowrap">{tx('Quick add', 'ثبت سریع', 'چټک زیاتول')}</span>
                 <ChevronDown className="w-3 h-3 text-amber-200" />
               </button>
 
@@ -473,7 +480,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       const handler = actionHandlers[btn.id] || actionHandlers[(btn as any).actionKey];
                       const IconComponent = actionIcons[btn.id] || actionIcons[(btn as any).actionKey] || Plus;
                       const iconColor = iconColorClasses[btn.color] || 'text-amber-600';
-                      const label = (btn as any).labelFa || btn.label || btn.id;
+                      const label = localizeActionButtonLabel(btn, language);
 
                       return (
                         <button
@@ -501,7 +508,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                title={t.actions || 'بیشتر'}
+                title={tx('More actions', 'عملیات بیشتر', 'نورې کړنې')}
                 className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-line transition-colors tap-target"
               >
                 <MoreHorizontal className="w-4 h-4" />
@@ -515,7 +522,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
                   >
                     <Cloud className={`w-4 h-4 shrink-0 ${isGoogleDriveConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`} />
-                    <span className="flex-1">{isGoogleDriveConnected ? 'Google Drive متصل است' : 'اتصال به Google Drive'}</span>
+                    <span className="flex-1">{isGoogleDriveConnected ? tx('Google Drive connected', 'Google Drive متصل است', 'Google Drive ونښلول شو') : tx('Connect to Google Drive', 'اتصال به Google Drive', 'له Google Drive سره نښلول')}</span>
                     {isGoogleDriveConnected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
                   </button>
 
@@ -526,7 +533,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
                     >
                       <Bot className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span>هوش مصنوعی</span>
+                      <span>{tx('AI assistant', 'دستیار هوش مصنوعی', 'د مصنوعي ځیرکتیا مرستیال')}</span>
                     </button>
                   )}
 
@@ -546,7 +553,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
                     >
                       <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span>راهنما</span>
+                      <span>{tx('Guide', 'راهنما', 'لارښود')}</span>
                     </button>
                   )}
 
@@ -557,7 +564,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full text-start px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 flex items-center space-x-2 rtl:space-x-reverse transition-colors"
                     >
                       <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      <span className="flex-1">درایو</span>
+                      <span className="flex-1">Google Drive</span>
                       {isGoogleDriveConnected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                     </button>
                   )}
@@ -574,7 +581,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Globe className="w-3.5 h-3.5 text-slate-500" />
                 <span>
-                  {language === 'en' ? 'EN' : language === 'fa' ? 'دری' : 'پښتو'}
+                  {localizeText(language, { en: 'EN', fa: 'دری', ps: 'پښتو' })}
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
@@ -582,24 +589,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="absolute top-full mt-1.5 end-0 w-36 bg-surface rounded-2xl shadow-2xl border border-line py-1 z-50 animate-in fade-in zoom-in-95">
                   <button
                     onClick={() => { setLanguage('en'); setLangDropdownOpen(false); }}
-                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${language === 'en' ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
+                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isCurrentLanguage(language, 'en') ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
                   >
-                    <span>English</span>
-                    {language === 'en' && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
+                    <span>{NATIVE_LANGUAGE_NAMES.en}</span>
+                    {isCurrentLanguage(language, 'en') && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
                   </button>
                   <button
                     onClick={() => { setLanguage('fa'); setLangDropdownOpen(false); }}
-                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${language === 'fa' ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
+                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isCurrentLanguage(language, 'fa') ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
                   >
-                    <span>دری</span>
-                    {language === 'fa' && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
+                    <span>{NATIVE_LANGUAGE_NAMES.fa}</span>
+                    {isCurrentLanguage(language, 'fa') && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
                   </button>
                   <button
                     onClick={() => { setLanguage('ps'); setLangDropdownOpen(false); }}
-                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${language === 'ps' ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
+                    className={`w-full text-start px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isCurrentLanguage(language, 'ps') ? 'font-bold text-amber-700' : 'text-slate-700 dark:text-slate-300'}`}
                   >
-                    <span>پښتو</span>
-                    {language === 'ps' && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
+                    <span>{NATIVE_LANGUAGE_NAMES.ps}</span>
+                    {isCurrentLanguage(language, 'ps') && <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>}
                   </button>
                 </div>
               )}
@@ -642,34 +649,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <p className="text-[11px] text-slate-400 truncate">{currentUser?.email}</p>
                   </div>
 
-                  {(currentUser?.role === 'admin' || currentUser?.isMasterSuperAdmin) && !currentUser?.ownerAdminId && (
-                    <div className="px-4 py-2.5 border-b border-line">
-                      <div className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 flex items-center space-x-1 rtl:space-x-reverse">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>{t.role}</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <button
-                          onClick={() => { switchUserRole('admin'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'admin' ? 'bg-rose-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
-                        >
-                          Admin
-                        </button>
-                        <button
-                          onClick={() => { switchUserRole('accountant'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'accountant' ? 'bg-amber-600 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
-                        >
-                          Accountant
-                        </button>
-                        <button
-                          onClick={() => { switchUserRole('viewer'); setUserDropdownOpen(false); }}
-                          className={`px-1.5 py-1 text-[11px] rounded-lg font-bold transition-colors ${currentUser?.role === 'viewer' ? 'bg-slate-700 text-white' : 'bg-surface-2 text-slate-700 dark:text-slate-300'}`}
-                        >
-                          Viewer
-                        </button>
-                      </div>
-                    </div>
-                  )}
 
                   {(currentUser?.role === 'admin' || currentUser?.isMasterSuperAdmin) && !currentUser?.ownerAdminId && (
                     <>
@@ -682,7 +661,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full text-start px-4 py-2.5 text-xs text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/40 flex items-center space-x-2 rtl:space-x-reverse font-black transition-colors border-y border-line bg-gradient-to-l from-violet-500/5 to-indigo-500/5"
                         >
                           <ShieldCheck className="w-4 h-4 text-violet-600 shrink-0" />
-                          <span>دفتر هفت (office_7)</span>
+                          <span>{tx('Office 7 (office_7)', 'دفتر هفت (office_7)', 'اووم دفتر (office_7)')}</span>
                         </button>
                       )}
                       <button
@@ -693,7 +672,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="w-full text-start px-4 py-2.5 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center space-x-2 rtl:space-x-reverse font-bold transition-colors border-b border-line"
                       >
                         <Users className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span>مدیریت کارمندان</span>
+                        <span>{tx('Staff management', 'مدیریت کارمندان', 'د کارکوونکو مدیریت')}</span>
                       </button>
                       <button
                         onClick={() => {

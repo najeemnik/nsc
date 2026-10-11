@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   HardHat, 
   Plus, 
@@ -39,6 +40,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
     t,
     language 
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
@@ -165,15 +167,15 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                     <span className="font-bold text-slate-800 dark:text-slate-200">{formatCurrency(stats.totalWorkUSD, 'USD')}</span>
                   </div>
                   <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                    <span>کسر ۱۰٪ حسن نیت (Retention):</span>
+                    <span>{tx('10% retention deduction:', 'کسر ۱۰٪ حسن نیت:', 'د ۱۰٪ ساتل شوې پیسې:')}</span>
                     <span className="font-mono">-{formatCurrency(stats.retentionAmountUSD, 'USD')}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">{t('totalPaid') || 'Paid'}:</span>
+                    <span className="text-slate-400">{t('totalPaid') || t("budgetColPaid")}:</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(stats.totalPaidUSD, 'USD')}</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-line/60 font-bold">
-                    <span className="text-amber-600 dark:text-amber-400">{t('remainingBalance') || 'Remaining Balance'}:</span>
+                    <span className="text-amber-600 dark:text-amber-400">{t('remainingBalance') || t("remainingBalance")}:</span>
                     <span className="text-amber-600 dark:text-amber-400">{formatCurrency(stats.debtUSD, 'USD')}</span>
                   </div>
                 </div>
@@ -187,7 +189,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition"
                 >
                   <FileText className="w-3.5 h-3.5 text-orange-500" />
-                  <span>صورت‌وضعیت</span>
+                  <span>{tx('Statement', 'صورت‌وضعیت', 'صورت‌حساب')}</span>
                 </button>
 
                 {onOpenAddPayment && (
@@ -197,7 +199,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition shadow-xs"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>{t('payContractor') || 'پرداخت'}</span>
+                    <span>{t('payContractor') || t("payBtn")}</span>
                   </button>
                 )}
               </div>
@@ -221,13 +223,13 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                   </div>
                   <div>
                     <h2 className="text-base font-black text-ink flex items-center gap-2">
-                      <span>صورت‌وضعیت جامع پیمانکار: {selectedContractor.name}</span>
+                      <span>{tx('Full contractor statement:', 'صورت‌وضعیت جامع پیمانکار:', 'د قراردادي بشپړ صورت‌حساب:')} {selectedContractor.name}</span>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-500/15 text-orange-600 font-bold">
                         {selectedContractor.trade}
                       </span>
                     </h2>
                     <p className="text-xs text-ink-muted">
-                      {currentProject?.name} • محاسبه حسن نیت ۱۰٪ و تراز مالی معین
+                      {currentProject?.name} • {tx('10% retention and running balance calculation', 'محاسبه حسن نیت ۱۰٪ و تراز مالی معین', 'د ۱۰٪ ساتل شوې پیسې او روان بیلانس محاسبه')}
                     </p>
                   </div>
                 </div>
@@ -239,7 +241,7 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition"
                   >
                     <Printer className="w-4 h-4 text-slate-500" />
-                    <span className="hidden sm:inline">چاپ رسمی</span>
+                    <span className="hidden sm:inline">{tx('Print statement', 'چاپ رسمی', 'صورت‌حساب چاپول')}</span>
                   </button>
                   <button
                     type="button"
@@ -256,60 +258,60 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                 {/* 4 Financial Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-4 rounded-2xl bg-surface-2/60 border border-line">
-                    <span className="text-slate-400 font-semibold block mb-1">کارکرد کل ناخالص:</span>
+                    <span className="text-slate-400 font-semibold block mb-1">{tx('Total gross work:', 'کارکرد کل ناخالص:', 'ټول ناخالص کار:')}</span>
                     <span className="text-base font-black font-mono text-ink">
                       {formatCurrency(stats.totalWorkUSD, 'USD')}
                     </span>
-                    <span className="block text-[10px] text-slate-400 mt-0.5">{stats.billsCount} صورت‌وضعیت</span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5">{stats.billsCount} {tx('bills', 'صورت‌وضعیت', 'صورت‌حسابونه')}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                    <span className="text-amber-700 dark:text-amber-400 font-semibold block mb-1">سپرده حسن نیت (۱۰٪):</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold block mb-1">{tx('10% retention:', 'سپرده حسن نیت (۱۰٪):', '۱۰٪ ساتل شوې پیسې:')}</span>
                     <span className="text-base font-black font-mono text-amber-700 dark:text-amber-300">
                       {formatCurrency(stats.retentionAmountUSD, 'USD')}
                     </span>
-                    <span className="block text-[10px] text-amber-600/80 mt-0.5">نزد شرکت تا تحویل قطعی</span>
+                    <span className="block text-[10px] text-amber-600/80 mt-0.5">{tx('Held by the company until final handover', 'نزد شرکت تا تحویل قطعی', 'د وروستي سپارلو پورې له شرکت سره ساتل کېږي')}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold block mb-1">پرداخت‌های نقدی:</span>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold block mb-1">{tx('Payments made:', 'پرداخت‌های نقدی:', 'ترسره شوې ورکړې:')}</span>
                     <span className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300">
                       {formatCurrency(stats.totalPaidUSD, 'USD')}
                     </span>
-                    <span className="block text-[10px] text-emerald-600/80 mt-0.5">تسویه‌شده تا کنون</span>
+                    <span className="block text-[10px] text-emerald-600/80 mt-0.5">{tx('Settled to date', 'تسویه‌شده تا کنون', 'تر اوسه تصفیه شوي')}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-surface-2/60 border border-line">
-                    <span className="text-rose-600 font-semibold block mb-1">مانده طلب جاری:</span>
+                    <span className="text-rose-600 font-semibold block mb-1">{tx('Outstanding balance:', 'مانده طلب جاری:', 'پاتې بیلانس:')}</span>
                     <span className="text-base font-black font-mono text-rose-600">
                       {formatCurrency(stats.debtUSD, 'USD')}
                     </span>
-                    <span className="block text-[10px] text-slate-400 mt-0.5">خالص قابل پرداخت</span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5">{tx('Net amount payable', 'خالص قابل پرداخت', 'خالص د ورکړې وړ اندازه')}</span>
                   </div>
                 </div>
 
                 {/* Bills Table */}
                 <div className="border border-line rounded-2xl overflow-hidden">
                   <div className="p-3 bg-surface-2 font-black text-xs text-ink flex items-center justify-between">
-                    <span>ریز صورت‌وضعیت‌ها و فاکتورهای کارکرد</span>
-                    <span className="text-[11px] font-mono text-slate-400">{stats.contractorExpenses.length} سند</span>
+                    <span>{tx('Work statements and bill details', 'ریز صورت‌وضعیت‌ها و فاکتورهای کارکرد', 'د کاري صورت‌حسابونو او بلونو جزیات')}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{stats.contractorExpenses.length} {tx('documents', 'سند', 'سندونه')}</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-right border-collapse">
                       <thead className="bg-surface-2/40 border-b border-line text-slate-500 font-bold">
                         <tr>
-                          <th className="p-2.5">تاریخ</th>
-                          <th className="p-2.5">شرح عملیات ساختمانی</th>
-                          <th className="p-2.5">شماره بل</th>
-                          <th className="p-2.5 text-left">مبلغ ناخالص (USD)</th>
-                          <th className="p-2.5 text-left">کسر ۱۰٪ حسن نیت</th>
-                          <th className="p-2.5 text-left">خالص سند (USD)</th>
+                          <th className="p-2.5">{t("accColDate")}</th>
+                          <th className="p-2.5">{tx('Construction work description', 'شرح عملیات ساختمانی', 'د ساختماني کار تشریح')}</th>
+                          <th className="p-2.5">{tx('Bill number', 'شماره بل', 'د بل شمېره')}</th>
+                          <th className="p-2.5 text-left">{tx('Gross amount (USD)', 'مبلغ ناخالص (USD)', 'ناخالص اندازه (USD)')}</th>
+                          <th className="p-2.5 text-left">{tx('10% retention', 'کسر ۱۰٪ حسن نیت', '۱۰٪ ساتل شوې پیسې')}</th>
+                          <th className="p-2.5 text-left">{tx('Net bill (USD)', 'خالص سند (USD)', 'خالص بل (USD)')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
                         {stats.contractorExpenses.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="p-4 text-center text-slate-400">سندی برای این پیمانکار ثبت نشده است.</td>
+                            <td colSpan={6} className="p-4 text-center text-slate-400">{tx('No bills are recorded for this contractor.', 'سندی برای این پیمانکار ثبت نشده است.', 'د دې قراردادي لپاره بل نه دی ثبت شوی.')}</td>
                           </tr>
                         ) : (
                           stats.contractorExpenses.map(exp => {
@@ -336,29 +338,29 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
                 {/* Payments Table */}
                 <div className="border border-line rounded-2xl overflow-hidden">
                   <div className="p-3 bg-surface-2 font-black text-xs text-ink flex items-center justify-between">
-                    <span>پرداخت‌های انجام‌شده به پیمانکار</span>
-                    <span className="text-[11px] font-mono text-slate-400">{stats.contractorPayments.length} واچر</span>
+                    <span>{tx('Payments made to contractor', 'پرداخت‌های انجام‌شده به پیمانکار', 'قراردادي ته ورکړل شوې پیسې')}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{stats.contractorPayments.length} {tx('vouchers', 'واچر', 'واوچرونه')}</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-right border-collapse">
                       <thead className="bg-surface-2/40 border-b border-line text-slate-500 font-bold">
                         <tr>
-                          <th className="p-2.5">تاریخ</th>
-                          <th className="p-2.5">روش پرداخت</th>
-                          <th className="p-2.5">شماره سند / واچر</th>
-                          <th className="p-2.5 text-left">مبلغ پرداختی (USD)</th>
+                          <th className="p-2.5">{t("accColDate")}</th>
+                          <th className="p-2.5">{t("paymentMethod")}</th>
+                          <th className="p-2.5">{tx('Document / voucher number', 'شماره سند / واچر', 'د سند / واوچر شمېره')}</th>
+                          <th className="p-2.5 text-left">{tx('Payment amount (USD)', 'مبلغ پرداختی (USD)', 'د ورکړې اندازه (USD)')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
                         {stats.contractorPayments.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="p-4 text-center text-slate-400">پرداختی ثبت نشده است.</td>
+                            <td colSpan={4} className="p-4 text-center text-slate-400">{tx('No payments are recorded.', 'پرداختی ثبت نشده است.', 'هیڅ ورکړه نه ده ثبت شوې.')}</td>
                           </tr>
                         ) : (
                           stats.contractorPayments.map(pay => (
                             <tr key={pay.id} className="hover:bg-surface-2/30">
                               <td className="p-2.5 font-mono text-slate-400">{pay.date}</td>
-                              <td className="p-2.5 font-semibold text-ink">{pay.method || 'نقدی'}</td>
+                              <td className="p-2.5 font-semibold text-ink">{pay.method || t("methodCash")}</td>
                               <td className="p-2.5 font-mono">{pay.referenceNumber || pay.id.slice(-6)}</td>
                               <td className="p-2.5 text-left font-mono font-bold text-emerald-600">
                                 {formatCurrency(pay.amountUSD || 0, 'USD')}
@@ -375,15 +377,13 @@ export const ContractorsView: React.FC<ContractorsViewProps> = ({
               {/* Footer */}
               <div className="p-4 border-t border-line bg-surface-2 flex items-center justify-between shrink-0">
                 <span className="text-slate-400 text-[11px]">
-                  وضعیت نهایی: {stats.debtUSD <= 0 ? 'کاملاً تسویه شده' : 'دارای مانده طلب جاری'}
+                  {tx('Final status:', 'وضعیت نهایی:', 'وروستی حالت:')} {stats.debtUSD <= 0 ? tx('Fully settled', 'کاملاً تسویه شده', 'بشپړ تصفیه شوی') : tx('Outstanding balance remains', 'دارای مانده طلب جاری', 'لا هم پاتې بیلانس شته')}
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedContractor(null)}
                   className="px-5 py-2 rounded-xl bg-surface hover:bg-slate-200 dark:hover:bg-slate-700 text-ink font-bold"
-                >
-                  بستن
-                </button>
+                >{t("close")}</button>
               </div>
             </div>
           </div>

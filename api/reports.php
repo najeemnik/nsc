@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Executive Reporting & P&L Analysis API
  * Solves Excel Flaw #1: Multi-Year Monthly Performance Reports (Year + Month)

@@ -7,13 +7,14 @@
  * real-estate development business (multi-storey apartment projects).
  *
  * Layers:
- *   Group (e.g. 5000)  ->  Main account (e.g. 5100)  ->  Sub account (Phase 2+,
- *   user-creatable, e.g. 5110 "Rebar — Supplier A") via `parentCode`.
+ *   Group (e.g. 5000) -> main account (e.g. 5100) -> material subaccount
+ *   (e.g. 51001 for rebar) via `parentCode`. Product brands, sizes and other
+ *   SKU details stay in the material register, not in the general ledger.
  *
  * Design principles:
- *  - Users never see codes. The UI keeps working with «مصارف / پرداخت‌ها /
- *    فروشات / سرمایه‌گذاری» — the journal engine maps them to accounts
- *    behind the scenes (see `src/utils/journalEngine.ts`).
+ *  - Operational forms use business labels and stable category IDs; account
+ *    codes are exposed only where useful in budget/accounting reports. The
+ *    journal engine maps source records to COA accounts behind the scenes.
  *  - 5xxx accounts = DIRECT PROJECT costs only (they conceptually feed the
  *    Work-in-Progress asset 1500; the WIP/COGS reclass lands in Phase 3).
  *  - 6xxx accounts = company-level operating/admin expenses (NOT project
@@ -23,11 +24,13 @@
  * ============================================================================
  */
 
+import materialAccountData from '../../api/material_account_map.json';
+
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 export type NormalBalance = 'debit' | 'credit';
 
 export interface Account {
-  /** 4-digit account code, e.g. '5100' */
+  /** Stable 4- or 5-digit account code, e.g. '5100' or '51001' */
   code: string;
   type: AccountType;
   /** The side on which the account normally increases */
@@ -54,9 +57,60 @@ export interface Account {
   description?: string;
 }
 
+export interface LocalizedMaterialLabel {
+  en: string;
+  fa: string;
+  ps: string;
+}
+
+export interface MaterialPurchaseCategory {
+  id: string;
+  account_code: string;
+  parent_code: string;
+  group: string;
+  labels: LocalizedMaterialLabel;
+  existing_account?: boolean;
+}
+
+interface MaterialAccountMapData {
+  version: number;
+  default_account_code: string;
+  groups: Array<{ id: string; labels: LocalizedMaterialLabel }>;
+  categories: MaterialPurchaseCategory[];
+  legacy_accounts: Record<string, string>;
+}
+
+const MATERIAL_ACCOUNT_MAP_DATA = materialAccountData as MaterialAccountMapData;
+export const MATERIAL_PURCHASE_GROUPS = MATERIAL_ACCOUNT_MAP_DATA.groups;
+export const MATERIAL_PURCHASE_CATEGORIES = MATERIAL_ACCOUNT_MAP_DATA.categories;
+export const DEFAULT_MATERIAL_ACCOUNT = MATERIAL_ACCOUNT_MAP_DATA.default_account_code;
+
+const MATERIAL_CATEGORY_ACCOUNT_MAP = new Map(
+  MATERIAL_PURCHASE_CATEGORIES.map(category => [category.id.toLowerCase(), category.account_code])
+);
+const LEGACY_MATERIAL_CATEGORY_ACCOUNT_MAP = new Map(
+  Object.entries(MATERIAL_ACCOUNT_MAP_DATA.legacy_accounts).map(([category, code]) => [category.trim().toLowerCase(), code])
+);
+
 /* ------------------------------------------------------------------ */
 /* The Chart                                                           */
 /* ------------------------------------------------------------------ */
+
+function materialAccountsFor(parentCode: string): Account[] {
+  return MATERIAL_PURCHASE_CATEGORIES
+    .filter(category => category.parent_code === parentCode && !category.existing_account)
+    .map(category => ({
+      code: category.account_code,
+      type: 'expense',
+      normalBalance: 'debit',
+      parentCode: category.parent_code,
+      nameEn: category.labels.en,
+      nameFa: category.labels.fa,
+      namePs: category.labels.ps,
+      system: true,
+      activePhase: 1,
+    }));
+}
 
 export const CHART_OF_ACCOUNTS: Account[] = [
   /* ============================ 1000 ASSETS ============================ */
@@ -105,21 +159,33 @@ export const CHART_OF_ACCOUNTS: Account[] = [
   /* ================ 5000 PROJECT / CONSTRUCTION COSTS ================= */
   { code: '5000', type: 'expense', normalBalance: 'debit', nameEn: 'Construction / Project Costs', nameFa: 'هزینه‌های ساخت پروژه', namePs: 'د پروژې د جوړښت لګښتونه', isHeader: true, system: true,
     description: 'DIRECT project costs only. Conceptually these feed WIP (1500); WIP/COGS reclass arrives in Phase 3.' },
+  { code: '5010', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Specialty Building Materials & Systems', nameFa: 'مصالح و سیستم‌های تخصصی ساختمان', namePs: 'ځانګړي ودانیز توکي او سیستمونه', isHeader: true, system: true },
+  ...materialAccountsFor('5010'),
   { code: '5050', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Cost of Units Sold (COGS)', nameFa: 'هزینه واحدهای فروخته‌شده', namePs: 'د پلورل شویو واحدونو لګښت', system: true, activePhase: 3 },
   { code: '5100', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Steel & Rebar', nameFa: 'آهن و میل‌گرد', namePs: 'اوسپنه او سیخ ګول', system: true, activePhase: 1 },
+  ...materialAccountsFor('5100'),
   { code: '5200', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Concrete & Pumping', nameFa: 'کانکریت و پمپ', namePs: 'کانکریت او پمپ', system: true, activePhase: 1 },
+  ...materialAccountsFor('5200'),
   { code: '5300', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Cement', nameFa: 'سیمنت', namePs: 'سمنټ', system: true, activePhase: 1 },
+  ...materialAccountsFor('5300'),
   { code: '5400', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Sand & Gravel', nameFa: 'ریگ و شن', namePs: 'شګه او ریګ', system: true, activePhase: 1 },
+  ...materialAccountsFor('5400'),
   { code: '5500', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Masonry (Blocks & Bricks)', nameFa: 'بلاک، آجر و بنایات', namePs: 'بلاک، خشتې او بنایات', system: true, activePhase: 1 },
+  ...materialAccountsFor('5500'),
   { code: '5600', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Labour & Wages', nameFa: 'مزد و نیروی انسانی', namePs: 'مزد او کارګران', system: true, activePhase: 1 },
   { code: '5700', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Machinery & Equipment Rental', nameFa: 'کرایه ماشین‌آلات و تجهیزات', namePs: 'د ماشینونو او تجهیزاتو کرایه', system: true, activePhase: 1 },
   { code: '5800', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Transportation & Logistics', nameFa: 'ترانسپورت و حمل‌ونقل', namePs: 'ترانسپورت او لېږد', system: true, activePhase: 1 },
   { code: '5900', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Site Utilities & Fuel', nameFa: 'آب‌وبرق و تیل ساحه', namePs: 'د ساحې اوبه، برق او تیل', system: true, activePhase: 1 },
   { code: '5910', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Formwork & Scaffolding', nameFa: 'قالب‌بندی و داربست', namePs: 'قالب بندي او داربست', system: true, activePhase: 1 },
+  ...materialAccountsFor('5910'),
   { code: '5920', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Electrical Works', nameFa: 'برق‌کاری و تأسیسات برقی', namePs: 'د برېښنا کارونه', system: true, activePhase: 1 },
+  ...materialAccountsFor('5920'),
   { code: '5930', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Plumbing & Sanitary', nameFa: 'لوله‌کاری و تأسیسات صحی', namePs: 'د لولو او صحي کارونه', system: true, activePhase: 1 },
+  ...materialAccountsFor('5930'),
   { code: '5940', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Carpentry, Doors & Windows', nameFa: 'نجاری، دروازه و ورک', namePs: 'نجاري، دروازې او ورکونه', system: true, activePhase: 1 },
+  ...materialAccountsFor('5940'),
   { code: '5950', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Tiles, Paint & Finishing', nameFa: 'کاشی، نقاشی و تکمیل‌کاری', namePs: 'کاشي، رنګ او بشپړونکي کار', system: true, activePhase: 1 },
+  ...materialAccountsFor('5950'),
   { code: '5960', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Elevator, Excavation & Shoring', nameFa: 'لیفتر، حفاری و تکیه‌گاه', namePs: 'لفټ، کیندنه او تکیه ګاه', system: true, activePhase: 1 },
   { code: '5970', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Permits, Fees & Engineering', nameFa: 'جواز، فیس و انجنیری', namePs: 'جواز، فیس او انجنیري', system: true, activePhase: 1 },
   { code: '5980', type: 'expense', normalBalance: 'debit', parentCode: '5000', nameEn: 'Project & Site Overhead', nameFa: 'مصارف اداری و نگهبانی ساحه', namePs: 'د ساحې اداري لګښتونه', system: true, activePhase: 1 },
@@ -320,6 +386,15 @@ export function resolveExpenseAccount(category?: string): string {
     if (key.includes(hint)) return code;
   }
   return DEFAULT_EXPENSE_ACCOUNT;
+}
+
+/** Resolve a material-register category to its detailed subaccount. */
+export function resolveMaterialAccount(category?: string): string {
+  if (!category) return DEFAULT_MATERIAL_ACCOUNT;
+  const key = category.trim().toLowerCase();
+  return MATERIAL_CATEGORY_ACCOUNT_MAP.get(key)
+    ?? LEGACY_MATERIAL_CATEGORY_ACCOUNT_MAP.get(key)
+    ?? resolveExpenseAccount(category);
 }
 
 /* ------------------------------------------------------------------ */

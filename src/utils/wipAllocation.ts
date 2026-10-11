@@ -35,6 +35,7 @@ import {
   Expense,
   SteelRecord,
   ConcreteRecord,
+  MaterialProcurementRecord,
   ProjectBudget,
 } from '../types';
 import { computeBudgetActuals, BudgetableActual } from './budgetUtils';
@@ -52,6 +53,7 @@ export interface CostPoolInput {
   expenses: Expense[];
   steelRecords: SteelRecord[];
   concreteRecords: ConcreteRecord[];
+  materialProcurements?: MaterialProcurementRecord[];
 }
 
 /**
@@ -68,6 +70,7 @@ export function computeProjectCostPoolUSD(input: CostPoolInput): number {
     expenses: input.expenses,
     steelRecords: input.steelRecords,
     concreteRecords: input.concreteRecords,
+    materialProcurements: input.materialProcurements,
   });
   let total = 0;
   for (const [code, act] of actuals) {
@@ -131,6 +134,7 @@ export function computeUnitProfitability(input: {
   expenses?: Expense[];
   steelRecords?: SteelRecord[];
   concreteRecords?: ConcreteRecord[];
+  materialProcurements?: MaterialProcurementRecord[];
 }): {
   rows: UnitProfitabilityRow[];
   sellableAreaM2: number;
@@ -149,6 +153,7 @@ export function computeUnitProfitability(input: {
           expenses: input.expenses,
           steelRecords: input.steelRecords,
           concreteRecords: input.concreteRecords,
+          materialProcurements: input.materialProcurements,
         })
       : 0);
 

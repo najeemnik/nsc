@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
+import { MATERIAL_PURCHASE_CATEGORIES, MATERIAL_PURCHASE_GROUPS } from '../../data/chartOfAccounts';
 import { Truck, X, Calculator, Building2, CheckCircle, Package } from 'lucide-react';
-import { backendApi } from '../../services/backendApi';
 
 interface AddMaterialModalProps {
   isOpen: boolean;
@@ -16,14 +17,17 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
   defaultMaterialName,
   defaultSupplierId,
 }) => {
-  const { currentProject, projects, suppliers, formatCurrency, t, language } = useApp();
+  const { currentProject, projects, suppliers, t, language, addMaterialProcurement } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
+  const selectedProject = projects.find(project => project.id === projectId) || currentProject;
+  const procurementCurrency = selectedProject?.currency || 'AFN';
   const [materialName, setMaterialName] = useState(defaultMaterialName || '');
-  const [category, setCategory] = useState('مصالح عمومی ساختمانی');
-  const [quantity, setQuantity] = useState('100');
+  const [category, setCategory] = useState('mat_other');
+  const [quantity, setQuantity] = useState('1');
   const [unitOfMeasure, setUnitOfMeasure] = useState('بوجی (کیسه)');
-  const [unitPrice, setUnitPrice] = useState('520');
-  const [supplierName, setSupplierName] = useState('شرکت تأمین مصالح ABC');
+  const [unitPrice, setUnitPrice] = useState('');
+  const [supplierName, setSupplierName] = useState('');
   const [supplierId, setSupplierId] = useState(defaultSupplierId || '');
   const [isPaid, setIsPaid] = useState(true);
   const [invoiceNo, setInvoiceNo] = useState(`INV-${Date.now().toString().slice(-5)}`);
@@ -36,6 +40,8 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
   const numQty = parseFloat(quantity) || 0;
   const numUnitPrice = parseFloat(unitPrice) || 0;
   const totalCost = numQty * numUnitPrice;
+  const formatProcurementAmount = (amount: number) =>
+    `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${procurementCurrency}`;
 
   useEffect(() => {
     if (currentProject) setProjectId(currentProject.id);
@@ -62,26 +68,29 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
     e.preventDefault();
     setFormError(null);
     if (!materialName.trim()) {
-      setFormError(language === 'fa' ? 'نام جنس/ماده ساختمانی الزامی است.' : 'Material name is required.');
+      setFormError(tx('Material name is required.', 'نام جنس/ماده ساختمانی الزامی است.', 'د توکي نوم اړین دی.'));
       return;
     }
     if (numQty <= 0 || numUnitPrice <= 0) {
-      setFormError(language === 'fa' ? 'تعداد و قیمت فی واحد باید بیشتر از صفر باشد.' : 'Quantity and price must be greater than zero.');
+      setFormError(tx('Quantity and price must be greater than zero.', 'تعداد و قیمت فی واحد باید بیشتر از صفر باشد.', 'مقدار او بیه باید تر صفر ډېر وي.'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await backendApi.createMaterialProcurement({
+      addMaterialProcurement({
         projectId,
         materialName: materialName.trim(),
         materialCategory: category,
         quantity: numQty,
         unitOfMeasure,
         unitPrice: numUnitPrice,
+        currency: procurementCurrency,
+        exchangeRate: selectedProject?.defaultExchangeRate || 70,
         supplierName: supplierName.trim(),
         supplierId: supplierId || undefined,
         isPaid,
+        invoiceNo,
         purchaseDate,
         notes: notes.trim() || undefined,
       });
@@ -92,15 +101,15 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
         setIsSubmitting(false);
         onClose();
       }, 1000);
-    } catch (err: any) {
-      setFormError(err.message || 'خطا در ثبت خرید مصالح');
+    } catch {
+      setFormError(tx('Could not save the material purchase.', 'ثبت خرید مصالح انجام نشد.', 'د توکو پېرل ثبت نه شول.'));
       setIsSubmitting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div 
+      <div
         className="relative w-full max-w-xl bg-surface border border-line rounded-3xl shadow-2xl overflow-hidden my-auto"
         onClick={e => e.stopPropagation()}
       >
@@ -112,10 +121,10 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-ink">
-                {language === 'fa' ? 'ثبت و تدارکات خرید مصالح (تعداد × فی)' : 'Material Purchase & Procurement'}
+                {tx('Material Purchase & Procurement', 'ثبت و تدارکات خرید مصالح (تعداد × فی)', 'د ودانیزو توکو پېرل او تدارک')}
               </h2>
               <p className="text-xs text-ink-muted">
-                {language === 'fa' ? 'محاسبه خودکار سرجمع و اتصال مستقیم به مصارف و تأمین‌کننده' : 'Auto-calculated Total Cost connected to Actual Cost'}
+                {tx('Auto-calculated Total Cost connected to Actual Cost', 'محاسبه خودکار سرجمع و اتصال مستقیم به مصارف و تأمین‌کننده', 'د ټول لګښت اتومات محاسبه او د واقعي لګښت سره تړل')}
               </p>
             </div>
           </div>
@@ -139,7 +148,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           {successNotice && (
             <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>{language === 'fa' ? 'خرید مصالح با موفقیت ثبت و در مصارف پروژه اعمال گردید!' : 'Material purchase logged successfully!'}</span>
+              <span>{tx('Material purchase logged successfully!', 'خرید مصالح با موفقیت ثبت و در مصارف پروژه اعمال گردید!', 'د توکو پېرل په بریالیتوب ثبت شول!')}</span>
             </div>
           )}
 
@@ -147,7 +156,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
             {/* Project */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {t('project') || 'Project'}
+                {tx('Project', 'پروژه', 'پروژه')}
               </label>
               <select
                 value={projectId}
@@ -163,20 +172,24 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
             {/* Category */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'دسته‌بندی مواد' : 'Category'}
+                {tx('Category', 'دسته‌بندی مواد', 'ډول')}
               </label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               >
-                <option value="سیمان و مواد چسباننده">{language === 'fa' ? 'سیمان و مواد چسباننده' : 'Cement & Binders'}</option>
-                <option value="ریگ، جغل و سنگ‌دانه">{language === 'fa' ? 'ریگ، جغل و سنگ‌دانه' : 'Sand, Gravel & Aggregates'}</option>
-                <option value="خشت و بلاک ساختمانی">{language === 'fa' ? 'خشت و بلاک ساختمانی' : 'Bricks & Blocks'}</option>
-                <option value="پایپ‌دوانی و تأسیسات آب">{language === 'fa' ? 'پایپ‌دوانی و تأسیسات آب' : 'Plumbing & Pipes'}</option>
-                <option value="تأسیسات برقی و کیبل">{language === 'fa' ? 'تأسیسات برقی و کیبل' : 'Electrical & Wiring'}</option>
-                <option value="گچ، رنگ و نازک‌کاری">{language === 'fa' ? 'گچ، رنگ و نازک‌کاری' : 'Plaster, Paint & Finishing'}</option>
-                <option value="تجهیزات و مصالح متفرقه">{language === 'fa' ? 'تجهیزات و مصالح متفرقه' : 'Other Building Materials'}</option>
+                {MATERIAL_PURCHASE_GROUPS.map(group => (
+                  <optgroup key={group.id} label={localizeText(language, group.labels)}>
+                    {MATERIAL_PURCHASE_CATEGORIES
+                      .filter(materialCategory => materialCategory.group === group.id)
+                      .map(materialCategory => (
+                        <option key={materialCategory.id} value={materialCategory.id}>
+                          {localizeText(language, materialCategory.labels)}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
           </div>
@@ -184,7 +197,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           {/* Material Name */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {language === 'fa' ? 'نام مشخص جنس / مواد' : 'Material Description'}
+              {tx('Material Description', 'نام مشخص جنس / مواد', 'د توکي جزیات')}
             </label>
             <div className="relative">
               <Package className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
@@ -193,7 +206,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                 required
                 value={materialName}
                 onChange={e => setMaterialName(e.target.value)}
-                placeholder={language === 'fa' ? 'مثلاً: سیمان پرتلند غوری درجه یک' : 'e.g. Portland Cement Grade 1'}
+                placeholder={tx('e.g. Portland Cement Grade 1', 'مثلاً: سیمان پرتلند غوری درجه یک', 'لکه: د لومړۍ درجې پورټلنډ سمنټ')}
                 className="w-full ps-9 pe-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
             </div>
@@ -203,7 +216,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'تعداد / مقدار (Qty)' : 'Quantity'}
+                {tx('Quantity', 'تعداد / مقدار (Qty)', 'مقدار')}
               </label>
               <input
                 type="number"
@@ -217,26 +230,26 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'واحد اندازه‌گیری' : 'Unit'}
+                {tx('Unit', 'واحد اندازه‌گیری', 'واحد')}
               </label>
               <select
                 value={unitOfMeasure}
                 onChange={e => setUnitOfMeasure(e.target.value)}
                 className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               >
-                <option value="بوجی (کیسه)">بوجی / کیسه (Bags)</option>
-                <option value="تن (Tons)">تن (Tons)</option>
-                <option value="متر مکعب (m³)">متر مکعب (m³)</option>
-                <option value="عدد (Pieces)">عدد (Pieces)</option>
-                <option value="متر طول (Meters)">متر طول (Meters)</option>
-                <option value="موتر / لاری (Trucks)">موتر / لاری (Trucks)</option>
-                <option value="کیلوگرم (Kg)">کیلوگرم (Kg)</option>
+                <option value="بوجی (کیسه)">{tx('Bag', 'بوجی / کیسه', 'بوجۍ')}</option>
+                <option value="تن (Tons)">{tx('Tons', 'تن', 'ټنه')}</option>
+                <option value="متر مکعب (m³)">{tx('Cubic metres (m³)', 'متر مکعب (m³)', 'مکعب متره (m³)')}</option>
+                <option value="عدد (Pieces)">{tx('Pieces', 'عدد', 'دانې')}</option>
+                <option value="متر طول (Meters)">{tx('Linear metres', 'متر طول', 'اوږده متره')}</option>
+                <option value="موتر / لاری (Trucks)">{tx('Truckloads', 'موتر / لاری', 'لارۍ')}</option>
+                <option value="کیلوگرم (Kg)">{tx('Kilograms (kg)', 'کیلوگرام (kg)', 'کیلوګرام (kg)')}</option>
               </select>
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'قیمت فی واحد (AFN)' : 'Unit Price (AFN)'}
+                {tx('Unit Price', 'قیمت فی واحد', 'د هر واحد بیه')} ({procurementCurrency})
               </label>
               <input
                 type="number"
@@ -254,14 +267,14 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
             <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
               <Calculator className="w-4 h-4 shrink-0" />
               <span className="font-bold">
-                {language === 'fa' ? 'فرمول محاسبه سرجمع: ' : 'Formula: '} 
-                <span className="font-mono">{numQty} {unitOfMeasure} × {numUnitPrice.toLocaleString()} AFN</span>
+                {tx('Formula: ', 'فرمول محاسبه سرجمع: ', 'محاسبه: ')}
+                <span className="font-mono">{numQty} {unitOfMeasure} × {formatProcurementAmount(numUnitPrice)}</span>
               </span>
             </div>
             <div className="text-end">
-              <span className="text-[10px] text-slate-400 block">{language === 'fa' ? 'مجموع بهای کل:' : 'Total Cost:'}</span>
+              <span className="text-[10px] text-slate-400 block">{tx('Total Cost:', 'مجموع بهای کل:', 'ټول لګښت:')}</span>
               <span className="text-base font-black text-amber-600 dark:text-amber-400 font-mono">
-                {totalCost.toLocaleString()} AFN
+                {formatProcurementAmount(totalCost)}
               </span>
             </div>
           </div>
@@ -270,7 +283,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'تأمین‌کننده / فروشنده' : 'Supplier'}
+                {tx('Supplier', 'تأمین‌کننده / فروشنده', 'عرضه‌کوونکی')}
               </label>
               <div className="relative">
                 <Building2 className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
@@ -278,7 +291,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                   type="text"
                   value={supplierName}
                   onChange={e => setSupplierName(e.target.value)}
-                  placeholder="نام شرکت یا دکان فروشنده"
+                  placeholder={tx('Supplier or shop name', 'نام شرکت یا دکان فروشنده', 'د عرضه‌کوونکي یا هټۍ نوم')}
                   className="w-full ps-9 pe-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
                 />
               </div>
@@ -286,7 +299,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'وضعیت تسویه مالی' : 'Settlement Status'}
+                {tx('Settlement Status', 'وضعیت تسویه مالی', 'د تصفیې حالت')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -296,7 +309,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                     isPaid ? 'bg-emerald-600 text-white shadow-xs' : 'bg-surface-2 text-slate-500'
                   }`}
                 >
-                  {language === 'fa' ? 'پرداخت نقدی (کسر از صندوق)' : 'Paid (Cash)'}
+                  {tx('Paid (Cash)', 'پرداخت نقدی (کسر از صندوق)', 'ورکړل شوي (نغدې)')}
                 </button>
                 <button
                   type="button"
@@ -305,7 +318,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                     !isPaid ? 'bg-amber-600 text-white shadow-xs' : 'bg-surface-2 text-slate-500'
                   }`}
                 >
-                  {language === 'fa' ? 'نسیه (طلب تأمین‌کننده)' : 'Credit / Payable'}
+                  {tx('Credit / Payable', 'نسیه (طلب تأمین‌کننده)', 'پور / ورکړې ته پاتې')}
                 </button>
               </div>
             </div>
@@ -314,7 +327,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'شماره بل فاکتور' : 'Invoice Number'}
+                {tx('Invoice Number', 'شماره بل فاکتور', 'د بل شمېره')}
               </label>
               <input
                 type="text"
@@ -326,7 +339,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {t('date') || 'Purchase Date'}
+                {tx('Purchase Date', 'تاریخ خرید', 'د پېرلو نېټه')}
               </label>
               <input
                 type="date"
@@ -340,13 +353,13 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
           {/* Notes */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {t('notes') || 'Notes'}
+              {t('notes') || t("notes")}
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="توضیحات تکمیلی، محل تخلیه بار در کارگاه یا شماره موتر..."
+              placeholder={tx('Additional notes, delivery point, or truck number...', 'توضیحات تکمیلی، محل تخلیه بار در کارگاه یا شماره موتر...', 'نور یادښتونه، د توکو د ښکته کولو ځای یا د لارۍ شمېره...')}
               className="w-full px-3.5 py-2 bg-surface-2 border border-line rounded-xl text-ink"
             />
           </div>
@@ -358,7 +371,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel') || t("cancel")}
             </button>
             <button
               type="submit"
@@ -366,7 +379,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black shadow-lg shadow-amber-500/25 transition active:scale-95 disabled:opacity-50"
             >
               <Truck className="w-4 h-4" />
-              <span>{isSubmitting ? 'در حال ثبت...' : 'ثبت خرید و صدور سند مصالح'}</span>
+              <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : tx('Save purchase and issue voucher', 'ثبت خرید و صدور سند مصالح', 'پېرل ثبت او سند صادر کړئ')}</span>
             </button>
           </div>
         </form>

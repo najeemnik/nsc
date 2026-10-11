@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   Receipt, 
   Plus, 
@@ -40,6 +41,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
     contractors,
     suppliers
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -119,7 +121,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
             className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition"
           >
             <Printer className="w-4 h-4" />
-            <span>{t('print') || 'Print'}</span>
+            <span>{t('print') || t("print")}</span>
           </button>
 
           <button
@@ -144,7 +146,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
           }`}
         >
           <Receipt className="w-4 h-4 text-rose-500" />
-          <span>همه فاکتورها و مصارف کارگاه ({projectExpenses.length})</span>
+          <span>{tx('All site invoices and expenses', 'همه فاکتورها و مصارف کارگاه', 'د ساحې ټول بلونه او لګښتونه')} ({projectExpenses.length})</span>
         </button>
         <button
           type="button"
@@ -156,7 +158,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
           }`}
         >
           <Wallet className="w-4 h-4 text-emerald-500" />
-          <span>صندوق تنخواه‌گردان کارگاه ({pettyCashExpenses.length})</span>
+          <span>{tx('Site petty cash fund', 'صندوق تنخواه‌گردان کارگاه', 'د ساحې کوچنی نغدي صندوق')} ({pettyCashExpenses.length})</span>
         </button>
       </div>
 
@@ -170,10 +172,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                 <div>
                   <h4 className="font-bold text-amber-800 dark:text-amber-300">
-                    هشدار ضرورت شارژ مجدد تنخواه کارگاه (Replenish Imprest)
+                    {tx('Petty cash replenishment required', 'هشدار ضرورت شارژ مجدد تنخواه کارگاه', 'د کوچني نغدي صندوق د بیا ډکولو اړتیا')}
                   </h4>
                   <p className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-0.5">
-                    موجودی نقد صندوق ساحه به زیر ۲۵٪ سقف مجاز رسیده است. لطفاً صورت ریز ذیل را چاپ نموده و جهت دریافت وجه جدید به امور مالی دفتر مرکزی ارسال کنید.
+                    {tx('Site cash has fallen below 25% of the approved limit. Print the detailed statement below and send it to head-office finance to request replenishment.', 'موجودی نقد صندوق ساحه به زیر ۲۵٪ سقف مجاز رسیده است. لطفاً صورت ریز ذیل را چاپ نموده و جهت دریافت وجه جدید به امور مالی دفتر مرکزی ارسال کنید.', 'د ساحې نغدې پیسې د منظور شوي حد له ۲۵٪ څخه کمې شوې دي. لاندې تفصیلي صورت‌حساب چاپ او د بیا ډکولو غوښتنې لپاره یې د مرکزي دفتر مالي څانګې ته ولېږئ.')}
                   </p>
                 </div>
               </div>
@@ -182,7 +184,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                 onClick={handlePrint}
                 className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shrink-0 shadow-xs"
               >
-                چاپ صورت تسویه
+                {tx('Print settlement statement', 'چاپ صورت تسویه', 'د تصفیې صورت‌حساب چاپول')}
               </button>
             </div>
           )}
@@ -190,35 +192,35 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
           {/* 4 Imprest KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-surface border border-line shadow-xs">
-              <span className="text-slate-400 font-bold block mb-1">سقف تنخواه مصوب کارگاه:</span>
+              <span className="text-slate-400 font-bold block mb-1">{tx('Approved site petty cash limit:', 'سقف تنخواه مصوب کارگاه:', 'د ساحې منظور شوی نغدي حد:')}</span>
               <span className="text-lg font-black font-mono text-ink">
                 {formatNumber(imprestCapAFN, 0)} AFN
               </span>
-              <span className="block text-[10px] text-slate-400 mt-0.5">تخصیص یافته دفتر مرکزی</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5">{tx('Allocated by head office', 'تخصیص یافته دفتر مرکزی', 'د مرکزي دفتر له خوا ځانګړې شوې')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-              <span className="text-rose-700 dark:text-rose-400 font-bold block mb-1">مصارف پرداخت‌شده (PCVs):</span>
+              <span className="text-rose-700 dark:text-rose-400 font-bold block mb-1">{tx('Expenses paid (PCVs):', 'مصارف پرداخت‌شده (PCVs):', 'ورکړل شوي لګښتونه (PCVs):')}</span>
               <span className="text-lg font-black font-mono text-rose-700 dark:text-rose-300">
                 {formatNumber(pettyCashSpentAFN, 0)} AFN
               </span>
-              <span className="block text-[10px] text-rose-600/80 mt-0.5">{pettyCashExpenses.length} واچر تنخواه</span>
+              <span className="block text-[10px] text-rose-600/80 mt-0.5">{pettyCashExpenses.length} {tx('petty cash vouchers', 'واچر تنخواه', 'د کوچني نغدي صندوق واوچرونه')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-1">موجودی نقد فعلی گاوصندوق:</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-1">{tx('Current cash in the site safe:', 'موجودی نقد فعلی گاوصندوق:', 'په ساحوي صندوق کې اوسنۍ نغدې پیسې:')}</span>
               <span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300">
                 {formatNumber(pettyCashBalanceAFN, 0)} AFN
               </span>
-              <span className="block text-[10px] text-emerald-600/80 mt-0.5">نقدینگی در دسترس ساحه</span>
+              <span className="block text-[10px] text-emerald-600/80 mt-0.5">{tx('Cash available on site', 'نقدینگی در دسترس ساحه', 'په ساحه کې شته نغدې پیسې')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-surface border border-line shadow-xs">
-              <span className="text-slate-400 font-bold block mb-1">درصد نقدینگی باقیمانده:</span>
+              <span className="text-slate-400 font-bold block mb-1">{tx('Remaining cash percentage:', 'درصد نقدینگی باقیمانده:', 'د پاتې نغدو پیسو سلنه:')}</span>
               <span className={`text-lg font-black font-mono ${pettyCashBalanceAFN > 25000 ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {Math.round((pettyCashBalanceAFN / imprestCapAFN) * 100)}%
               </span>
-              <span className="block text-[10px] text-slate-400 mt-0.5">شاخص استمرار مصارف خرد</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5">{tx('Petty cash runway indicator', 'شاخص استمرار مصارف خرد', 'د کوچنیو لګښتونو د دوام شاخص')}</span>
             </div>
           </div>
 
@@ -228,10 +230,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
               <div>
                 <h3 className="font-bold text-sm sm:text-base text-ink flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-emerald-500" />
-                  <span>دفتر ثبت واچرهای تنخواه‌گردان کارگاه (Petty Cash Book)</span>
+                  <span>{tx('Site petty cash voucher ledger', 'دفتر ثبت واچرهای تنخواه‌گردان کارگاه', 'د ساحې د کوچني نغدي صندوق د واوچرونو ثبت')}</span>
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  خریدهای اضطراری، پذیرایی، کرایه و مصارف روزمره معتمد ساحه
+                  {tx('Emergency purchases, hospitality, rent and daily site-custodian expenses.', 'خریدهای اضطراری، پذیرایی، کرایه و مصارف روزمره معتمد ساحه', 'بیړني پېرودونه، مېلمستیا، کرایه او د ساحې د مسئول ورځني لګښتونه.')}
                 </p>
               </div>
 
@@ -241,7 +243,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-500" />
-                <span>چاپ صورت تسویه تنخواه</span>
+                <span>{tx('Print petty cash settlement', 'چاپ صورت تسویه تنخواه', 'د کوچني نغدي صندوق تصفیه چاپول')}</span>
               </button>
             </div>
 
@@ -249,19 +251,19 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
               <table className="w-full text-xs text-right border-collapse">
                 <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line">
                   <tr>
-                    <th className="py-3 px-3">شماره واچر</th>
-                    <th className="py-3 px-3">تاریخ</th>
-                    <th className="py-3 px-3">بابت / دسته‌بندی</th>
-                    <th className="py-3 px-3">شرح دقیق مصرف خرد</th>
-                    <th className="py-3 px-3">گیرنده وجه</th>
-                    <th className="py-3 px-3 text-left">مبلغ واچر (AFN)</th>
+                    <th className="py-3 px-3">{tx('Voucher number', 'شماره واچر', 'د واوچر شمېره')}</th>
+                    <th className="py-3 px-3">{t("accColDate")}</th>
+                    <th className="py-3 px-3">{tx('Purpose / category', 'بابت / دسته‌بندی', 'موخه / کټګوري')}</th>
+                    <th className="py-3 px-3">{tx('Petty expense details', 'شرح دقیق مصرف خرد', 'د کوچني لګښت جزیات')}</th>
+                    <th className="py-3 px-3">{tx('Payee', 'گیرنده وجه', 'د پیسو ترلاسه کوونکی')}</th>
+                    <th className="py-3 px-3 text-left">{tx('Voucher amount (AFN)', 'مبلغ واچر (AFN)', 'د واوچر اندازه (AFN)')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {pettyCashExpenses.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-slate-400">
-                        واچر تنخواهی برای این پروژه ثبت نشده است. از منوی «ثبت سریع» دکمه تنخواه را انتخاب کنید.
+                        {tx('No petty cash vouchers are recorded for this project. Choose the petty cash action from Quick Add.', 'واچر تنخواهی برای این پروژه ثبت نشده است. از منوی «ثبت سریع» دکمه تنخواه را انتخاب کنید.', 'د دې پروژې لپاره د کوچني نغدي صندوق واوچر نشته. د چټک زیاتولو له غورنۍ د کوچني نغدي صندوق تڼۍ وټاکئ.')}
                       </td>
                     </tr>
                   ) : (
@@ -277,10 +279,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                           </span>
                         </td>
                         <td className="py-3 px-3 font-semibold text-ink max-w-xs truncate">
-                          {exp.title || exp.description || 'مصرف خرد ساحه'}
+                          {exp.title || exp.description || tx('Petty site expense', 'مصرف خرد ساحه', 'د ساحې کوچنی لګښت')}
                         </td>
                         <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
-                          {exp.recipientName || 'معتمد ساحه'}
+                          {exp.recipientName || tx('Site custodian', 'معتمد ساحه', 'د ساحې مسئول')}
                         </td>
                         <td className="py-3 px-3 text-left font-mono font-black text-emerald-600">
                           {formatNumber(exp.totalAmountAFN || ((exp.totalAmountUSD || 0) * 70), 0)} AFN
@@ -301,14 +303,14 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
           <table className="w-full text-xs text-left">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
-                <th className="py-3.5 px-4">{t('date') || 'Date'}</th>
+                <th className="py-3.5 px-4">{t('date') || t("accColDate")}</th>
                 <th className="py-3.5 px-4">{t('title') || 'Title / Description'}</th>
-                <th className="py-3.5 px-4">{t('category') || 'Category'}</th>
+                <th className="py-3.5 px-4">{t('category') || t("category")}</th>
                 <th className="py-3.5 px-4">{t('vendorContractor') || 'Vendor / Contractor'}</th>
                 <th className="py-3.5 px-4">{t('quantity') || 'Quantity / Unit'}</th>
-                <th className="py-3.5 px-4 text-right">{t('amount') || 'Amount'}</th>
+                <th className="py-3.5 px-4 text-right">{t('amount') || t("amount")}</th>
                 <th className="py-3.5 px-4 text-center">{t('receipt') || 'Receipt'}</th>
-                <th className="py-3.5 px-4 text-center">{t('actions') || 'Actions'}</th>
+                <th className="py-3.5 px-4 text-center">{t('actions') || t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -347,7 +349,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                       <button
                         onClick={() => setSelectedReceipt(exp.receiptUrl || exp.attachments?.[0] || '')}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition"
-                        title="View Receipt"
+                        title={tx('View receipt', 'مشاهده رسید', 'رسېد کتل')}
                       >
                         <Image className="w-4 h-4" />
                       </button>
@@ -359,7 +361,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
                     <button
                       onClick={() => handleDelete(exp.id, exp.title || exp.description || 'Expense')}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition"
-                      title={t('delete') || 'Delete'}
+                      title={t('delete') || t("delete")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -393,7 +395,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ onOpenAddExpense }) 
             </button>
             <img 
               src={selectedReceipt} 
-              alt="Receipt Preview" 
+              alt={tx('Receipt preview', 'پیش‌نمایش رسید', 'د رسېد مخکتنه')}
               className="w-full h-auto max-h-[80vh] object-contain rounded-2xl" 
             />
           </div>

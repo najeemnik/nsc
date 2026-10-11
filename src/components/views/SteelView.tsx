@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { 
   Layers, 
   Plus, 
@@ -35,6 +36,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
     t, 
     language 
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sizeFilter, setSizeFilter] = useState('all');
@@ -61,7 +63,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
   const totalTons = totalKG / 1000;
   const totalCostUSD = filteredSteel.reduce((sum, s) => sum + (s.totalCostUSD || 0), 0);
 
-  const sizes = Array.from(new Set(projectSteel.map(s => s.size).filter(Boolean)));
+  const sizes = Array.from(new Set(projectSteel.map(s => s.size).filter((size): size is string => Boolean(size))));
 
   // Kardex Inventory by Rebar Diameter (نمره سیخ)
   const kardexBySize = useMemo(() => {
@@ -118,7 +120,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
             className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition"
           >
             <Printer className="w-4 h-4" />
-            <span>{t('print') || 'Print'}</span>
+            <span>{t('print') || t("print")}</span>
           </button>
 
           <button
@@ -126,7 +128,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
             className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-amber-500/25 transition active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>{t('addSteel') || 'Record Steel Purchase'}</span>
+            <span>{t('addSteel') || t("addSteel")}</span>
           </button>
         </div>
       </div>
@@ -143,7 +145,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
           }`}
         >
           <Layers className="w-4 h-4 text-amber-500" />
-          <span>تدارکات و خریدهای سیخ‌گول ({projectSteel.length})</span>
+          <span>{tx('Rebar procurement and purchases', 'تدارکات و خریدهای سیخ‌گول', 'د سیخ‌ګول تدارکات او پېرود')} ({projectSteel.length})</span>
         </button>
         <button
           type="button"
@@ -155,7 +157,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
           }`}
         >
           <Box className="w-4 h-4 text-emerald-500" />
-          <span>کاردکس انبار و مصرف در سازه (Stock & Kardex)</span>
+          <span>{tx('Warehouse stock and construction usage', 'کاردکس انبار و مصرف در سازه', 'د ګودام زېرمه او په جوړښت کې مصرف')}</span>
         </button>
       </div>
 
@@ -169,10 +171,10 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                 <div>
                   <h4 className="font-bold text-amber-800 dark:text-amber-300">
-                    هشدار نقطه سفارش مجدد سیخ‌گول (Rebar Reorder Alert)
+                    {tx('Rebar reorder alert', 'هشدار نقطه سفارش مجدد سیخ‌گول', 'د سیخ‌ګول د بیا فرمایش خبرداری')}
                   </h4>
                   <p className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-0.5">
-                    موجودی پای کار یک یا چند نمره میلگرد به زیر ۱.۵ تن رسیده است. جهت جلوگیری از توقف آرماتوربندها در بتن‌ریزی سقف بعدی، سفارش خرید جدید صادر فرمایید.
+                    {tx('On-site stock for one or more rebar sizes is below 1.5 tons. Place a new order to avoid interrupting the next slab pour.', 'موجودی پای کار یک یا چند نمره میلگرد به زیر ۱.۵ تن رسیده است. جهت جلوگیری از توقف آرماتوربندها در بتن‌ریزی سقف بعدی، سفارش خرید جدید صادر فرمایید.', 'په ساحه کې د یوه یا څو سیخ‌ګول سایزونو زېرمه له ۱.۵ ټنو کمه ده. د راتلونکي چت د کانکریټ اچولو د ځنډېدو د مخنیوي لپاره نوی فرمایش ورکړئ.')}
                   </p>
                 </div>
               </div>
@@ -181,7 +183,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                 onClick={onOpenAddSteel}
                 className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shrink-0 shadow-xs"
               >
-                ثبت خرید جدید
+                {tx('Record purchase', 'ثبت خرید جدید', 'پېرود ثبتول')}
               </button>
             </div>
           )}
@@ -189,35 +191,35 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
           {/* 4 Kardex Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-surface border border-line shadow-xs">
-              <span className="text-slate-400 font-bold block mb-1">کل میلگرد وارده به کارگاه:</span>
+              <span className="text-slate-400 font-bold block mb-1">{tx('Total rebar received on site:', 'کل میلگرد وارده به کارگاه:', 'ساحې ته د ترلاسه شویو سیخونو ټول مقدار:')}</span>
               <span className="text-lg font-black font-mono text-ink">
-                {formatNumber(totalTons, 2)} تن
+                {formatNumber(totalTons, 2)} {tx('tons', 'تن', 'ټنه')}
               </span>
-              <span className="block text-[10px] text-slate-400 mt-0.5">تحویلی بارنامه‌ها</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5">{tx('Delivered per waybills', 'تحویلی بارنامه‌ها', 'د بارنامو له مخې سپارل شوي')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-              <span className="text-rose-700 dark:text-rose-400 font-bold block mb-1">مصرف در سازه و سقف‌ها:</span>
+              <span className="text-rose-700 dark:text-rose-400 font-bold block mb-1">{tx('Used in structure and slabs:', 'مصرف در سازه و سقف‌ها:', 'په جوړښت او چتونو کې مصرف:')}</span>
               <span className="text-lg font-black font-mono text-rose-700 dark:text-rose-300">
-                {formatNumber(totalConsumedTons, 2)} تن
+                {formatNumber(totalConsumedTons, 2)} {tx('tons', 'تن', 'ټنه')}
               </span>
-              <span className="block text-[10px] text-rose-600/80 mt-0.5">نصب‌شده در بتن</span>
+              <span className="block text-[10px] text-rose-600/80 mt-0.5">{tx('Installed in concrete', 'نصب‌شده در بتن', 'په کانکریټ کې نصب شوي')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-1">موجودی فیزیکی پای کار:</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-1">{tx('Physical on-site stock:', 'موجودی فیزیکی پای کار:', 'په ساحه کې فزیکي زېرمه:')}</span>
               <span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300">
-                {formatNumber(totalStockOnSiteTons, 2)} تن
+                {formatNumber(totalStockOnSiteTons, 2)} {tx('tons', 'تن', 'ټنه')}
               </span>
-              <span className="block text-[10px] text-emerald-600/80 mt-0.5">آماده بافت و خم‌کاری</span>
+              <span className="block text-[10px] text-emerald-600/80 mt-0.5">{tx('Ready for tying and bending', 'آماده بافت و خم‌کاری', 'د تړلو او کوږولو لپاره چمتو')}</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-surface border border-line shadow-xs">
-              <span className="text-slate-400 font-bold block mb-1">وضعیت کلی زنجیره تأمین:</span>
+              <span className="text-slate-400 font-bold block mb-1">{tx('Overall supply status:', 'وضعیت کلی زنجیره تأمین:', 'د اکمالاتو ټولیز حالت:')}</span>
               <span className={`text-lg font-black font-mono ${hasLowStockWarning ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {hasLowStockWarning ? 'نیاز به خرید' : 'موجودی پایدار'}
+                {hasLowStockWarning ? tx('Purchase needed', 'نیاز به خرید', 'پېرود ته اړتیا') : tx('Stock stable', 'موجودی پایدار', 'زېرمه باثباته')}
               </span>
-              <span className="block text-[10px] text-slate-400 mt-0.5">کنترل انبار ساحه</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5">{tx('Site warehouse monitoring', 'کنترل انبار ساحه', 'د ساحې ګودام څارنه')}</span>
             </div>
           </div>
 
@@ -227,10 +229,10 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
               <div>
                 <h3 className="font-bold text-sm sm:text-base text-ink flex items-center gap-2">
                   <Box className="w-4 h-4 text-emerald-500" />
-                  <span>کاردکس انبار تفکیک نمره میلگرد (Steel Rebar Stock Kardex)</span>
+                  <span>{tx('Rebar stock kardex by bar size', 'کاردکس انبار تفکیک نمره میلگرد', 'د سیخ‌ګول د سایز له مخې د زېرمو ثبت')}</span>
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  ردیابی ورود، مصرف در المان‌های بتنی و مانده فیزیکی در کارگاه
+                  {tx('Track receipts, use in concrete elements and physical stock on site.', 'ردیابی ورود، مصرف در المان‌های بتنی و مانده فیزیکی در کارگاه', 'د ترلاسه کولو، په کانکریټي برخو کې د مصرف او په ساحه کې د فزیکي زېرمو څارنه.')}
                 </p>
               </div>
 
@@ -240,7 +242,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-500" />
-                <span>چاپ کاردکس انبار</span>
+                <span>{tx('Print warehouse kardex', 'چاپ کاردکس انبار', 'د ګودام زېرمو ثبت چاپول')}</span>
               </button>
             </div>
 
@@ -248,13 +250,13 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
               <table className="w-full text-xs text-right border-collapse">
                 <thead className="bg-surface-2/60 text-slate-500 font-bold border-b border-line">
                   <tr>
-                    <th className="py-3 px-3">سایز / نمره سیخ</th>
-                    <th className="py-3 px-3 text-center">پارت‌های تحویلی</th>
-                    <th className="py-3 px-3 text-left">کل ورود به کارگاه (تن)</th>
-                    <th className="py-3 px-3 text-left">مصرف در بتن‌ریزی (تن)</th>
-                    <th className="py-3 px-3 text-left">موجودی پای کار (تن)</th>
-                    <th className="py-3 px-3 text-center">نقطه سفارش بحرانی</th>
-                    <th className="py-3 px-3 text-center">وضعیت انبار</th>
+                    <th className="py-3 px-3">{tx('Bar size / diameter', 'سایز / نمره سیخ', 'د سیخ سایز / قطر')}</th>
+                    <th className="py-3 px-3 text-center">{tx('Deliveries', 'پارت‌های تحویلی', 'سپارنې')}</th>
+                    <th className="py-3 px-3 text-left">{tx('Total received on site (tons)', 'کل ورود به کارگاه (تن)', 'ساحې ته ټول ترلاسه شوي (ټنه)')}</th>
+                    <th className="py-3 px-3 text-left">{tx('Used in concrete (tons)', 'مصرف در بتن‌ریزی (تن)', 'په کانکریټ کې مصرف (ټنه)')}</th>
+                    <th className="py-3 px-3 text-left">{tx('On-site stock (tons)', 'موجودی پای کار (تن)', 'په ساحه کې زېرمه (ټنه)')}</th>
+                    <th className="py-3 px-3 text-center">{tx('Critical reorder point', 'نقطه سفارش بحرانی', 'د بیا فرمایش مهم حد')}</th>
+                    <th className="py-3 px-3 text-center">{tx('Warehouse status', 'وضعیت انبار', 'د ګودام حالت')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -264,7 +266,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                         {k.size}
                       </td>
                       <td className="py-3 px-3 text-center font-mono text-slate-400">
-                        {k.deliveriesCount} بار
+                        {k.deliveriesCount} {tx('deliveries', 'بار', 'سپارنې')}
                       </td>
                       <td className="py-3 px-3 text-left font-mono font-bold text-slate-800 dark:text-slate-200">
                         {formatNumber(k.receivedTons, 2)}
@@ -276,7 +278,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                         {formatNumber(k.currentStockTons, 2)}
                       </td>
                       <td className="py-3 px-3 text-center font-mono text-slate-400">
-                        1.50 تن
+                        {formatNumber(1.5, 2)} {tx('tons', 'تن', 'ټنه')}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -284,7 +286,7 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
                           k.isLowStock ? 'bg-amber-500/15 text-amber-600' :
                           'bg-emerald-500/15 text-emerald-600'
                         }`}>
-                          {k.receivedTons === 0 ? 'بدون موجودی' : k.isLowStock ? 'سفارش فوری' : 'موجودی کافی'}
+                          {k.receivedTons === 0 ? tx('Out of stock', 'بدون موجودی', 'زېرمه نشته') : k.isLowStock ? tx('Urgent reorder', 'سفارش فوری', 'بیړنی بیا فرمایش') : tx('Sufficient stock', 'موجودی کافی', 'کافي زېرمه')}
                         </span>
                       </td>
                     </tr>
@@ -344,15 +346,15 @@ export const SteelView: React.FC<SteelViewProps> = ({ onOpenAddSteel }) => {
           <table className="w-full text-xs text-left">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
-                <th className="py-3.5 px-4">{t('date') || 'Date'}</th>
+                <th className="py-3.5 px-4">{t('date') || t("accColDate")}</th>
                 <th className="py-3.5 px-4">{t('size') || 'Mill Size'}</th>
                 <th className="py-3.5 px-4">{t('brand') || 'Brand / Origin'}</th>
-                <th className="py-3.5 px-4">{t('supplier') || 'Supplier'}</th>
+                <th className="py-3.5 px-4">{t('supplier') || t("supplier")}</th>
                 <th className="py-3.5 px-4">{t('bundles') || 'Bundles / Branch'}</th>
                 <th className="py-3.5 px-4">{t('weightKg') || 'Weight (KG)'}</th>
                 <th className="py-3.5 px-4">{t('weightTon') || 'Weight (Ton)'}</th>
                 <th className="py-3.5 px-4 text-right">{t('costUSD') || 'Total Cost (USD)'}</th>
-                <th className="py-3.5 px-4 text-center">{t('actions') || 'Actions'}</th>
+                <th className="py-3.5 px-4 text-center">{t('actions') || t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

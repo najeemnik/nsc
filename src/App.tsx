@@ -3,71 +3,95 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { isRtlLanguage, localizeText } from './i18n/localize';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
-import { LoginView } from './components/LoginView';
+import type { Project } from './types';
 
-// Views
-import { DashboardView } from './components/views/DashboardView';
-import { ProjectsView } from './components/views/ProjectsView';
-import { ExpensesView } from './components/views/ExpensesView';
-import { SteelView } from './components/views/SteelView';
-import { ConcreteView } from './components/views/ConcreteView';
-import { ContractorsView } from './components/views/ContractorsView';
-import { LaborView } from './components/views/LaborView';
-import { SuppliersView } from './components/views/SuppliersView';
-import { AssetsView } from './components/views/AssetsView';
-import { ApartmentsView } from './components/views/ApartmentsView';
-import { PaymentsView } from './components/views/PaymentsView';
-import { DocumentsView } from './components/views/DocumentsView';
-import { ReportsView } from './components/views/ReportsView';
-import { BudgetView } from './components/views/BudgetView';
-import { AccountingView } from './components/views/AccountingView';
-import { UsersView } from './components/views/UsersView';
-import { AuditLogView } from './components/views/AuditLogView';
-import { SettingsView } from './components/views/SettingsView';
+// Load each feature only when its tab or dialog is opened. This keeps the
+// authenticated shell small and avoids downloading unused business modules.
+const LoginView = React.lazy(() => import('./components/LoginView').then((module) => ({ default: module.LoginView })));
+const DashboardView = React.lazy(() => import('./components/views/DashboardView').then((module) => ({ default: module.DashboardView })));
+const ProjectsView = React.lazy(() => import('./components/views/ProjectsView').then((module) => ({ default: module.ProjectsView })));
+const ExpensesView = React.lazy(() => import('./components/views/ExpensesView').then((module) => ({ default: module.ExpensesView })));
+const SteelView = React.lazy(() => import('./components/views/SteelView').then((module) => ({ default: module.SteelView })));
+const ConcreteView = React.lazy(() => import('./components/views/ConcreteView').then((module) => ({ default: module.ConcreteView })));
+const ContractorsView = React.lazy(() => import('./components/views/ContractorsView').then((module) => ({ default: module.ContractorsView })));
+const LaborView = React.lazy(() => import('./components/views/LaborView').then((module) => ({ default: module.LaborView })));
+const SuppliersView = React.lazy(() => import('./components/views/SuppliersView').then((module) => ({ default: module.SuppliersView })));
+const AssetsView = React.lazy(() => import('./components/views/AssetsView').then((module) => ({ default: module.AssetsView })));
+const ApartmentsView = React.lazy(() => import('./components/views/ApartmentsView').then((module) => ({ default: module.ApartmentsView })));
+const PaymentsView = React.lazy(() => import('./components/views/PaymentsView').then((module) => ({ default: module.PaymentsView })));
+const DocumentsView = React.lazy(() => import('./components/views/DocumentsView').then((module) => ({ default: module.DocumentsView })));
+const ReportsView = React.lazy(() => import('./components/views/ReportsView').then((module) => ({ default: module.ReportsView })));
+const BudgetView = React.lazy(() => import('./components/views/BudgetView').then((module) => ({ default: module.BudgetView })));
+const AccountingView = React.lazy(() => import('./components/views/AccountingView').then((module) => ({ default: module.AccountingView })));
+const UsersView = React.lazy(() => import('./components/views/UsersView').then((module) => ({ default: module.UsersView })));
+const AuditLogView = React.lazy(() => import('./components/views/AuditLogView').then((module) => ({ default: module.AuditLogView })));
+const SettingsView = React.lazy(() => import('./components/views/SettingsView').then((module) => ({ default: module.SettingsView })));
 
-// Modals
-import { NewProjectModal } from './components/modals/NewProjectModal';
-import { EditProjectModal } from './components/modals/EditProjectModal';
-import { ProjectPartnersModal } from './components/modals/ProjectPartnersModal';
-import { ProjectTransferModal } from './components/modals/ProjectTransferModal';
-import { AddExpenseModal } from './components/modals/AddExpenseModal';
-import { AddSteelModal } from './components/modals/AddSteelModal';
-import { AddConcreteModal } from './components/modals/AddConcreteModal';
-import { AddContractorModal } from './components/modals/AddContractorModal';
-import { AddSupplierModal } from './components/modals/AddSupplierModal';
-import { AddApartmentModal } from './components/modals/AddApartmentModal';
-import { AddPaymentModal } from './components/modals/AddPaymentModal';
-import { AddDocumentModal } from './components/modals/AddDocumentModal';
-import { GoogleDriveModal } from './components/modals/GoogleDriveModal';
-import { SystemGuideModal } from './components/modals/SystemGuideModal';
-import { AddIncomeModal } from './components/modals/AddIncomeModal';
-import { AddMaterialModal } from './components/modals/AddMaterialModal';
-import { AddLaborModal } from './components/modals/AddLaborModal';
-import { AddTransferModal } from './components/modals/AddTransferModal';
-import { AddPettyCashModal } from './components/modals/AddPettyCashModal';
-import { AddAssetModal } from './components/modals/AddAssetModal';
-import { MasterAdminModal } from './components/MasterAdminModal';
-import { AiAssistantModal } from './components/AiAssistantModal';
-import { CameraModal } from './components/CameraModal';
-import { Project } from './types';
+const NewProjectModal = React.lazy(() => import('./components/modals/NewProjectModal').then((module) => ({ default: module.NewProjectModal })));
+const EditProjectModal = React.lazy(() => import('./components/modals/EditProjectModal').then((module) => ({ default: module.EditProjectModal })));
+const ProjectPartnersModal = React.lazy(() => import('./components/modals/ProjectPartnersModal').then((module) => ({ default: module.ProjectPartnersModal })));
+const ProjectTransferModal = React.lazy(() => import('./components/modals/ProjectTransferModal').then((module) => ({ default: module.ProjectTransferModal })));
+const AddExpenseModal = React.lazy(() => import('./components/modals/AddExpenseModal').then((module) => ({ default: module.AddExpenseModal })));
+const AddSteelModal = React.lazy(() => import('./components/modals/AddSteelModal').then((module) => ({ default: module.AddSteelModal })));
+const AddConcreteModal = React.lazy(() => import('./components/modals/AddConcreteModal').then((module) => ({ default: module.AddConcreteModal })));
+const AddContractorModal = React.lazy(() => import('./components/modals/AddContractorModal').then((module) => ({ default: module.AddContractorModal })));
+const AddSupplierModal = React.lazy(() => import('./components/modals/AddSupplierModal').then((module) => ({ default: module.AddSupplierModal })));
+const AddApartmentModal = React.lazy(() => import('./components/modals/AddApartmentModal').then((module) => ({ default: module.AddApartmentModal })));
+const AddPaymentModal = React.lazy(() => import('./components/modals/AddPaymentModal').then((module) => ({ default: module.AddPaymentModal })));
+const AddDocumentModal = React.lazy(() => import('./components/modals/AddDocumentModal').then((module) => ({ default: module.AddDocumentModal })));
+const GoogleDriveModal = React.lazy(() => import('./components/modals/GoogleDriveModal').then((module) => ({ default: module.GoogleDriveModal })));
+const SystemGuideModal = React.lazy(() => import('./components/modals/SystemGuideModal').then((module) => ({ default: module.SystemGuideModal })));
+const AddIncomeModal = React.lazy(() => import('./components/modals/AddIncomeModal').then((module) => ({ default: module.AddIncomeModal })));
+const AddMaterialModal = React.lazy(() => import('./components/modals/AddMaterialModal').then((module) => ({ default: module.AddMaterialModal })));
+const AddLaborModal = React.lazy(() => import('./components/modals/AddLaborModal').then((module) => ({ default: module.AddLaborModal })));
+const AddTransferModal = React.lazy(() => import('./components/modals/AddTransferModal').then((module) => ({ default: module.AddTransferModal })));
+const AddPettyCashModal = React.lazy(() => import('./components/modals/AddPettyCashModal').then((module) => ({ default: module.AddPettyCashModal })));
+const AddAssetModal = React.lazy(() => import('./components/modals/AddAssetModal').then((module) => ({ default: module.AddAssetModal })));
+const MasterAdminModal = React.lazy(() => import('./components/MasterAdminModal').then((module) => ({ default: module.MasterAdminModal })));
+const AiAssistantModal = React.lazy(() => import('./components/AiAssistantModal').then((module) => ({ default: module.AiAssistantModal })));
+const CameraModal = React.lazy(() => import('./components/CameraModal').then((module) => ({ default: module.CameraModal })));
+
+function AppLoadingFallback() {
+  const { language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  return (
+    <div
+      className="min-h-dscreen flex items-center justify-center bg-canvas text-ink"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-9 w-9 animate-spin rounded-full border-4 border-amber-400/30 border-t-amber-400" />
+        <span className="text-sm font-semibold">{tx('Loading…', 'در حال بارگذاری…', 'پورته کېږي…')}</span>
+      </div>
+    </div>
+  );
+}
 
 function MainApp() {
-  const { 
-    currentUser, 
-    isDarkMode, 
-    language, 
-    isAiAssistantOpen, 
+  const {
+    currentUser,
+    authLoading,
+    workspaceSaving,
+    workspaceError,
+    exportJsonBackup,
+    isDarkMode,
+    language,
+    isAiAssistantOpen,
     setIsAiAssistantOpen,
     isMasterAdminOpen,
     setIsMasterAdminOpen,
-    isTabAllowed
+    isTabAllowed,
+    cameraModalOpen
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -125,8 +149,23 @@ function MainApp() {
   // Pre-selected payment payee if opened from contractor/supplier card
   const [paymentRecipient, setPaymentRecipient] = useState<{ id: string; name: string } | null>(null);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-dscreen flex items-center justify-center bg-slate-950 text-white" role="status" aria-live="polite">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-amber-400/30 border-t-amber-400" />
+          <span className="text-sm font-semibold">{tx('Checking secure session…', 'در حال بررسی نشست امن…', 'خوندي ناسته کتل کېږي…')}</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
-    return <LoginView />;
+    return (
+      <Suspense fallback={<AppLoadingFallback />}>
+        <LoginView />
+      </Suspense>
+    );
   }
 
   const handleOpenPaymentForPayee = (id: string, name: string) => {
@@ -134,33 +173,35 @@ function MainApp() {
     setIsAddPaymentOpen(true);
   };
 
-  const isRtl = language === 'fa' || language === 'ps';
+  const isRtl = isRtlLanguage(language);
 
   // 🛡 دفتر هفت full-screen mode: hide the ENTIRE construction app — panel is a standalone page
   if (currentUser.isMasterSuperAdmin && isMasterAdminOpen) {
     return (
-      <div dir={isRtl ? 'rtl' : 'ltr'} className="h-dscreen w-full overflow-hidden bg-slate-100">
-        <MasterAdminModal
-          isOpen={isMasterAdminOpen}
-          onClose={() => setIsMasterAdminOpen(false)}
-          directAccess={masterDirectAccess}
-          fullPage
-        />
-      </div>
+      <Suspense fallback={<AppLoadingFallback />}>
+        <div dir={isRtl ? 'rtl' : 'ltr'} className="h-dscreen w-full overflow-hidden bg-slate-100">
+          <MasterAdminModal
+            isOpen={isMasterAdminOpen}
+            onClose={() => setIsMasterAdminOpen(false)}
+            directAccess={masterDirectAccess}
+            fullPage
+          />
+        </div>
+      </Suspense>
     );
   }
 
   return (
-    <div 
+    <div
       className="min-h-dscreen bg-canvas text-ink flex flex-col"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="flex flex-1 h-dscreen overflow-hidden">
         {/* Desktop / Tablet Sidebar */}
         <div className="hidden md:flex shrink-0">
-          <Sidebar 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             onOpenSystemGuide={() => setIsSystemGuideOpen(true)}
           />
         </div>
@@ -168,7 +209,7 @@ function MainApp() {
         {/* Content Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top Navbar */}
-          <Navbar 
+          <Navbar
             onOpenNewProject={() => setIsNewProjectOpen(true)}
             setActiveTab={setActiveTab}
             onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
@@ -192,119 +233,140 @@ function MainApp() {
           {/* Main Tab Content */}
           <main className="flex-1 overflow-y-auto scroll-touch p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
             <div className="max-w-7xl mx-auto">
-              {activeTab === 'dashboard' && (
-                <DashboardView 
-                  onOpenNewProject={() => setIsNewProjectOpen(true)}
-                  onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                  onOpenAddPayment={() => setIsAddPaymentOpen(true)}
-                  onOpenAddSteel={() => setIsAddSteelOpen(true)}
-                  onOpenAddConcrete={() => setIsAddConcreteOpen(true)}
-                  onOpenAddApartment={() => setIsAddApartmentOpen(true)}
-                  onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
-                  setActiveTab={setActiveTab}
-                />
+              {workspaceError && (
+                <div role="alert" className="mb-4 flex flex-col gap-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100 sm:flex-row sm:items-center sm:justify-between">
+                  <span><strong>{tx('Database save blocked:', 'ذخیره به پایگاه داده مسدود شد:', 'ډېټابېس ته خوندي کول بند شول:')}</strong>{' '}{workspaceError}{' '}{tx('Download a recovery copy before reloading.', 'پیش از بارگذاری دوباره، یک نسخهٔ بازیابی بارگیری کنید.', 'د بیا پورته کولو مخکې د بیا رغونې یوه کاپي ښکته کړئ.')}</span>
+                  <button type="button" onClick={exportJsonBackup} className="shrink-0 rounded-lg bg-rose-800 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700">{tx('Download recovery JSON', 'بارگیری فایل JSON بازیابی', 'د بیا رغونې JSON ښکته کول')}</button>
+                </div>
               )}
+              {workspaceSaving && !workspaceError && (
+                <div className="mb-3 text-xs font-medium text-slate-500" role="status" aria-live="polite">{tx('Saving changes to the server…', 'تغییرات در سرور ذخیره می‌شود…', 'بدلونونه په سرور کې خوندي کېږي…')}</div>
+              )}
+              <Suspense
+                fallback={
+                  <div
+                    className="py-12 text-center text-sm font-medium text-slate-500"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {tx('Loading section…', 'بخش در حال بارگذاری است…', 'برخه پورته کېږي…')}
+                  </div>
+                }
+              >
+                {activeTab === 'dashboard' && (
+                  <DashboardView
+                    onOpenNewProject={() => setIsNewProjectOpen(true)}
+                    onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                    onOpenAddPayment={() => setIsAddPaymentOpen(true)}
+                    onOpenAddSteel={() => setIsAddSteelOpen(true)}
+                    onOpenAddConcrete={() => setIsAddConcreteOpen(true)}
+                    onOpenAddApartment={() => setIsAddApartmentOpen(true)}
+                    onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
+                    setActiveTab={setActiveTab}
+                  />
+                )}
 
-              {activeTab === 'projects' && (
-                <ProjectsView 
-                  onOpenNewProject={() => setIsNewProjectOpen(true)}
-                  onOpenEditProject={(p) => setEditingProject(p)}
-                  onOpenPartners={(p) => setPartnersProject(p)}
-                  onOpenTransfer={(p) => setTransferProjectData(p)}
-                />
-              )}
+                {activeTab === 'projects' && (
+                  <ProjectsView
+                    onOpenNewProject={() => setIsNewProjectOpen(true)}
+                    onOpenEditProject={(p) => setEditingProject(p)}
+                    onOpenPartners={(p) => setPartnersProject(p)}
+                    onOpenTransfer={(p) => setTransferProjectData(p)}
+                  />
+                )}
 
-              {activeTab === 'expenses' && (
-                <ExpensesView 
-                  onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                />
-              )}
+                {activeTab === 'expenses' && (
+                  <ExpensesView
+                    onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'steel' && (
-                <SteelView 
-                  onOpenAddSteel={() => setIsAddSteelOpen(true)}
-                />
-              )}
+                {activeTab === 'steel' && (
+                  <SteelView
+                    onOpenAddSteel={() => setIsAddSteelOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'concrete' && (
-                <ConcreteView 
-                  onOpenAddConcrete={() => setIsAddConcreteOpen(true)}
-                />
-              )}
+                {activeTab === 'concrete' && (
+                  <ConcreteView
+                    onOpenAddConcrete={() => setIsAddConcreteOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'contractors' && (
-                <ContractorsView 
-                  onOpenAddContractor={() => setIsAddContractorOpen(true)}
-                  onOpenAddPayment={handleOpenPaymentForPayee}
-                />
-              )}
+                {activeTab === 'contractors' && (
+                  <ContractorsView
+                    onOpenAddContractor={() => setIsAddContractorOpen(true)}
+                    onOpenAddPayment={handleOpenPaymentForPayee}
+                  />
+                )}
 
-              {activeTab === 'labor' && (
-                <LaborView 
-                  onOpenAddLabor={() => setIsAddLaborOpen(true)}
-                />
-              )}
+                {activeTab === 'labor' && (
+                  <LaborView
+                    onOpenAddLabor={() => setIsAddLaborOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'suppliers' && (
-                <SuppliersView 
-                  onOpenAddSupplier={() => setIsAddSupplierOpen(true)}
-                  onOpenAddPayment={handleOpenPaymentForPayee}
-                />
-              )}
+                {activeTab === 'suppliers' && (
+                  <SuppliersView
+                    onOpenAddSupplier={() => setIsAddSupplierOpen(true)}
+                    onOpenAddPayment={handleOpenPaymentForPayee}
+                  />
+                )}
 
-              {activeTab === 'assets' && (
-                <AssetsView 
-                  onOpenAddAsset={() => setIsAddAssetOpen(true)}
-                />
-              )}
+                {activeTab === 'assets' && (
+                  <AssetsView
+                    onOpenAddAsset={() => setIsAddAssetOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'apartments' && (
-                <ApartmentsView 
-                  onOpenAddApartment={() => setIsAddApartmentOpen(true)}
-                />
-              )}
+                {activeTab === 'apartments' && (
+                  <ApartmentsView
+                    onOpenAddApartment={() => setIsAddApartmentOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'payments' && (
-                <PaymentsView 
-                  onOpenAddPayment={() => {
-                    setPaymentRecipient(null);
-                    setIsAddPaymentOpen(true);
-                  }}
-                />
-              )}
+                {activeTab === 'payments' && (
+                  <PaymentsView
+                    onOpenAddPayment={() => {
+                      setPaymentRecipient(null);
+                      setIsAddPaymentOpen(true);
+                    }}
+                  />
+                )}
 
-              {activeTab === 'budget' && (
-                <BudgetView />
-              )}
+                {activeTab === 'budget' && (
+                  <BudgetView />
+                )}
 
-              {activeTab === 'accounting' && (
-                <AccountingView />
-              )}
+                {activeTab === 'accounting' && (
+                  <AccountingView />
+                )}
 
-              {activeTab === 'documents' && (
-                <DocumentsView 
-                  onOpenAddDocument={() => setIsAddDocumentOpen(true)}
-                  onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
-                />
-              )}
+                {activeTab === 'documents' && (
+                  <DocumentsView
+                    onOpenAddDocument={() => setIsAddDocumentOpen(true)}
+                    onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
+                  />
+                )}
 
-              {activeTab === 'reports' && (
-                <ReportsView />
-              )}
+                {activeTab === 'reports' && (
+                  <ReportsView />
+                )}
 
-              {activeTab === 'users' && (
-                <UsersView />
-              )}
+                {activeTab === 'users' && (
+                  <UsersView />
+                )}
 
-              {activeTab === 'audit_logs' && (
-                <AuditLogView />
-              )}
+                {activeTab === 'audit_logs' && (
+                  <AuditLogView />
+                )}
 
-              {activeTab === 'settings' && (
-                <SettingsView 
-                  onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
-                />
-              )}
+                {activeTab === 'settings' && (
+                  <SettingsView
+                    onOpenGoogleDrive={() => setIsGoogleDriveOpen(true)}
+                  />
+                )}
+              </Suspense>
             </div>
           </main>
         </div>
@@ -321,131 +383,171 @@ function MainApp() {
         setActiveTab={(tab) => { setActiveTab(tab); setIsMobileMenuOpen(false); }}
       />
 
-      {/* Modals Container */}
-      <NewProjectModal 
-        isOpen={isNewProjectOpen} 
-        onClose={() => setIsNewProjectOpen(false)} 
-      />
+      {/* Modals load on demand so closed dialogs add no work to the initial bundle. */}
+      <Suspense fallback={null}>
+        {isNewProjectOpen && (
+          <NewProjectModal
+            isOpen={isNewProjectOpen}
+            onClose={() => setIsNewProjectOpen(false)}
+          />
+        )}
 
-      {editingProject && (
-        <EditProjectModal 
-          isOpen={!!editingProject} 
-          project={editingProject}
-          onClose={() => setEditingProject(null)} 
-        />
-      )}
+        {editingProject && (
+          <EditProjectModal
+            isOpen={!!editingProject}
+            project={editingProject}
+            onClose={() => setEditingProject(null)}
+          />
+        )}
 
-      {partnersProject && (
-        <ProjectPartnersModal 
-          isOpen={!!partnersProject} 
-          project={partnersProject}
-          onClose={() => setPartnersProject(null)} 
-        />
-      )}
+        {partnersProject && (
+          <ProjectPartnersModal
+            isOpen={!!partnersProject}
+            project={partnersProject}
+            onClose={() => setPartnersProject(null)}
+          />
+        )}
 
-      {transferProjectData && (
-        <ProjectTransferModal 
-          isOpen={!!transferProjectData}
-          project={transferProjectData}
-          onClose={() => setTransferProjectData(null)}
-        />
-      )}
+        {transferProjectData && (
+          <ProjectTransferModal
+            isOpen={!!transferProjectData}
+            project={transferProjectData}
+            onClose={() => setTransferProjectData(null)}
+          />
+        )}
 
-      <AddExpenseModal 
-        isOpen={isAddExpenseOpen} 
-        onClose={() => setIsAddExpenseOpen(false)} 
-      />
+        {isAddExpenseOpen && (
+          <AddExpenseModal
+            isOpen={isAddExpenseOpen}
+            onClose={() => setIsAddExpenseOpen(false)}
+          />
+        )}
 
-      <AddSteelModal 
-        isOpen={isAddSteelOpen} 
-        onClose={() => setIsAddSteelOpen(false)} 
-      />
+        {isAddSteelOpen && (
+          <AddSteelModal
+            isOpen={isAddSteelOpen}
+            onClose={() => setIsAddSteelOpen(false)}
+          />
+        )}
 
-      <AddConcreteModal 
-        isOpen={isAddConcreteOpen} 
-        onClose={() => setIsAddConcreteOpen(false)} 
-      />
+        {isAddConcreteOpen && (
+          <AddConcreteModal
+            isOpen={isAddConcreteOpen}
+            onClose={() => setIsAddConcreteOpen(false)}
+          />
+        )}
 
-      <AddContractorModal 
-        isOpen={isAddContractorOpen} 
-        onClose={() => setIsAddContractorOpen(false)} 
-      />
+        {isAddContractorOpen && (
+          <AddContractorModal
+            isOpen={isAddContractorOpen}
+            onClose={() => setIsAddContractorOpen(false)}
+          />
+        )}
 
-      <AddSupplierModal 
-        isOpen={isAddSupplierOpen} 
-        onClose={() => setIsAddSupplierOpen(false)} 
-      />
+        {isAddSupplierOpen && (
+          <AddSupplierModal
+            isOpen={isAddSupplierOpen}
+            onClose={() => setIsAddSupplierOpen(false)}
+          />
+        )}
 
-      <AddApartmentModal 
-        isOpen={isAddApartmentOpen} 
-        onClose={() => setIsAddApartmentOpen(false)} 
-      />
+        {isAddApartmentOpen && (
+          <AddApartmentModal
+            isOpen={isAddApartmentOpen}
+            onClose={() => setIsAddApartmentOpen(false)}
+          />
+        )}
 
-      <AddPaymentModal 
-        isOpen={isAddPaymentOpen} 
-        onClose={() => {
-          setIsAddPaymentOpen(false);
-          setPaymentRecipient(null);
-        }} 
-      />
+        {isAddPaymentOpen && (
+          <AddPaymentModal
+            isOpen={isAddPaymentOpen}
+            onClose={() => {
+              setIsAddPaymentOpen(false);
+              setPaymentRecipient(null);
+            }}
+          />
+        )}
 
-      <AddDocumentModal 
-        isOpen={isAddDocumentOpen} 
-        onClose={() => setIsAddDocumentOpen(false)} 
-      />
+        {isAddDocumentOpen && (
+          <AddDocumentModal
+            isOpen={isAddDocumentOpen}
+            onClose={() => setIsAddDocumentOpen(false)}
+          />
+        )}
 
-      <AddIncomeModal
-        isOpen={isAddIncomeOpen}
-        onClose={() => setIsAddIncomeOpen(false)}
-      />
+        {isAddIncomeOpen && (
+          <AddIncomeModal
+            isOpen={isAddIncomeOpen}
+            onClose={() => setIsAddIncomeOpen(false)}
+          />
+        )}
 
-      <AddMaterialModal
-        isOpen={isAddMaterialOpen}
-        onClose={() => setIsAddMaterialOpen(false)}
-      />
+        {isAddMaterialOpen && (
+          <AddMaterialModal
+            isOpen={isAddMaterialOpen}
+            onClose={() => setIsAddMaterialOpen(false)}
+          />
+        )}
 
-      <AddLaborModal
-        isOpen={isAddLaborOpen}
-        onClose={() => setIsAddLaborOpen(false)}
-      />
+        {isAddLaborOpen && (
+          <AddLaborModal
+            isOpen={isAddLaborOpen}
+            onClose={() => setIsAddLaborOpen(false)}
+          />
+        )}
 
-      <AddTransferModal
-        isOpen={isAddInterProjectTransferOpen}
-        onClose={() => setIsAddInterProjectTransferOpen(false)}
-      />
+        {isAddInterProjectTransferOpen && (
+          <AddTransferModal
+            isOpen={isAddInterProjectTransferOpen}
+            onClose={() => setIsAddInterProjectTransferOpen(false)}
+          />
+        )}
 
-      <AddPettyCashModal
-        isOpen={isAddPettyCashOpen}
-        onClose={() => setIsAddPettyCashOpen(false)}
-      />
+        {isAddPettyCashOpen && (
+          <AddPettyCashModal
+            isOpen={isAddPettyCashOpen}
+            onClose={() => setIsAddPettyCashOpen(false)}
+          />
+        )}
 
-      <AddAssetModal
-        isOpen={isAddAssetOpen}
-        onClose={() => setIsAddAssetOpen(false)}
-      />
+        {isAddAssetOpen && (
+          <AddAssetModal
+            isOpen={isAddAssetOpen}
+            onClose={() => setIsAddAssetOpen(false)}
+          />
+        )}
 
-      <GoogleDriveModal 
-        isOpen={isGoogleDriveOpen} 
-        onClose={() => setIsGoogleDriveOpen(false)} 
-      />
+        {isGoogleDriveOpen && (
+          <GoogleDriveModal
+            isOpen={isGoogleDriveOpen}
+            onClose={() => setIsGoogleDriveOpen(false)}
+          />
+        )}
 
-      <SystemGuideModal 
-        isOpen={isSystemGuideOpen} 
-        onClose={() => setIsSystemGuideOpen(false)} 
-      />
+        {isSystemGuideOpen && (
+          <SystemGuideModal
+            isOpen={isSystemGuideOpen}
+            onClose={() => setIsSystemGuideOpen(false)}
+          />
+        )}
 
-      <MasterAdminModal 
-        isOpen={isMasterAdminOpen} 
-        onClose={() => setIsMasterAdminOpen(false)}
-        directAccess={masterDirectAccess}
-      />
+        {isMasterAdminOpen && (
+          <MasterAdminModal
+            isOpen={isMasterAdminOpen}
+            onClose={() => setIsMasterAdminOpen(false)}
+            directAccess={masterDirectAccess}
+          />
+        )}
 
-      <AiAssistantModal 
-        isOpen={isAiAssistantOpen} 
-        onClose={() => setIsAiAssistantOpen(false)} 
-      />
+        {isAiAssistantOpen && (
+          <AiAssistantModal
+            isOpen={isAiAssistantOpen}
+            onClose={() => setIsAiAssistantOpen(false)}
+          />
+        )}
 
-      <CameraModal />
+        {cameraModalOpen && <CameraModal />}
+      </Suspense>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
+import { isCurrentLanguage, isRtlLanguage, localizeText } from '../i18n/localize';
+import { exportLegacyBrowserData } from '../services/legacyBrowserData';
 import { 
   Building2,
   Lock, 
@@ -37,6 +39,8 @@ import {
   Moon
 } from 'lucide-react';
 
+const NATIVE_LANGUAGE_NAMES = { en: 'English', fa: 'دری', ps: 'پښتو' } as const;
+
 export const LoginView: React.FC = () => {
   const { 
     login, 
@@ -48,10 +52,9 @@ export const LoginView: React.FC = () => {
     appSettings,
     themeSchedule,
     cycleThemeSchedule,
-    connectGoogleDrive,
-    isGoogleDriveConnected,
-    googleDriveUserEmail
+    workspaceError
   } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
 
   const [authMode, setAuthMode] = useState<'login' | 'forgot_password' | 'reset_otp'>('login');
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -70,7 +73,18 @@ export const LoginView: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
+  const [legacyExportMessage, setLegacyExportMessage] = useState<string | null>(null);
+
+  const handleLegacyExport = () => {
+    const result = exportLegacyBrowserData();
+    setLegacyExportMessage(result.success
+      ? tx(
+        `Exported ${result.exportedCount} business-data items. Nothing was deleted; review the JSON before importing.`,
+        `تعداد ${result.exportedCount} مورد دادهٔ تجاری صادر شد. چیزی حذف نشد؛ پیش از واردکردن فایل JSON را بررسی کنید.`,
+        `د سوداګریزو معلوماتو ${result.exportedCount} توکي صادر شول. هېڅ شی حذف نه شول؛ د واردولو مخکې JSON وګورئ.`,
+      )
+      : tx('No legacy data was exported.', 'داده‌ای صادر نشد.', 'معلومات صادر نه شول.'));
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -86,10 +100,10 @@ export const LoginView: React.FC = () => {
       desc: t.slideRebarDesc,
       icon: Layers,
       color: 'from-amber-500/25 to-orange-500/25 text-amber-300 border-amber-500/40',
-      badge: 'STEEL / REBAR',
+      badge: tx('Steel / rebar', 'سیخ‌گول', 'سیخ‌ګول'),
       statLabel: t.tons,
       statValue: '124.50 Tn',
-      detail1: 'سایزهای ۱۲ الی ۳۲ ملی',
+      detail1: tx('Sizes: 12–32 mm', 'اندازه‌ها: ۱۲ تا ۳۲ ملی‌متر', 'اندازې: ۱۲ تر ۳۲ ملي‌متر'),
       detail2: t.formulaSteelTons,
     },
     {
@@ -98,11 +112,11 @@ export const LoginView: React.FC = () => {
       desc: t.slideConcreteDesc,
       icon: CircleDot,
       color: 'from-emerald-500/25 to-teal-500/25 text-emerald-300 border-emerald-500/40',
-      badge: 'CONCRETE & PUMP',
-      statLabel: 'Ready-Mix Volume',
+      badge: tx('Concrete & pump', 'کانکریت و پمپ', 'کانکریټ او پمپ'),
+      statLabel: tx('Ready-mix volume', 'حجم کانکریت آماده', 'د چمتو کانکریټو حجم'),
       statValue: '480 m³',
-      detail1: '14 Mixer Trucks',
-      detail2: 'Slump: 120mm • 350 kg/cm²',
+      detail1: tx('14 mixer trucks', '۱۴ موتر میکسر', '۱۴ مکسر موټر'),
+      detail2: tx('Slump: 120 mm • 350 kg/cm²', 'قوام: ۱۲۰ ملی‌متر • ۳۵۰ کیلوگرام/سانتی‌متر²', 'سلمپ: ۱۲۰ ملي‌متر • ۳۵۰ کیلوګرام/سانتي‌متر²'),
     },
     {
       id: 2,
@@ -110,10 +124,10 @@ export const LoginView: React.FC = () => {
       desc: t.slideApartmentsDesc,
       icon: Home,
       color: 'from-blue-500/25 to-indigo-500/25 text-blue-300 border-blue-500/40',
-      badge: 'APARTMENTS & SALES',
+      badge: tx('Apartments & sales', 'آپارتمان‌ها و فروش', 'اپارتمانونه او پلور'),
       statLabel: t.totalSales,
       statValue: '$1,250,000',
-      detail1: '8 Units Contracted',
+      detail1: tx('8 units contracted', '۸ واحد قرارداد شده', 'د ۸ واحدو تړون شوی'),
       detail2: t.apartmentsProtectedSubtitle,
     },
     {
@@ -122,10 +136,10 @@ export const LoginView: React.FC = () => {
       desc: t.slideFinancialsDesc,
       icon: HardHat,
       color: 'from-purple-500/25 to-pink-500/25 text-purple-300 border-purple-500/40',
-      badge: 'CONTRACTORS & SUPPLIERS',
+      badge: tx('Contractors & suppliers', 'قراردادیان و عرضه‌کنندگان', 'قراردادیان او عرضه‌کوونکي'),
       statLabel: t.totalOutstanding,
       statValue: '$34,800',
-      detail1: '100% Real-time Ledger',
+      detail1: tx('Ledger overview', 'نمای کلی دفتر حساب', 'د حساب‌کتاب لنډیز'),
       detail2: t.deductFromDebt,
     },
     {
@@ -134,42 +148,30 @@ export const LoginView: React.FC = () => {
       desc: t.slideAiDesc,
       icon: Bot,
       color: 'from-cyan-500/25 to-sky-500/25 text-cyan-300 border-cyan-500/40',
-      badge: 'PROJECT AI AGENT',
-      statLabel: 'Civil Analysis',
-      statValue: 'Instant Insights',
-      detail1: 'Multi-lingual Intelligence',
-      detail2: 'Automated Variance Forecasts',
+      badge: tx('Project AI assistant', 'دستیار هوش مصنوعی پروژه', 'د پروژې مصنوعي ځیرکتیا مرستیال'),
+      statLabel: tx('Engineering analysis', 'تحلیل انجینری', 'انجنیري شننه'),
+      statValue: tx('Instant insights', 'بینش فوری', 'سمدستي شننې'),
+      detail1: tx('Three-language interface', 'رابط کاربری به سه زبان', 'درې‌ژبی کارن‌مخ'),
+      detail2: tx('Variance forecasts', 'پیش‌بینی انحرافات', 'د توپیرونو وړاندوینه'),
     },
   ];
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setLoading(true);
-    setTimeout(() => {
-      const result = login(loginEmail, loginPassword);
-      if (!result.success) {
-        setErrorMessage(result.error || (language === 'en' ? 'Sign in failed. Please verify credentials.' : language === 'ps' ? 'ننوتل ناکام شول.' : 'نام کاربری یا رمز عبور اشتباه است.'));
-      }
-      setLoading(false);
-    }, 300);
-  };
-
-  const handleGoogleSignInClick = async () => {
-    setIsGoogleSigningIn(true);
-    setErrorMessage(null);
     try {
-      const ok = await connectGoogleDrive();
-      if (ok) {
-        // Also auto-login with default admin role
-        login('admin', 'password123');
+      const result = await login(loginEmail, loginPassword);
+      if (!result.success) {
+        setErrorMessage(tx('Sign-in failed. Check your username and password.', 'ورود انجام نشد؛ نام کاربری و رمز عبور را بررسی کنید.', 'ننوتل ناکام شو؛ خپل کارن‌نوم او پټنوم وګورئ.'));
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'خطا در ورود با گوگل');
+    } catch {
+      setErrorMessage(tx('Could not reach the sign-in server.', 'ارتباط با سرور ورود برقرار نشد.', 'د ننوتلو سرور ته اړیکه ټینګه نه شوه.'));
     } finally {
-      setIsGoogleSigningIn(false);
+      setLoading(false);
     }
   };
+
 
   const handleForgotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +180,7 @@ export const LoginView: React.FC = () => {
     setTimeout(() => {
       const result = requestPasswordReset(forgotEmail);
       if (!result.success) {
-        setErrorMessage(result.error || (language === 'en' ? 'Email not found in records.' : language === 'ps' ? 'بریښنالیک ونه موندل شو.' : 'حسابی با این ایمیل یافت نشد.'));
+        setErrorMessage(tx('No account was found for that email.', 'حسابی با این نشانی ایمیل پیدا نشد.', 'د دې برېښنالیک لپاره حساب ونه موندل شو.'));
         setLoading(false);
         return;
       }
@@ -193,7 +195,7 @@ export const LoginView: React.FC = () => {
   const handleResetComplete = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setErrorMessage(language === 'en' ? 'Passwords do not match.' : language === 'ps' ? 'پټ نومونه سره سمون نه خوري.' : 'رمزهای عبور با یکدیگر مطابقت ندارند.');
+      setErrorMessage(tx('Passwords do not match.', 'رمزهای عبور یکسان نیستند.', 'پټنومونه سره برابر نه دي.'));
       return;
     }
     setErrorMessage(null);
@@ -201,11 +203,11 @@ export const LoginView: React.FC = () => {
     setTimeout(() => {
       const result = completePasswordReset(pendingEmail, otpInput, newPassword);
       if (!result.success) {
-        setErrorMessage(result.error || (language === 'en' ? 'Password reset failed.' : language === 'ps' ? 'د پټ نوم بدلول ناکام شول.' : 'تغییر رمز عبور با خطا مواجه شد.'));
+        setErrorMessage(tx('Password reset failed.', 'تغییر رمز عبور انجام نشد.', 'د پټنوم بدلول ناکام شول.'));
         setLoading(false);
         return;
       }
-      setSuccessMessage(language === 'en' ? 'New password saved successfully. You may now sign in.' : language === 'ps' ? 'نوی پټ نوم په بریالیتوب سره ثبت شو.' : 'رمز عبور جدید با موفقیت ذخیره شد.');
+      setSuccessMessage(tx('New password saved. You can now sign in.', 'رمز عبور جدید ذخیره شد؛ اکنون می‌توانید وارد شوید.', 'نوی پټنوم خوندي شو؛ اوس ننوتلای شئ.'));
       setLoginEmail(pendingEmail);
       setLoginPassword(newPassword);
       setAuthMode('login');
@@ -213,7 +215,7 @@ export const LoginView: React.FC = () => {
     }, 300);
   };
 
-  const isRtl = language === 'fa' || language === 'ps';
+  const isRtl = isRtlLanguage(language);
 
   return (
     <div className={`min-h-screen relative flex flex-col justify-between transition-colors duration-300 ${
@@ -284,17 +286,17 @@ export const LoginView: React.FC = () => {
                 <>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   {appSettings.darkMode ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
-                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">خودکار</span>
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">{tx('Automatic', 'خودکار', 'اتومات')}</span>
                 </>
               ) : appSettings.darkMode ? (
                 <>
                   <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-[11px] font-bold">شب</span>
+                  <span className="text-[11px] font-bold">{tx('Night', 'شب', 'شپه')}</span>
                 </>
               ) : (
                 <>
                   <Sun className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-[11px] font-bold">روز</span>
+                  <span className="text-[11px] font-bold">{tx('Day', 'روز', 'ورځ')}</span>
                 </>
               )}
             </button>
@@ -306,34 +308,34 @@ export const LoginView: React.FC = () => {
                 type="button"
                 onClick={() => setLanguage('fa')}
                 className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  language === 'fa' 
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
+                  isCurrentLanguage(language, 'fa')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
                     : appSettings.darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                دری
+                {NATIVE_LANGUAGE_NAMES.fa}
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage('ps')}
                 className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  language === 'ps' 
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
+                  isCurrentLanguage(language, 'ps')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
                     : appSettings.darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                پښتو
+                {NATIVE_LANGUAGE_NAMES.ps}
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
                 className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                  language === 'en' 
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
+                  isCurrentLanguage(language, 'en')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
                     : appSettings.darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                English
+                {NATIVE_LANGUAGE_NAMES.en}
               </button>
             </div>
           </div>
@@ -359,7 +361,7 @@ export const LoginView: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400 block">
-                    {language === 'en' ? 'OFFICIAL CIVIL ENGINEERING SUITE' : 'سیستم تخصصی محاسبات و مدیریت مالی ساختمان'}
+                    {tx('Construction management suite', 'سیستم تخصصی مدیریت ساختمان و امور مالی', 'د ودانیزو پروژو د مدیریت او مالي چارو سیستم')}
                   </span>
                   <span className={`text-xl sm:text-2xl font-black tracking-tight ${appSettings.darkMode ? 'text-white' : 'text-slate-900'}`}>
                     {t.appName}
@@ -462,77 +464,9 @@ export const LoginView: React.FC = () => {
               })()}
             </motion.div>
 
-            {/* Quick Demo Credentials Panel */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30, scale: 0.98 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
-              className="p-4 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-white/15 text-xs text-slate-200 space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-400" />
-                  <span>{t.demoAccountsTitle}</span>
-                </span>
-                <span className="text-[10px] text-slate-400">{t.copyEmail}</span>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setLoginEmail('admin');
-                    setLoginPassword('password123');
-                    setErrorMessage(null);
-                  }}
-                  className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-xl border border-amber-500/40 transition-all font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>{t.demoAdminLabel} (@admin)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setLoginEmail('accountant');
-                    setLoginPassword('password123');
-                    setErrorMessage(null);
-                  }}
-                  className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-xl border border-blue-500/40 transition-all font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Briefcase className="w-3.5 h-3.5" />
-                  <span>{t.demoStaffLabel} (@accountant)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setLoginEmail('sales');
-                    setLoginPassword('password123');
-                    setErrorMessage(null);
-                  }}
-                  className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 rounded-xl border border-emerald-500/40 transition-all font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Home className="w-3.5 h-3.5" />
-                  <span>مسؤول فروشات (@sales)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setLoginEmail('najeemnik');
-                    setLoginPassword('password123');
-                    setErrorMessage(null);
-                  }}
-                  className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-xl border border-rose-500/40 transition-all font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{t.demoSuperAdminLabel} (@najeemnik)</span>
-                </button>
-              </div>
-            </motion.div>
+            <div className="rounded-2xl border border-amber-500/30 bg-slate-900/70 px-4 py-3 text-xs text-slate-200 leading-relaxed">
+              {tx('Sign-in accounts are provisioned and managed on the server. No demo credentials or browser-created accounts are enabled.', 'حساب‌های ورود در سرور ایجاد و مدیریت می‌شوند. هیچ حساب آزمایشی یا حسابی که در مرورگر ساخته شده باشد، فعال نیست.', 'د ننوتلو حسابونه په سرور کې جوړېږي او اداره کېږي. د ازمایښتي حسابونو یا په براوزر کې د جوړو شوو حسابونو اجازه نشته.')}
+            </div>
           </div>
 
           {/* Right Column: High-Contrast Auth Card */}
@@ -544,41 +478,25 @@ export const LoginView: React.FC = () => {
               <div className="space-y-1.5 pb-2 border-b border-slate-200/80 dark:border-white/10">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{language === 'en' ? 'Authorized Corporate Portal' : 'سامانه اختصاصی ورود به سیستم'}</span>
+                  <span>{tx('Authorized company portal', 'دروازهٔ اختصاصی شرکت', 'د شرکت ځانګړی پورټل')}</span>
                 </div>
                 <h2 className={`text-xl font-black tracking-tight ${appSettings.darkMode ? 'text-white' : 'text-slate-900'}`}>
-                  {t.loginTitle || 'ورود به دیتابیس پروژه ساختمانی'}
+                  {t.loginTitle || tx('Sign in to your company workspace', 'ورود به فضای کاری شرکت', 'د شرکت کاري ځای ته ننوتل')}
                 </h2>
                 <p className={`text-xs ${appSettings.darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed`}>
-                  صاحبان شرکت‌ها و کارمندان: با نام کاربری یا ایمیل خود وارد شوید.
+                  {tx('Company owners and staff: sign in with your username or email.', 'مالکین شرکت و کارمندان: با نام کاربری یا ایمیل خود وارد شوید.', 'د شرکت مالک او کارکوونکي: د خپل کارن‌نوم یا برېښنالیک له لارې ننوځئ.')}
                 </p>
               </div>
 
-              {/* Official Google Sign In Button (Google Workspace Skill Standard) */}
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignInClick}
-                  disabled={isGoogleSigningIn}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-white font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-850 transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                  </svg>
-                  <span>{isGoogleSigningIn ? 'در حال ورود با گوگل...' : 'ورود مستقیم با گوگل (Google Drive)'}</span>
-                </button>
-                <div className="flex items-center gap-2 my-2 text-slate-400">
-                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-                  <span className="text-[10px] font-bold uppercase">یا ورود با نام کاربری</span>
-                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+              {workspaceError && (
+                <div className="p-3.5 bg-rose-950/80 border border-rose-600/80 rounded-2xl text-rose-200 text-xs flex items-center gap-2.5 animate-in fade-in" role="alert">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{tx('The workspace could not be loaded. Contact your company administrator.', 'فضای کاری بارگذاری نشد. با مدیر شرکت تماس بگیرید.', 'کاري ځای بار نه شو. د خپل شرکت له مدیر سره اړیکه ونیسئ.')}</span>
                 </div>
-              </div>
+              )}
 
               {errorMessage && (
-                <div className="p-3.5 bg-rose-950/80 border border-rose-600/80 rounded-2xl text-rose-200 text-xs flex items-center gap-2.5 animate-in fade-in">
+                <div className="p-3.5 bg-rose-950/80 border border-rose-600/80 rounded-2xl text-rose-200 text-xs flex items-center gap-2.5 animate-in fade-in" role="alert">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMessage}</span>
                 </div>
@@ -591,11 +509,29 @@ export const LoginView: React.FC = () => {
                 </div>
               )}
 
+              {legacyExportMessage && (
+                <div className="p-3 rounded-xl bg-sky-950/70 border border-sky-700 text-sky-100 text-xs" role="status">
+                  {legacyExportMessage}
+                </div>
+              )}
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-2">
+                <p className="text-[11px] leading-relaxed text-slate-300">
+                  {tx(
+                    'If this browser contains older NSC records, export them for review before importing into the server workspace. The export is read-only and excludes local accounts, passwords, and security logs.',
+                    'اگر در این مرورگر سوابق قدیمی NSC موجود است، پیش از واردکردن به فضای کاری سرور آن‌ها را برای بررسی صادر کنید. صادرکردن فقط‌خواندنی است و حساب‌های محلی، گذرواژه‌ها و رویدادهای امنیتی را شامل نمی‌شود.',
+                    'که په دې براوزر کې د NSC پخواني ریکارډونه وي، د سرور کاري ځای ته له واردولو مخکې یې د بیاکتنې لپاره صادر کړئ. صادرول یوازې لوستل کوي او محلي حسابونه، پټنومونه او امنیتي لاګونه نه رانغاړي.',
+                  )}
+                </p>
+                <button type="button" onClick={handleLegacyExport} className="w-full rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200 hover:bg-sky-500/20">
+                  {tx('Export older browser business data', 'صادرکردن داده‌های تجاری قدیمی مرورگر', 'د براوزر پخواني سوداګریز معلومات صادرول')}
+                </button>
+              </div>
+
               {authMode === 'login' && (
                 <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
                   <div>
                     <label className={`block font-bold mb-1.5 ${appSettings.darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                      {language === 'en' ? 'Username or Email' : 'نام کاربری یا ایمیل'}
+                      {tx('Username or email', 'نام کاربری یا ایمیل', 'کارن‌نوم یا برېښنالیک')}
                     </label>
                     <div className="relative">
                       <UserIcon className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2" />
@@ -604,7 +540,7 @@ export const LoginView: React.FC = () => {
                         required
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="مثال: admin یا accountant"
+                        placeholder={tx('e.g. owner or accountant', 'مثال: مدیر یا حسابدار', 'لکه: مدیر یا محاسب')}
                         className={`w-full ps-10 pe-3.5 py-3 rounded-2xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/60 font-mono ${
                           appSettings.darkMode 
                             ? 'bg-slate-950/90 border border-slate-700 text-white placeholder-slate-500' 
@@ -672,7 +608,7 @@ export const LoginView: React.FC = () => {
                     type="submit"
                     className="w-full py-3 bg-amber-600 text-white font-bold rounded-xl"
                   >
-                    ارسال کد بازیابی
+                    {tx('Send reset code', 'فرستادن کد بازیابی', 'د بیاځلي تنظیم کوډ ولېږئ')}
                   </button>
                   <div className="text-center">
                     <button
@@ -680,7 +616,7 @@ export const LoginView: React.FC = () => {
                       onClick={() => setAuthMode('login')}
                       className="text-slate-400 hover:text-amber-500 text-xs"
                     >
-                      بازگشت به صفحه ورود
+                      {tx('Return to sign in', 'بازگشت به صفحهٔ ورود', 'ننوتلو پاڼې ته ورستنېدل')}
                     </button>
                   </div>
                 </form>

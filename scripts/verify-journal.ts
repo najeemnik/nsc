@@ -25,13 +25,50 @@ import {
 import { buildJournal, computeAccountBalances, buildTrialBalance, isEntryBalanced, computeWipCostBreakdown } from '../src/utils/journalEngine';
 import { computeBudgetReport, summarizeBudgetReport } from '../src/utils/budgetUtils';
 import { computeProjectCostPoolUSD, computeSellableAreaM2, allocateUnitCostUSD, computeUnitProfitability } from '../src/utils/wipAllocation';
-import { getAccount } from '../src/data/chartOfAccounts';
+import { ACC, getAccount, resolveMaterialAccount } from '../src/data/chartOfAccounts';
+import type { MaterialProcurementRecord } from '../src/types';
+
+const verificationMaterials: MaterialProcurementRecord[] = [
+  {
+    id: 'verify-mat-bricks',
+    projectId: 'proj-kabul-plaza',
+    materialName: 'Test clay bricks',
+    materialCategory: 'mat_clay_bricks',
+    quantity: 1000,
+    unitOfMeasure: 'pieces',
+    unitPrice: 5,
+    totalCost: 5000,
+    currency: 'AFN',
+    exchangeRate: 70,
+    supplierName: 'Verification Supplier',
+    isPaid: false,
+    purchaseDate: '2024-01-03',
+    createdAt: '2024-01-03T00:00:00.000Z',
+  },
+  {
+    id: 'verify-mat-paint',
+    projectId: 'proj-kabul-plaza',
+    materialName: 'Test interior paint',
+    materialCategory: 'mat_paints',
+    quantity: 10,
+    unitOfMeasure: 'gallons',
+    unitPrice: 50,
+    totalCost: 500,
+    currency: 'USD',
+    exchangeRate: 70,
+    supplierName: 'Verification Supplier',
+    isPaid: true,
+    purchaseDate: '2024-01-04',
+    createdAt: '2024-01-04T00:00:00.000Z',
+  },
+];
 
 const journal = buildJournal({
   projects: initialProjects,
   expenses: initialExpenses,
   steelRecords: initialSteelRecords,
   concreteRecords: initialConcreteRecords,
+  materialProcurements: verificationMaterials,
   payments: initialPayments,
   apartments: initialApartments,
   projectInvestments: initialInvestmentsSafe,
@@ -49,6 +86,15 @@ console.log('\n════════════ 1. ENTRY-LEVEL BALANCE ═�
 const unbalanced = journal.filter(e => !isEntryBalanced(e));
 check(journal.length > 0, `Journal built: ${journal.length} entries`);
 check(unbalanced.length === 0, `All entries balanced (Dr == Cr)${unbalanced.length ? ` — offenders: ${unbalanced.map(e => e.id).slice(0, 5).join(', ')}` : ''}`);
+const brickPurchase = journal.find(entry => entry.sourceType === 'material' && entry.sourceId === 'verify-mat-bricks');
+const paintPurchase = journal.find(entry => entry.sourceType === 'material' && entry.sourceId === 'verify-mat-paint');
+const brickWipLine = brickPurchase?.lines.find(line => line.accountCode === ACC.WIP);
+check(resolveMaterialAccount('mat_clay_bricks') === '55001', 'Stable brick category resolves to detailed masonry account 55001');
+check(resolveMaterialAccount('خشت و بلاک ساختمانی') === '5500', 'Legacy Dari category keeps its established four-digit account');
+check(resolveMaterialAccount('unmapped legacy material label') === '5990', 'Unknown material categories safely use 5990');
+check(brickWipLine?.costAccountCode === '55001', 'Material journal preserves the brick subaccount on the WIP line');
+check(brickPurchase?.lines.some(line => line.accountCode === ACC.SUPPLIER_PAYABLES && line.credit === 5000) ?? false, 'Unpaid material purchase credits supplier payables');
+check(paintPurchase?.lines.some(line => line.accountCode === ACC.CASH_USD && line.credit === 500) ?? false, 'Paid USD material purchase credits USD cash');
 
 console.log('\n════════════ 2. TRIAL BALANCE (USD-normalized) ════════════');
 const tb = buildTrialBalance(journal);
@@ -110,6 +156,7 @@ const budgetRows = computeBudgetReport({
   expenses: initialExpenses,
   steelRecords: initialSteelRecords,
   concreteRecords: initialConcreteRecords,
+  materialProcurements: verificationMaterials,
 });
 console.log('  Account  Budget $      Spent $      Paid $       Payable $    Remaining $  Usage   Status');
 console.log('  -------  -----------  -----------  -----------  -----------  -----------  ------  ----------');
@@ -129,6 +176,10 @@ if (steelRow) {
 }
 check(budgetRows.some(r => r.status === 'over' || r.status === 'warning'), 'Warning/Over-Budget detection active');
 check(budgetRows.some(r => !r.hasBudget), 'Unbudgeted spending section detected');
+const brickBudgetRow = budgetRows.find(r => r.accountCode === '55001');
+const paintBudgetRow = budgetRows.find(r => r.accountCode === '59505');
+check(Math.abs((brickBudgetRow?.committedUSD || 0) - (5000 / 70)) < 0.01 && brickBudgetRow?.paidUSD === 0, 'Unpaid brick procurement reaches its mapped budget account');
+check(paintBudgetRow?.committedUSD === 500 && paintBudgetRow?.paidUSD === 500, 'Paid paint procurement reaches its mapped budget account');
 
 console.log('\n════════════ 6. WIP / COGS (PHASE 3) ════════════');
 const PROJ = 'proj-kabul-plaza';
@@ -142,6 +193,7 @@ const pool = computeProjectCostPoolUSD({
   expenses: initialExpenses,
   steelRecords: initialSteelRecords,
   concreteRecords: initialConcreteRecords,
+  materialProcurements: verificationMaterials,
 });
 const projUnits = initialApartments.filter(u => u.projectId === PROJ);
 const sellableArea = computeSellableAreaM2(projUnits, initialProjects.find(p => p.id === PROJ));
@@ -181,6 +233,7 @@ const profit = computeUnitProfitability({
   expenses: initialExpenses,
   steelRecords: initialSteelRecords,
   concreteRecords: initialConcreteRecords,
+  materialProcurements: verificationMaterials,
 });
 console.log(`  Unit profitability: sales $${money(profit.totals.saleUSD)} − COGS $${money(profit.totals.cogsUSD)} = gross $${money(profit.totals.grossProfitUSD)} (${profit.totals.marginPct?.toFixed(1)}%)`);
 check(Math.abs(profit.totals.cogsUSD - bookCogs) < 1, 'Profitability report COGS agrees with the books');

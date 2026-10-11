@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Wallet, X, CheckCircle, Receipt, Coffee } from 'lucide-react';
 
 interface AddPettyCashModalProps {
@@ -12,14 +13,15 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
   onClose,
 }) => {
   const { currentProject, projects, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
   const [category, setCategory] = useState('چای، نان و مهمان‌داری ساحه');
   const [amount, setAmount] = useState('500');
-  const [paidTo, setPaidTo] = useState('آشپز کارگاه / مسئول خرید روزمره');
+  const [paidTo, setPaidTo] = useState('');
   const [purpose, setPurpose] = useState('');
   const [voucherNo, setVoucherNo] = useState(`PCV-${Date.now().toString().slice(-4)}`);
   const [expenseDate, setExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [approvedBy, setApprovedBy] = useState('معتمد تنخواه‌گردان ساحه');
+  const [approvedBy, setApprovedBy] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successNotice, setSuccessNotice] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
     setFormError(null);
     const numAmt = parseFloat(amount);
     if (isNaN(numAmt) || numAmt <= 0) {
-      setFormError(language === 'fa' ? 'لطفاً مبلغ معتبر وارد کنید.' : 'Please enter a valid amount.');
+      setFormError(tx('Please enter a valid amount.', 'لطفاً مبلغ معتبر وارد کنید.', 'مهرباني وکړئ سمه اندازه ولیکئ.'));
       return;
     }
 
@@ -78,10 +80,10 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-ink">
-                {language === 'fa' ? 'ثبت واچر تنخواه‌گردان کارگاه (Petty Cash)' : 'Petty Cash Voucher (PCV)'}
+                {tx('Petty Cash Voucher (PCV)', 'ثبت واچر تنخواه‌گردان کارگاه (Petty Cash)', 'د وړو نغدي لګښتونو سند (PCV)')}
               </h2>
               <p className="text-xs text-ink-muted">
-                {language === 'fa' ? 'ثبت مصارف خرد روزمره با کسر مستقیم از صندوق تنخواه ساحه' : 'Minor daily on-site operational expenses'}
+                {tx('Minor daily on-site operational expenses', 'ثبت مصارف خرد روزمره با کسر مستقیم از صندوق تنخواه ساحه', 'د ساحې کوچني ورځني عملیاتي لګښتونه')}
               </p>
             </div>
           </div>
@@ -105,7 +107,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
           {successNotice && (
             <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>{language === 'fa' ? 'واچر تنخواه با موفقیت ثبت و از صندوق کسر شد!' : 'Petty cash voucher recorded successfully!'}</span>
+              <span>{tx('Petty cash voucher recorded successfully!', 'واچر تنخواه با موفقیت ثبت و از صندوق کسر شد!', 'د وړو نغدي لګښتونو سند په بریالیتوب ثبت شو!')}</span>
             </div>
           )}
 
@@ -129,18 +131,18 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
             {/* Category */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'بابت / موضوع هزینه' : 'Expense Category'}
+                {tx('Expense Category', 'بابت / موضوع هزینه', 'د لګښت ډول')}
               </label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               >
-                <option value="چای، نان و مهمان‌داری ساحه">{language === 'fa' ? 'چای، شکر، نان و مهمان‌داری ساحه' : 'Tea & Refreshments'}</option>
-                <option value="کرایه موتر و ترانسپورت بار">{language === 'fa' ? 'کرایه موتر و ترانسپورت شهری' : 'Transport & Logistics'}</option>
-                <option value="خرید ابزار خرد و سیمان فوری">{language === 'fa' ? 'خرید ابزار خرد و وسایل فوری' : 'Minor Hardware & Tools'}</option>
-                <option value="مصارف اداری، قرطاسیه و اینترنت">{language === 'fa' ? 'مصارف اداری، قرطاسیه و اینترنت ساحه' : 'Stationery & Site Admin'}</option>
-                <option value="ترمیمات فوری جنراتور یا پمپ">{language === 'fa' ? 'ترمیمات فوری وسایل ساحه' : 'Urgent Site Repairs'}</option>
+                <option value="چای، نان و مهمان‌داری ساحه">{tx('Tea & Refreshments', 'چای، شکر، نان و مهمان‌داری ساحه', 'چای او مېلمستیا')}</option>
+                <option value="کرایه موتر و ترانسپورت بار">{tx('Transport & Logistics', 'کرایه موتر و ترانسپورت شهری', 'ترانسپورت او لوژستیک')}</option>
+                <option value="خرید ابزار خرد و سیمان فوری">{tx('Minor Hardware & Tools', 'خرید ابزار خرد و وسایل فوری', 'کوچني وسایل او ابزار')}</option>
+                <option value="مصارف اداری، قرطاسیه و اینترنت">{tx('Stationery & Site Admin', 'مصارف اداری، قرطاسیه و اینترنت ساحه', 'قرطاسیه او د ساحې اداري لګښتونه')}</option>
+                <option value="ترمیمات فوری جنراتور یا پمپ">{tx('Urgent Site Repairs', 'ترمیمات فوری وسایل ساحه', 'د ساحې عاجل ترمیمات')}</option>
               </select>
             </div>
           </div>
@@ -149,7 +151,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
             {/* Amount */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'مبلغ واچر (AFN)' : 'Voucher Amount (AFN)'}
+                {tx('Voucher Amount (AFN)', 'مبلغ واچر (AFN)', 'د سند اندازه (AFN)')}
               </label>
               <input
                 type="number"
@@ -164,13 +166,14 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
             {/* Paid To */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'پرداخت شده در وجه' : 'Paid To (Person)'}
+                {tx('Paid To (Person)', 'پرداخت شده در وجه', 'ترلاسه کوونکی')}
               </label>
               <input
                 type="text"
                 required
                 value={paidTo}
                 onChange={e => setPaidTo(e.target.value)}
+                placeholder={tx('Name of recipient', 'نام دریافت‌کننده', 'د ترلاسه کوونکي نوم')}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               />
             </div>
@@ -179,7 +182,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'شماره واچر' : 'Voucher No'}
+                {tx('Voucher No', 'شماره واچر', 'د سند شمېره')}
               </label>
               <input
                 type="text"
@@ -191,7 +194,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {t('date') || 'Date'}
+                {t('date') || t("accColDate")}
               </label>
               <input
                 type="date"
@@ -203,12 +206,13 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'تأییدکننده' : 'Approved By'}
+                {tx('Approved By', 'تأییدکننده', 'تأییدوونکی')}
               </label>
               <input
                 type="text"
                 value={approvedBy}
                 onChange={e => setApprovedBy(e.target.value)}
+                placeholder={tx('Name of approver', 'نام تأییدکننده', 'د تأییدوونکي نوم')}
                 className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               />
             </div>
@@ -217,13 +221,13 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
           {/* Purpose */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {language === 'fa' ? 'شرح و هدف دقیق مصرف' : 'Description'}
+              {tx('Description', 'شرح و هدف دقیق مصرف', 'توضیحات')}
             </label>
             <textarea
               rows={2}
               value={purpose}
               onChange={e => setPurpose(e.target.value)}
-              placeholder="توضیح خرید نان چاشت، کرایه لاری برای تخلیه خشت، یا خرید سیم..."
+              placeholder={tx('e.g. meal supplies, unloading transport, or small tools...', 'توضیح خرید نان چاشت، کرایه لاری برای تخلیه خشت، یا خرید سیم...', 'لکه: د خوړو توکي، د خښتو د ښکته کولو لېږد یا کوچني وسایل...')}
               className="w-full px-3.5 py-2 bg-surface-2 border border-line rounded-xl text-ink"
             />
           </div>
@@ -235,7 +239,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel') || t("cancel")}
             </button>
             <button
               type="submit"
@@ -243,7 +247,7 @@ export const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-lg shadow-emerald-500/25 transition active:scale-95 disabled:opacity-50"
             >
               <Wallet className="w-4 h-4" />
-              <span>{isSubmitting ? 'در حال ثبت...' : 'ثبت واچر تنخواه'}</span>
+              <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : tx('Save petty cash voucher', 'ثبت واچر تنخواه', 'د وړو نغدي لګښتونو سند ثبت کړئ')}</span>
             </button>
           </div>
         </form>

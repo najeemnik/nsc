@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { intlLocaleFor, localizeText } from '../../i18n/localize';
 import { CreditCard, X, Clock, Calendar, CheckCircle, Users, AlertCircle } from 'lucide-react';
 import { PaymentMethod } from '../../types';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
@@ -25,9 +26,10 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   outstandingDebt,
   title,
 }) => {
-  const { currentProject, addPayment, payments, debtorParties, t } = useApp();
+  const { currentProject, addPayment, payments, debtorParties, t, language, formatNumber } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit', hour12: false }));
   const [receiptNumber, setReceiptNumber] = useState(`VCH-${Date.now().toString().slice(-5)}`);
   const [selectedDebtorId, setSelectedDebtorId] = useState<string>('');
   const [partyName, setPartyName] = useState(defaultPartyName || '');
@@ -53,7 +55,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
     else if (outstandingDebt) setAmount(outstandingDebt.toString());
     if (outstandingDebt !== undefined) setActiveDebt(outstandingDebt);
     setDate(new Date().toISOString().split('T')[0]);
-    setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+    setTime(new Date().toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit', hour12: false }));
   }, [defaultPartyName, defaultRelatedType, defaultRelatedId, defaultAmount, outstandingDebt, isOpen]);
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
       
       const convertedAmount = currency === 'USD' ? debtor.debtAmount : Math.round(debtor.debtAmount * exchangeRate);
       setAmount(convertedAmount.toString());
-      setDescription(`پرداخت به ${debtor.partyName}`);
+      setDescription(tx(`Payment to ${debtor.partyName}`, `پرداخت به ${debtor.partyName}`, `د ${debtor.partyName} تادیه`));
     }
   };
 
@@ -96,15 +98,15 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setFormError('مبلغ پرداختی نامعتبر است.');
+      setFormError(tx('The payment amount is invalid.', 'مبلغ پرداختی نامعتبر است.', 'د تادیې اندازه ناسمه ده.'));
       return;
     }
     if (!partyName.trim()) {
-      setFormError('نام طرف حساب الزامی است.');
+      setFormError(tx('The payee name is required.', 'نام طرف حساب الزامی است.', 'د ترلاسه کوونکي نوم اړین دی.'));
       return;
     }
     if (!date || isNaN(new Date(date).getTime())) {
-      setFormError('تاریخ نامعتبر است.');
+      setFormError(tx('The date is invalid.', 'تاریخ نامعتبر است.', 'نېټه ناسمه ده.'));
       return;
     }
 
@@ -115,7 +117,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
              p.receiptNumber.trim().toLowerCase() === receiptNumber.trim().toLowerCase()
       );
       if (isDuplicate) {
-        setFormError(`رسید با شماره "${receiptNumber.trim()}" قبلاً در این پروژه ثبت شده است.`);
+        setFormError(tx(`Receipt ${receiptNumber.trim()} is already registered for this project.`, `رسید شمارهٔ «${receiptNumber.trim()}» پیش‌تر در این پروژه ثبت شده است.`, `د ${receiptNumber.trim()} شمېرې رسید په دې پروژه کې مخکې ثبت شوی دی.`));
         return;
       }
     }
@@ -175,7 +177,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             type="button" 
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -196,7 +198,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               {debtorParties.length > 0 ? `-- ${t.selectDebtorParty} (${debtorParties.length}) --` : `-- ${t.noDebtorsFound} --`}
             </option>
             {debtorParties.filter(d => d.relatedType === 'expense').length > 0 && (
-              <optgroup label="خریدها / فاکتورهای قرضی (Purchases)">
+              <optgroup label={tx('Credit purchases / invoices', 'خریدها / فاکتورهای قرضی', 'پور اخیستل شوي توکي / بلونه')}>
                 {debtorParties.filter(d => d.relatedType === 'expense').map((debtor) => (
                   <option 
                     key={`${debtor.relatedType}-${debtor.relatedId}`} 
@@ -208,31 +210,31 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               </optgroup>
             )}
             {debtorParties.filter(d => d.relatedType === 'supplier').length > 0 && (
-              <optgroup label="تأمین‌کنندگان (Suppliers)">
+              <optgroup label={tx('Suppliers', 'عرضه‌کنندگان', 'عرضه‌کوونکي')}>
                 {debtorParties.filter(d => d.relatedType === 'supplier').map((debtor) => (
                   <option 
                     key={`${debtor.relatedType}-${debtor.relatedId}`} 
                     value={`${debtor.relatedType}-${debtor.relatedId}`}
                   >
-                    {debtor.partyName} - طلب: ${debtor.debtAmount.toLocaleString()}
+                    {debtor.partyName} - {tx('Outstanding:', 'طلب:', 'پاتې پور:')} ${formatNumber(debtor.debtAmount, 0)}
                   </option>
                 ))}
               </optgroup>
             )}
             {debtorParties.filter(d => d.relatedType === 'contractor').length > 0 && (
-              <optgroup label="قراردادی‌ها (Contractors)">
+              <optgroup label={tx('Contractors', 'قراردادی‌ها', 'قراردادیان')}>
                 {debtorParties.filter(d => d.relatedType === 'contractor').map((debtor) => (
                   <option 
                     key={`${debtor.relatedType}-${debtor.relatedId}`} 
                     value={`${debtor.relatedType}-${debtor.relatedId}`}
                   >
-                    {debtor.partyName} - طلب: ${debtor.debtAmount.toLocaleString()}
+                    {debtor.partyName} - {tx('Outstanding:', 'طلب:', 'پاتې پور:')} ${formatNumber(debtor.debtAmount, 0)}
                   </option>
                 ))}
               </optgroup>
             )}
             {debtorParties.filter(d => d.relatedType === 'material_steel' || d.relatedType === 'material_concrete').length > 0 && (
-              <optgroup label="سیخ و کانکریت (Materials)">
+              <optgroup label={tx('Steel and concrete', 'سیخ‌گول و کانکریت', 'سیخ‌ګول او کانکریټ')}>
                 {debtorParties.filter(d => d.relatedType === 'material_steel' || d.relatedType === 'material_concrete').map((debtor) => (
                   <option 
                     key={`${debtor.relatedType}-${debtor.relatedId}`} 
@@ -243,7 +245,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 ))}
               </optgroup>
             )}
-            <option value="custom">-- {t.customPartyOption || 'شخص یا شرکت متفرقه'} --</option>
+            <option value="custom">-- {t.customPartyOption || tx('Other person or company', 'شخص یا شرکت متفرقه', 'بل شخص یا شرکت')} --</option>
           </select>
         </div>
 
@@ -251,10 +253,10 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
           <div className="bg-amber-500/10 dark:bg-amber-950/30 border-b border-amber-500/20 px-5 py-2.5 flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2 rtl:space-x-reverse text-amber-900 dark:text-amber-200 font-semibold">
               <CheckCircle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>کل طلبکاری: <strong className="text-rose-700 dark:text-rose-400 text-sm font-mono">${activeDebt.toLocaleString()}</strong></span>
+              <span>{tx('Total outstanding:', 'کل طلبکاری:', 'ټول پاتې پور:')} <strong className="text-rose-700 dark:text-rose-400 text-sm font-mono">${formatNumber(activeDebt, 0)}</strong></span>
             </div>
             <span className="text-[11px] text-amber-800 dark:text-amber-300 font-bold bg-amber-200/50 dark:bg-amber-900/50 px-2 py-0.5 rounded">
-              کسر مستقیم از باقیمانده طلب
+              {tx('Deducted from the outstanding balance', 'کسر مستقیم از باقیماندهٔ طلب', 'له پاتې پور څخه کسرېږي')}
             </span>
           </div>
         )}
@@ -269,7 +271,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
           <div className="grid grid-cols-3 gap-2.5">
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.receiptNumber || 'شماره سند / رسید'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.receiptNumber || tx('Document / receipt number', 'شمارهٔ سند / رسید', 'د سند / رسید شمېره')}</label>
               <input
                 type="text"
                 required
@@ -294,7 +296,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>{t.time || 'ساعت'}</span>
+                <span>{t.time || tx('Time', 'ساعت', 'وخت')}</span>
               </label>
               <input
                 type="time"
@@ -308,11 +310,11 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.paidTo || 'پرداخت به طرف حساب'} <span className="text-rose-500">*</span></label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.paidTo || tx('Paid to', 'پرداخت به طرف حساب', 'ورکړه د')} <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 required
-                placeholder="نام شخص یا شرکت دریافت‌کننده"
+                placeholder={tx('Name of the person or company receiving payment', 'نام شخص یا شرکت دریافت‌کننده', 'د پیسو ترلاسه کوونکي کس یا شرکت نوم')}
                 value={partyName}
                 onChange={(e) => setPartyName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
@@ -348,23 +350,23 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.paymentMethod || 'روش پرداخت'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.paymentMethod || tx('Payment method', 'روش پرداخت', 'د تادیې لاره')}</label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as PaymentMethod)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-medium"
               >
-                <option value="Cash">نقدی (Cash)</option>
-                <option value="Bank Transfer">انتقال بانکی (Bank Transfer)</option>
-                <option value="Hawala / Sarafi">حواله / صرافی (Sarafi)</option>
-                <option value="Cheque">چک بانکی (Cheque)</option>
+                <option value="Cash">{tx('Cash', 'نقدی', 'نغدې')}</option>
+                <option value="Bank Transfer">{tx('Bank transfer', 'انتقال بانکی', 'بانکي لېږد')}</option>
+                <option value="Hawala / Sarafi">{tx('Hawala / exchange', 'حواله / صرافی', 'حواله / صرافي')}</option>
+                <option value="Cheque">{tx('Bank cheque', 'چک بانکی', 'بانکي چک')}</option>
               </select>
             </div>
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام بانک یا صرافی</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Bank or exchange name', 'نام بانک یا صرافی', 'د بانک یا صرافۍ نوم')}</label>
               <input
                 type="text"
-                placeholder="مثلاً: صرافی شهزاده / DAB"
+                placeholder={tx('e.g. Sarai Shahzada Exchange / DAB', 'مثلاً: صرافی شهزاده / DAB', 'لکه: د سرای شهزاده صرافي / DAB')}
                 value={bankOrSarafiName}
                 onChange={(e) => setBankOrSarafiName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -376,7 +378,7 @@ export const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.description}</label>
             <input
               type="text"
-              placeholder="مثلاً: بابت تسویه سیخ تهداب..."
+              placeholder={tx('e.g. Payment for foundation rebar...', 'مثلاً: بابت تسویهٔ سیخ تهداب...', 'لکه: د تهداب د سیخونو تادیه...')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"

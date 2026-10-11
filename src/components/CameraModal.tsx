@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { intlLocaleFor, localizeText } from '../i18n/localize';
 import { Camera, RefreshCw, Check, X, Upload, AlertCircle } from 'lucide-react';
 
 export const CameraModal: React.FC = () => {
-  const { cameraModalOpen, setCameraModalOpen, saveCameraPhotoAsDocument, t, cameraTargetData } = useApp();
+  const { cameraModalOpen, setCameraModalOpen, saveCameraPhotoAsDocument, language, cameraTargetData } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -46,7 +48,7 @@ export const CameraModal: React.FC = () => {
       }
     } catch (err: any) {
       console.warn('Camera access error:', err);
-      setCameraError('دسترسی به کمره در این مرورگر مجاز نیست یا کمره مسدود شده است. می‌توانید عکس را از موبایل یا کامپیوتر آپلود کنید.');
+      setCameraError(tx('Camera access is unavailable or blocked. You can upload a photo instead.', 'دسترسی به کمره در این مرورگر ممکن نیست یا کمره مسدود شده است. می‌توانید عکس را بارگذاری کنید.', 'کېمرې ته لاسرسی نشته یا بند شوی دی. پر ځای یې انځور پورته کولای شئ.'));
     }
   };
 
@@ -100,7 +102,7 @@ export const CameraModal: React.FC = () => {
 
   const handleSave = () => {
     if (!capturedImage) return;
-    const finalTitle = billTitle.trim() || `بل فیزیکی ${new Date().toLocaleDateString()}`;
+    const finalTitle = billTitle.trim() || tx(`Paper receipt ${new Intl.DateTimeFormat(intlLocaleFor(language)).format(new Date())}`, `رسید کاغذی ${new Intl.DateTimeFormat(intlLocaleFor(language)).format(new Date())}`, `کاغذي رسید ${new Intl.DateTimeFormat(intlLocaleFor(language)).format(new Date())}`);
     const finalAmount = billAmount ? parseFloat(billAmount) : undefined;
     saveCameraPhotoAsDocument(capturedImage, finalTitle, finalAmount);
   };
@@ -116,13 +118,14 @@ export const CameraModal: React.FC = () => {
               <Camera className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">{t.captureWithCamera}</h3>
-              <p className="text-xs text-slate-500">{t.appSubtitle}</p>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">{tx('Capture with camera', 'عکس‌برداری با کمره', 'د کېمرې په وسیله انځور اخیستل')}</h3>
+              <p className="text-xs text-slate-500">{tx('Capture or upload a receipt', 'از رسید عکس بگیرید یا آن را بارگذاری کنید', 'رسید انځور کړئ یا یې پورته کړئ')}</p>
             </div>
           </div>
           <button
             onClick={() => setCameraModalOpen(false)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label={tx('Close camera', 'بستن کمره', 'کېمره بندول')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -133,7 +136,7 @@ export const CameraModal: React.FC = () => {
             {capturedImage ? (
               <img
                 src={capturedImage}
-                alt="Captured Bill"
+                alt={tx('Captured receipt', 'رسید عکس‌برداری‌شده', 'انځور شوی رسید')}
                 className="w-full h-full object-contain bg-slate-950"
               />
             ) : (
@@ -148,7 +151,7 @@ export const CameraModal: React.FC = () => {
                       className="inline-flex items-center space-x-2 rtl:space-x-reverse px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition-colors"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>انتخاب عکس از حافظه دستگاه</span>
+                      <span>{tx('Choose a photo from your device', 'انتخاب عکس از حافظهٔ دستگاه', 'له خپل وسیلې څخه انځور وټاکئ')}</span>
                     </button>
                   </div>
                 ) : (
@@ -161,7 +164,7 @@ export const CameraModal: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-6 border-2 border-dashed border-white/60 rounded-lg pointer-events-none flex flex-col justify-between p-3">
-                      <span className="text-[10px] text-white/80 bg-black/50 px-2 py-0.5 rounded self-start">رسید را داخل چارچوب قرار دهید</span>
+                      <span className="text-[10px] text-white/80 bg-black/50 px-2 py-0.5 rounded self-start">{tx('Place the receipt inside the frame', 'رسید را داخل چارچوب قرار دهید', 'رسید د چوکاټ دننه کېږدئ')}</span>
                     </div>
                   </>
                 )}
@@ -172,22 +175,22 @@ export const CameraModal: React.FC = () => {
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t.description} / {t.billNumber}</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Description', 'توضیحات', 'توضیحات')} / {tx('Receipt number', 'شمارهٔ رسید', 'د رسید شمېره')}</label>
               <input
                 type="text"
                 value={billTitle}
                 onChange={(e) => setBillTitle(e.target.value)}
-                placeholder="مثال: بل سیخ‌گول کابل استیل #492"
+                placeholder={tx('e.g. Steel rebar receipt #492', 'مثال: رسید سیخ‌گول کابل استیل #۴۹۲', 'لکه: د کابل سټیل سیخ‌ګول رسید #۴۹۲')}
                 className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t.totalAmount} ({t.currency})</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Total amount', 'مبلغ کل', 'ټوله اندازه')} ({tx('currency', 'واحد پول', 'پولي واحد')})</label>
               <input
                 type="number"
                 value={billAmount}
                 onChange={(e) => setBillAmount(e.target.value)}
-                placeholder="مثلاً: 35000"
+                placeholder={tx('e.g. 35,000', 'مثلاً: ۳۵٬۰۰۰', 'لکه: ۳۵٬۰۰۰')}
                 className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
@@ -210,7 +213,7 @@ export const CameraModal: React.FC = () => {
             className="flex items-center space-x-1.5 rtl:space-x-reverse text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 py-2 px-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             <Upload className="w-4 h-4" />
-            <span>آپلود فایل</span>
+            <span>{tx('Upload file', 'بارگذاری فایل', 'فایل پورته کړئ')}</span>
           </button>
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             {capturedImage ? (
@@ -221,7 +224,7 @@ export const CameraModal: React.FC = () => {
                   className="flex items-center space-x-1.5 rtl:space-x-reverse px-3 py-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>{t.retakePhoto}</span>
+                  <span>{tx('Retake photo', 'عکس‌برداری دوباره', 'بیا انځور واخلئ')}</span>
                 </button>
                 <button
                   type="button"
@@ -229,7 +232,7 @@ export const CameraModal: React.FC = () => {
                   className="flex items-center space-x-1.5 rtl:space-x-reverse px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
                 >
                   <Check className="w-4 h-4" />
-                  <span>{t.usePhoto}</span>
+                  <span>{tx('Use photo', 'استفاده از عکس', 'انځور وکاروئ')}</span>
                 </button>
               </>
             ) : (
@@ -240,7 +243,7 @@ export const CameraModal: React.FC = () => {
                 className="flex items-center space-x-2 rtl:space-x-reverse px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow transition-colors"
               >
                 <Camera className="w-4 h-4" />
-                <span>{t.snapPhoto}</span>
+                <span>{tx('Take photo', 'عکس بگیرید', 'انځور واخلئ')}</span>
               </button>
             )}
           </div>

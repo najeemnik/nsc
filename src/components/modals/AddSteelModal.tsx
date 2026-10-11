@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { intlLocaleFor, localizeText } from '../../i18n/localize';
 import { Layers, X, Calendar, Clock, Check, Banknote, AlertCircle } from 'lucide-react';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
 
@@ -9,9 +10,11 @@ interface AddSteelModalProps {
 }
 
 export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addSteelRecord, steelRecords, t } = useApp();
+  const { currentProject, addSteelRecord, steelRecords, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const formatNumber = (value: number) => value.toLocaleString(intlLocaleFor(language));
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit', hour12: false }));
   const [billNumber, setBillNumber] = useState(`STL-${Date.now().toString().slice(-4)}`);
   const [supplierName, setSupplierName] = useState('');
   const [tons, setTons] = useState('10');
@@ -74,27 +77,27 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
     setFormError(null);
 
     if (isNaN(parsedTons) || parsedTons <= 0) {
-      setFormError('مقدار وزن (تن) باید بزرگتر از صفر باشد.');
+      setFormError(tx('Weight in tonnes must be greater than zero.', 'مقدار وزن (تن) باید بیشتر از صفر باشد.', 'د وزن (ټنه) باید تر صفر لوړه وي.'));
       return;
     }
     if (isNaN(rawPrice) || rawPrice <= 0) {
-      setFormError('قیمت فی تن باید بزرگتر از صفر باشد.');
+      setFormError(tx('Price per tonne must be greater than zero.', 'قیمت هر تن باید بیشتر از صفر باشد.', 'د هر ټن بیه باید تر صفر لوړه وي.'));
       return;
     }
     if (!supplierName.trim()) {
-      setFormError('نام فروشنده یا شرکت سیخ‌گول الزامی است.');
+      setFormError(tx('Supplier or rebar company name is required.', 'نام فروشنده یا شرکت سیخ‌گول الزامی است.', 'د عرضه‌کوونکي یا د سیخ‌ګول شرکت نوم اړین دی.'));
       return;
     }
     if (rawPaid < 0) {
-      setFormError('مبلغ پرداختی نامعتبر است.');
+      setFormError(tx('The payment amount is invalid.', 'مبلغ پرداختی نامعتبر است.', 'د تادیې اندازه ناسمه ده.'));
       return;
     }
     if (rawPaid > totalAmountInCurrentCurrency) {
-      setFormError('مبلغ پرداختی نمی‌تواند بیشتر از کل فاکتور باشد.');
+      setFormError(tx('Payment cannot exceed the invoice total.', 'مبلغ پرداختی نمی‌تواند از کل فاکتور بیشتر باشد.', 'تادیه د بل له ټولې اندازې لوړه کېدای نه شي.'));
       return;
     }
     if (!date || isNaN(new Date(date).getTime())) {
-      setFormError('تاریخ نامعتبر است.');
+      setFormError(tx('The date is invalid.', 'تاریخ نامعتبر است.', 'نېټه ناسمه ده.'));
       return;
     }
 
@@ -105,7 +108,7 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
              s.billNumber.trim().toLowerCase() === billNumber.trim().toLowerCase()
       );
       if (isDuplicate) {
-        setFormError(`بل با شماره "${billNumber.trim()}" قبلاً در این پروژه ثبت شده است.`);
+        setFormError(tx(`Bill ${billNumber.trim()} is already registered for this project.`, `بل شمارهٔ «${billNumber.trim()}» پیش‌تر در این پروژه ثبت شده است.`, `د ${billNumber.trim()} شمېرې بل په دې پروژه کې مخکې ثبت شوی دی.`));
         return;
       }
     }
@@ -150,7 +153,7 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
             type="button" 
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -195,7 +198,7 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
             <input
               type="text"
               required
-              placeholder="مثلاً: کابل استیل / افغان پولاد"
+              placeholder={tx('e.g. Kabul Steel / Afghan Steel', 'مثلاً: کابل استیل / افغان پولاد', 'لکه: کابل سټیل / افغان پولاد')}
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20 font-bold"
@@ -215,7 +218,7 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.sizeMm || 'سایز'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Bar size', 'سایز', 'د سیخ اندازه')}</label>
               <input
                 type="text"
                 placeholder="16mm / 20mm"
@@ -225,10 +228,10 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.originCountry || 'کشور سازنده'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Country of origin', 'کشور سازنده', 'د جوړېدو هېواد')}</label>
               <input
                 type="text"
-                placeholder="ازبکستان / روسیه"
+                placeholder={tx('e.g. Uzbekistan / Russia', 'مثلاً: ازبکستان / روسیه', 'لکه: ازبکستان / روسیه')}
                 value={originCountry}
                 onChange={(e) => setOriginCountry(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink"
@@ -252,10 +255,10 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
             <span className="font-bold text-slate-700 dark:text-slate-300">{t.totalAmount}:</span>
             <div className="text-end font-mono">
               <span className="text-sm font-extrabold text-ink block">
-                ${totalAmountUSD.toLocaleString()}
+                ${formatNumber(totalAmountUSD)}
               </span>
               <span className="text-[11px] text-ink-muted">
-                معادل: {(totalAmountUSD * exchangeRate).toLocaleString()} افغانی
+                {tx('Equivalent:', 'معادل:', 'معادل:')} {formatNumber(totalAmountUSD * exchangeRate)} {tx('AFN', 'افغانی', 'افغانۍ')}
               </span>
             </div>
           </div>
@@ -303,7 +306,7 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
             {settlementMode !== 'credit' && (
               <div className="pt-2">
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.cashPaidNow} ({currency === 'USD' ? '$' : 'افغانی'})
+                  {tx('Paid now', 'پرداخت نقدی فعلی', 'اوسنۍ تادیه')} ({currency === 'USD' ? '$' : tx('AFN', 'افغانی', 'افغانۍ')})
                 </label>
                 <input
                   type="number"
@@ -321,17 +324,17 @@ export const AddSteelModal: React.FC<AddSteelModalProps> = ({ isOpen, onClose })
                 <span>{t.unpaidDebtBalance}:</span>
               </span>
               <span className={`font-mono font-bold ${remainingDebtUSD > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                ${remainingDebtUSD.toLocaleString()} {remainingDebtUSD > 0 && `(${(remainingDebtUSD * exchangeRate).toLocaleString()} افغانی)`}
+                ${formatNumber(remainingDebtUSD)} {remainingDebtUSD > 0 && `(${formatNumber(remainingDebtUSD * exchangeRate)} ${tx('AFN', 'افغانی', 'افغانۍ')})`}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t.vehicleNumber || 'پلیت موتر'}</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{tx('Vehicle plate number', 'شماره پلیت موتر', 'د موټر نمبر پلېټ')}</label>
               <input
                 type="text"
-                placeholder="مثلاً: کابل ۴-۸۲۹۱"
+                placeholder={tx('e.g. Kabul 4-8291', 'مثلاً: کابل ۴-۸۲۹۱', 'لکه: کابل ۴-۸۲۹۱')}
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink font-mono"

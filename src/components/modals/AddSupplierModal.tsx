@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { Truck, X, AlertCircle } from 'lucide-react';
 
 interface AddSupplierModalProps {
@@ -8,9 +9,11 @@ interface AddSupplierModalProps {
 }
 
 export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onClose }) => {
-  const { currentProject, addSupplier, suppliers, t } = useApp();
+  const { currentProject, addSupplier, suppliers, t, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [name, setName] = useState('');
-  const [materialsSupplied, setMaterialsSupplied] = useState('سیخ‌گول و آهن‌آلات');
+  const [materialsSupplied, setMaterialsSupplied] = useState(() => tx('Rebar and steel products', 'سیخ‌گول و آهن‌آلات', 'سیخ‌ګول او اوسپنیز توکي'));
+  const [materialsEdited, setMaterialsEdited] = useState(false);
   const [phone, setPhone] = useState('');
   const [bankOrSarafiDetails, setBankOrSarafiDetails] = useState('');
   const [initialPurchases, setInitialPurchases] = useState('0');
@@ -33,6 +36,10 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  React.useEffect(() => {
+    if (!materialsEdited) setMaterialsSupplied(tx('Rebar and steel products', 'سیخ‌گول و آهن‌آلات', 'سیخ‌ګول او اوسپنیز توکي'));
+  }, [language, materialsEdited]);
+
   if (!isOpen || !currentProject) return null;
 
   const purchases = parseFloat(initialPurchases) || 0;
@@ -45,7 +52,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
     setFormError(null);
 
     if (!name.trim()) {
-      setFormError('نام تأمین‌کننده الزامی است.');
+      setFormError(tx('Supplier name is required.', 'نام عرضه‌کننده الزامی است.', 'د عرضه‌کوونکي نوم اړین دی.'));
       return;
     }
 
@@ -54,12 +61,12 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
            s.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
     if (isDuplicate) {
-      setFormError(`فروشنده‌ای با نام "${name.trim()}" قبلاً ثبت شده است.`);
+      setFormError(tx(`Supplier ${name.trim()} is already registered.`, `عرضه‌کننده‌ای با نام «${name.trim()}» پیش‌تر ثبت شده است.`, `د ${name.trim()} عرضه‌کوونکی مخکې ثبت شوی دی.`));
       return;
     }
 
     if (purchases < 0) {
-      setFormError('مبلغ اولیه نمی‌تواند منفی باشد.');
+      setFormError(tx('The initial amount cannot be negative.', 'مبلغ اولیه نمی‌تواند منفی باشد.', 'لومړنۍ اندازه منفي کېدای نه شي.'));
       return;
     }
 
@@ -68,7 +75,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
       projectId: currentProject.id,
       name: name.trim(),
       materialsSupplied: materialsSupplied.trim(),
-      phone: phone.trim() || '+93 78 000 0000',
+      phone: phone.trim(),
       bankOrSarafiDetails: bankOrSarafiDetails.trim() || undefined,
       totalPurchases: purchasesUSD,
       totalPaid: 0,
@@ -91,7 +98,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
             type="button"
             onClick={onClose} 
             className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
-            title="بستن (Esc)"
+            title={tx('Close (Esc)', 'بستن (Esc)', 'بندول (Esc)')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,7 +118,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
               <input
                 type="text"
                 required
-                placeholder="مثلاً: شرکت سیخ‌گول پامیر"
+                placeholder={tx('e.g. Pamir Steel Company', 'مثلاً: شرکت سیخ‌گول پامیر', 'لکه: د پامیر سیخ‌ګول شرکت')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
@@ -122,9 +129,9 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
               <input
                 type="text"
                 required
-                placeholder="مثلاً: سمنت، ریگ، جغله، سیخ"
+                placeholder={tx('e.g. cement, sand, gravel, rebar', 'مثلاً: سمنت، ریگ، جغل و سیخ‌گول', 'لکه: سمنټ، شګه، جغل او سیخ‌ګول')}
                 value={materialsSupplied}
-                onChange={(e) => setMaterialsSupplied(e.target.value)}
+                onChange={(e) => { setMaterialsSupplied(e.target.value); setMaterialsEdited(true); }}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"
               />
             </div>
@@ -143,7 +150,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">سفارش یا خرید اولیه</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">{tx('Initial order or purchase', 'سفارش یا خرید اولیه', 'لومړنی فرمایش یا پېرود')}</label>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <div className="flex items-center gap-1 p-0.5 bg-slate-200/80 dark:bg-slate-700 rounded-md">
                     <button
@@ -151,14 +158,14 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                       onClick={() => setCurrency('USD')}
                       className={`px-2 py-0.5 rounded text-[10px] font-black ${currency === 'USD' ? 'bg-amber-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
                     >
-                      دالر ($)
+                      {tx('US dollars ($)', 'دالر ($)', 'امریکايي ډالر ($)')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setCurrency('AFN')}
                       className={`px-2 py-0.5 rounded text-[10px] font-black ${currency === 'AFN' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}
                     >
-                      افغانی
+                      {tx('Afghan afghani', 'افغانی', 'افغانۍ')}
                     </button>
                   </div>
                   <button
@@ -173,7 +180,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
 
               {showRateInput && (
                 <div className="mb-2 p-2 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center gap-2 text-xs">
-                  <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">نرخ:</span>
+                  <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">{tx('Exchange rate:', 'نرخ تبادله:', 'د تبادلې نرخ:')}</span>
                   <input
                     type="number"
                     step="any"
@@ -181,13 +188,13 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
                     onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 70)}
                     className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold bg-surface border border-amber-400 rounded text-center text-ink"
                   />
-                  <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">افغانی</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">{tx('AFN', 'افغانی', 'افغانۍ')}</span>
                   <button
                     type="button"
                     onClick={() => setShowRateInput(false)}
                     className="px-2 py-0.5 bg-amber-600 text-white rounded text-[10px] font-bold"
                   >
-                    تایید
+                    {tx('Apply', 'تأیید', 'تایید')}
                   </button>
                 </div>
               )}
@@ -204,10 +211,10 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">مشخصات حساب بانکی یا صرافی</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{tx('Bank or exchange account details', 'مشخصات حساب بانکی یا صرافی', 'د بانک یا صرافۍ حساب معلومات')}</label>
             <input
               type="text"
-              placeholder="مثلاً: شماره حساب بانک ملی یا صرافی حاجی برات"
+              placeholder={tx('e.g. bank account or Sarai Shahzada exchange', 'مثلاً: شمارهٔ حساب بانک ملی یا صرافی حاجی برات', 'لکه: د بانک حساب شمېره یا د حاجي برات صرافي')}
               value={bankOrSarafiDetails}
               onChange={(e) => setBankOrSarafiDetails(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-surface text-ink focus:ring-2 focus:ring-amber-500/20"

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Apartment Units & Commercial Pre-sales API
  * Manages Units, Prices (USD & AFN), Client Information & Outstanding Receivables

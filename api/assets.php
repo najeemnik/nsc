@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/legacy_endpoint_guard.php';
+nscBlockLegacyRelationalEndpoint();
+
 /**
  * NSC Assets, Machinery & Equipment Register API
  * Manages Heavy Machinery, Tools, Book Value & Depreciation Calculations

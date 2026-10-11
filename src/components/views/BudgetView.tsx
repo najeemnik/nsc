@@ -15,6 +15,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import {
   Wallet,
   Plus,
@@ -34,7 +35,7 @@ import {
   X,
 } from 'lucide-react';
 import { BudgetLineReport, BudgetStatus, ProjectBudget } from '../../types';
-import { getPostingAccounts } from '../../data/chartOfAccounts';
+import { CHART_OF_ACCOUNTS, getPostingAccounts } from '../../data/chartOfAccounts';
 import { summarizeBudgetReport } from '../../utils/budgetUtils';
 import { CurrencyAmountInput } from '../CurrencyAmountInput';
 
@@ -92,12 +93,15 @@ interface BudgetModalProps {
 const BudgetModal: React.FC<BudgetModalProps> = ({ onClose, editing }) => {
   const { t, currentProject, addProjectBudget, updateProjectBudget, getAccountDisplayName, language } = useApp();
 
-  const costAccounts = useMemo(
-    () => getPostingAccounts().filter(a => a.code.startsWith('5')),
-    []
-  );
+  const costAccounts = useMemo(() => {
+    const parentCodes = new Set(CHART_OF_ACCOUNTS.flatMap(account => account.parentCode ? [account.parentCode] : []));
+    return getPostingAccounts().filter(account =>
+      account.code.startsWith('5')
+      && (!parentCodes.has(account.code) || account.code === editing?.accountCode)
+    );
+  }, [editing?.accountCode]);
 
-  const [accountCode, setAccountCode] = useState<string>(editing?.accountCode || costAccounts[0]?.code || '5100');
+  const [accountCode, setAccountCode] = useState<string>(editing?.accountCode || costAccounts[0]?.code || '51001');
   const [amount, setAmount] = useState<string>(editing ? String(editing.amount) : '');
   const [currency, setCurrency] = useState<'USD' | 'AFN'>((editing?.currency as 'USD' | 'AFN') || 'USD');
   const [rate, setRate] = useState<number>(editing?.exchangeRate || currentProject?.defaultExchangeRate || 70);
@@ -131,7 +135,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ onClose, editing }) => {
           <div className="flex items-center justify-between">
             <h3 className="text-base font-black text-ink flex items-center gap-2">
               <Wallet className="w-5 h-5 text-emerald-500" />
-              {editing ? (t('budgetEditTitle') || 'Edit Budget') : (t('budgetAddTitle') || 'Set Budget')}
+              {editing ? (t('budgetEditTitle') || t("budgetEditTitle")) : (t('budgetAddTitle') || t("budgetAddTitle"))}
             </h3>
             <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
               <X className="w-4 h-4" />
@@ -152,7 +156,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ onClose, editing }) => {
                 </option>
               ))}
             </select>
-            <p className="text-[10px] text-ink-muted mt-1">{t('budgetAccountHint') || 'Budgets attach to Chart-of-Accounts cost codes — purchases auto-map here.'}</p>
+            <p className="text-[10px] text-ink-muted mt-1">{t('budgetAccountHint') || t("budgetAccountHint")}</p>
           </div>
 
           <CurrencyAmountInput
@@ -162,16 +166,16 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ onClose, editing }) => {
             onChangeCurrency={(c) => setCurrency(c as 'USD' | 'AFN')}
             exchangeRate={rate}
             onChangeExchangeRate={setRate}
-            label={t('budgetAmountLabel') || 'Budget Amount'}
+            label={t('budgetAmountLabel') || t("budgetAmountLabel")}
           />
 
           <div>
-            <label className="block text-xs font-bold text-ink mb-1.5">{t('notes') || 'Notes'}</label>
+            <label className="block text-xs font-bold text-ink mb-1.5">{t('notes') || t("notes")}</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={2}
-              placeholder={t('budgetNotesPlaceholder') || 'Optional note about this budget line...'}
+              placeholder={t('budgetNotesPlaceholder') || t("budgetNotesPlaceholder")}
               className="w-full px-3 py-2 bg-surface-2/80 border border-line rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
             />
           </div>
@@ -182,13 +186,13 @@ const BudgetModal: React.FC<BudgetModalProps> = ({ onClose, editing }) => {
               disabled={!amount || parseFloat(amount) <= 0}
               className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-600/25 transition active:scale-95"
             >
-              {editing ? (t('update') || 'Update') : (t('save') || 'Save')}
+              {editing ? (t('update') || t("update")) : (t('save') || 'Save')}
             </button>
             <button
               onClick={onClose}
               className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel') || t("cancel")}
             </button>
           </div>
         </div>
@@ -207,11 +211,11 @@ const BudgetVsSpentChart: React.FC<{ rows: BudgetLineReport[]; fmt: (n: number) 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-ink flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-emerald-500" />
-          {t('budgetChartVsTitle') || 'Budget vs Spent (per account)'}
+          {t('budgetChartVsTitle') || t("budgetChartVsTitle")}
         </h3>
         <div className="flex items-center gap-3 text-[10px] text-ink-muted">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-slate-300 dark:bg-slate-600 inline-block" />{t('budgetColBudget') || 'Budget'}</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />{t('budgetColSpent') || 'Spent'}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-slate-300 dark:bg-slate-600 inline-block" />{t('budgetColBudget') || t("budgetColBudget")}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />{t('budgetColSpent') || t("budgetColSpent")}</span>
         </div>
       </div>
       <div className="space-y-3">
@@ -247,7 +251,7 @@ const UsageChart: React.FC<{ rows: BudgetLineReport[]; t: (k: string) => string 
     <div className="bg-surface rounded-3xl border border-line shadow-sm p-5 space-y-4">
       <h3 className="text-sm font-black text-ink flex items-center gap-2">
         <Percent className="w-4 h-4 text-amber-500" />
-        {t('budgetChartUsageTitle') || 'Budget Usage %'}
+        {t('budgetChartUsageTitle') || t("budgetUsagePct")}
       </h3>
       <div className="space-y-3">
         {budgeted.map(r => {
@@ -268,7 +272,7 @@ const UsageChart: React.FC<{ rows: BudgetLineReport[]; t: (k: string) => string 
           );
         })}
       </div>
-      <p className="text-[10px] text-ink-muted pt-1">{t('budgetThresholdNote') || 'Thresholds: warning ≥ 80% • over budget ≥ 100%'}</p>
+      <p className="text-[10px] text-ink-muted pt-1">{t('budgetThresholdNote') || t("budgetThresholdNote")}</p>
     </div>
   );
 };
@@ -305,7 +309,7 @@ export const BudgetView: React.FC = () => {
   const unbudgetedRows = rows.filter(r => !r.hasBudget && r.committedUSD > 0);
 
   const fmt = (n: number) => formatCurrency(n, 'USD');
-  const nameOf = (r: BudgetLineReport) => (language === 'ps' ? r.namePs : language === 'en' ? r.nameEn : r.nameFa);
+  const nameOf = (r: BudgetLineReport) => localizeText(language, { en: r.nameEn, fa: r.nameFa, ps: r.namePs });
 
   const handleEdit = (row: BudgetLineReport) => {
     const stored = projectBudgets.find(b => b.projectId === currentProject?.id && b.accountCode === row.accountCode);
@@ -316,7 +320,11 @@ export const BudgetView: React.FC = () => {
   const handleDelete = (row: BudgetLineReport) => {
     const stored = projectBudgets.find(b => b.projectId === currentProject?.id && b.accountCode === row.accountCode);
     if (!stored) return;
-    if (confirm(t('budgetDeleteConfirm') || `Remove budget for ${row.nameFa}?`)) {
+    if (confirm(t('budgetDeleteConfirm') || localizeText(language, {
+      en: `Remove budget for ${row.nameEn}?`,
+      fa: `بودجهٔ ${row.nameFa} حذف شود؟`,
+      ps: `د ${row.namePs} بودجه لرې شي؟`,
+    }))) {
       deleteProjectBudget(stored.id);
     }
   };
@@ -341,10 +349,10 @@ export const BudgetView: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-ink flex items-center gap-2.5">
             <Wallet className="w-6 h-6 text-emerald-500" />
-            <span>{t('budgetTitle') || 'Project Budget'}</span>
+            <span>{t('budgetTitle') || t("navBudget")}</span>
           </h1>
           <p className="text-xs text-ink-muted mt-1">
-            {currentProject.name} • {t('budgetSubtitle') || 'Budget vs actual spending — linked to the Chart of Accounts'}
+            {currentProject.name} • {t('budgetSubtitle') || t("budgetSubtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -353,7 +361,7 @@ export const BudgetView: React.FC = () => {
             className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition"
           >
             <Printer className="w-4 h-4" />
-            <span>{t('print') || 'Print'}</span>
+            <span>{t('print') || t("print")}</span>
           </button>
           {canManage && (
             <button
@@ -361,7 +369,7 @@ export const BudgetView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-600/25 transition active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              <span>{t('budgetAddTitle') || 'Set Budget'}</span>
+              <span>{t('budgetAddTitle') || t("budgetAddTitle")}</span>
             </button>
           )}
         </div>
@@ -392,15 +400,15 @@ export const BudgetView: React.FC = () => {
           <table className="w-full text-xs">
             <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
               <tr>
-                <th className="py-3.5 px-4 text-start">{t('budgetColCategory') || 'Account / Category'}</th>
-                <th className="py-3.5 px-4 text-end">{t('budgetColBudget') || 'Budget'}</th>
-                <th className="py-3.5 px-4 text-end">{t('budgetColSpent') || 'Spent'}</th>
-                <th className="py-3.5 px-4 text-end">{t('budgetColPaid') || 'Paid'}</th>
-                <th className="py-3.5 px-4 text-end">{t('budgetColPayable') || 'Payable'}</th>
-                <th className="py-3.5 px-4 text-end">{t('budgetColRemaining') || 'Remaining'}</th>
-                <th className="py-3.5 px-4 text-center min-w-[120px]">{t('budgetColUsage') || 'Usage %'}</th>
-                <th className="py-3.5 px-4 text-center">{t('budgetColStatus') || 'Status'}</th>
-                {canManage && <th className="py-3.5 px-4 text-center">{t('actions') || 'Actions'}</th>}
+                <th className="py-3.5 px-4 text-start">{t('budgetColCategory') || t("budgetColCategory")}</th>
+                <th className="py-3.5 px-4 text-end">{t('budgetColBudget') || t("budgetColBudget")}</th>
+                <th className="py-3.5 px-4 text-end">{t('budgetColSpent') || t("budgetColSpent")}</th>
+                <th className="py-3.5 px-4 text-end">{t('budgetColPaid') || t("budgetColPaid")}</th>
+                <th className="py-3.5 px-4 text-end">{t('budgetColPayable') || t("budgetColPayable")}</th>
+                <th className="py-3.5 px-4 text-end">{t('budgetColRemaining') || t("budgetColRemaining")}</th>
+                <th className="py-3.5 px-4 text-center min-w-[120px]">{t('budgetColUsage') || t("budgetColUsage")}</th>
+                <th className="py-3.5 px-4 text-center">{t('budgetColStatus') || t("budgetColStatus")}</th>
+                {canManage && <th className="py-3.5 px-4 text-center">{t('actions') || t("actions")}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -427,10 +435,10 @@ export const BudgetView: React.FC = () => {
                   {canManage && (
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => handleEdit(r)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition" title={t('edit') || 'Edit'}>
+                        <button onClick={() => handleEdit(r)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition" title={t('edit') || t("edit")}>
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(r)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition" title={t('delete') || 'Delete'}>
+                        <button onClick={() => handleDelete(r)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition" title={t('delete') || t("delete")}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -441,7 +449,7 @@ export const BudgetView: React.FC = () => {
               {budgetedRows.length === 0 && (
                 <tr>
                   <td colSpan={canManage ? 9 : 8} className="py-12 text-center text-slate-400 text-xs">
-                    {t('budgetEmpty') || 'No budgets defined yet for this project — press "Set Budget" to create the first one.'}
+                    {t('budgetEmpty') || t("budgetEmpty")}
                   </td>
                 </tr>
               )}
@@ -449,7 +457,7 @@ export const BudgetView: React.FC = () => {
             {budgetedRows.length > 0 && (
               <tfoot className="bg-surface-2/60 font-black text-ink border-t border-line">
                 <tr>
-                  <td className="py-3 px-4">{t('total') || 'Total'}</td>
+                  <td className="py-3 px-4">{t('total') || t("total")}</td>
                   <td className="py-3 px-4 text-end font-mono">{fmt(totals.totalBudgetUSD)}</td>
                   <td className="py-3 px-4 text-end font-mono text-amber-600 dark:text-amber-400">{fmt(totals.totalCommittedUSD)}</td>
                   <td className="py-3 px-4 text-end font-mono text-emerald-600 dark:text-emerald-400">{fmt(totals.totalPaidUSD)}</td>
@@ -470,18 +478,18 @@ export const BudgetView: React.FC = () => {
         <div className="bg-surface rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="px-5 py-4 flex items-center gap-2 border-b border-line">
             <CircleDashed className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-black text-ink">{t('budgetUnbudgetedTitle') || 'Spending without an approved budget'}</h3>
-            <span className="text-[10px] text-ink-muted">({t('budgetUnbudgetedHint') || 'control list — assign a budget or review'})</span>
+            <h3 className="text-sm font-black text-ink">{t('budgetUnbudgetedTitle') || t("budgetUnbudgetedTitle")}</h3>
+            <span className="text-[10px] text-ink-muted">({t('budgetUnbudgetedHint') || t("budgetUnbudgetedHint")})</span>
           </div>
           <div className="overflow-x-auto scroll-touch">
             <table className="w-full text-xs">
               <thead className="bg-surface-2/60 text-ink-muted font-bold border-b border-line">
                 <tr>
-                  <th className="py-3 px-4 text-start">{t('budgetColCategory') || 'Account / Category'}</th>
-                  <th className="py-3 px-4 text-end">{t('budgetColSpent') || 'Spent'}</th>
-                  <th className="py-3 px-4 text-end">{t('budgetColPaid') || 'Paid'}</th>
-                  <th className="py-3 px-4 text-end">{t('budgetColPayable') || 'Payable'}</th>
-                  {canManage && <th className="py-3 px-4 text-center">{t('actions') || 'Actions'}</th>}
+                  <th className="py-3 px-4 text-start">{t('budgetColCategory') || t("budgetColCategory")}</th>
+                  <th className="py-3 px-4 text-end">{t('budgetColSpent') || t("budgetColSpent")}</th>
+                  <th className="py-3 px-4 text-end">{t('budgetColPaid') || t("budgetColPaid")}</th>
+                  <th className="py-3 px-4 text-end">{t('budgetColPayable') || t("budgetColPayable")}</th>
+                  {canManage && <th className="py-3 px-4 text-center">{t('actions') || t("actions")}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -497,7 +505,7 @@ export const BudgetView: React.FC = () => {
                     {canManage && (
                       <td className="py-3 px-4 text-center">
                         <button onClick={() => handleEdit(r)} className="px-2.5 py-1.5 text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600/20 rounded-lg transition">
-                          {t('budgetAssign') || 'Assign budget'}
+                          {t('budgetAssign') || t("budgetAssign")}
                         </button>
                       </td>
                     )}

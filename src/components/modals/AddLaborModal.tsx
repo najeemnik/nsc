@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { localizeText } from '../../i18n/localize';
 import { HardHat, X, Calculator, CheckCircle, UserCheck, DollarSign, MinusCircle } from 'lucide-react';
-import { backendApi } from '../../services/backendApi';
 
 interface AddLaborModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
   defaultWorkerName,
 }) => {
   const { currentProject, projects, formatCurrency, t, language, addLaborRecord } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
   const [projectId, setProjectId] = useState<string>(currentProject?.id || (projects[0]?.id || ''));
   const [workerName, setWorkerName] = useState(defaultWorkerName || '');
   const [workType, setWorkType] = useState('خشت‌کاری و دیوارچینی');
@@ -22,7 +23,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
   const [ratePerUnit, setRatePerUnit] = useState('1400');
   const [advanceDeduction, setAdvanceDeduction] = useState('3000');
   const [payrollDate, setPayrollDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [approvedBy, setApprovedBy] = useState('انجنیر ناظر ساحه');
+  const [approvedBy, setApprovedBy] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successNotice, setSuccessNotice] = useState(false);
@@ -58,11 +59,11 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
     e.preventDefault();
     setFormError(null);
     if (!workerName.trim()) {
-      setFormError(language === 'fa' ? 'نام استادکار یا سرتیم کارگری الزامی است.' : 'Worker or team name is required.');
+      setFormError(tx('Worker or team name is required.', 'نام استادکار یا سرتیم کارگری الزامی است.', 'د کارګر یا ډلې نوم اړین دی.'));
       return;
     }
     if (numDays <= 0 || numRate <= 0) {
-      setFormError(language === 'fa' ? 'تعداد روز/واحد و نرخ روزانه باید بزرگتر از صفر باشد.' : 'Days/units and rate must be greater than zero.');
+      setFormError(tx('Days/units and rate must be greater than zero.', 'تعداد روز/واحد و نرخ روزانه باید بزرگتر از صفر باشد.', 'ورځې یا واحدونه او نرخ باید تر صفر ډېر وي.'));
       return;
     }
 
@@ -72,7 +73,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
         projectId,
         workerName: workerName.trim(),
         role: workType,
-        workPeriod: 'ماه جاری',
+        workPeriod: payrollDate.slice(0, 7),
         daysWorked: numDays,
         dailyRate: numRate,
         grossWage: grossAmount,
@@ -84,26 +85,14 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
         notes: notes.trim() || undefined,
       });
 
-      await backendApi.createLaborPayroll({
-        projectId,
-        workerOrTeamLeader: workerName.trim(),
-        workTypeDescription: workType,
-        daysOrWorkUnits: numDays,
-        ratePerUnit: numRate,
-        advanceDeduction: numAdvance,
-        payrollDate,
-        approvedBy: approvedBy.trim(),
-        notes: notes.trim() || undefined,
-      });
-
       setSuccessNotice(true);
       setTimeout(() => {
         setSuccessNotice(false);
         setIsSubmitting(false);
         onClose();
       }, 1000);
-    } catch (err: any) {
-      setFormError(err.message || 'خطا در ثبت معاش کارگران');
+    } catch {
+      setFormError(tx('Could not save the payroll record.', 'ثبت معاش انجام نشد.', 'د مزد ثبتول ناکام شول.'));
       setIsSubmitting(false);
     }
   };
@@ -122,10 +111,10 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-ink">
-                {language === 'fa' ? 'محاسبه کارکرد و معاشات کارگران (Labor Wages)' : 'Worker Payroll & Wages'}
+                {tx('Worker Payroll & Wages', 'محاسبه کارکرد و معاشات کارگران (Labor Wages)', 'د کارګرانو د مزد او معاش ثبت')}
               </h2>
               <p className="text-xs text-ink-muted">
-                {language === 'fa' ? 'روزکار × نرخ = ناخالص، کسر اتوماتیک مساعده‌ها و تسویه خالص' : 'Auto Gross calculation, advance deduction and net payment'}
+                {tx('Auto Gross calculation, advance deduction and net payment', 'روزکار × نرخ = ناخالص، کسر اتوماتیک مساعده‌ها و تسویه خالص', 'د ناخالص مزد اتومات محاسبه، د پیشکي کسر او خالصه ورکړه')}
               </p>
             </div>
           </div>
@@ -149,7 +138,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           {successNotice && (
             <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>{language === 'fa' ? 'کارکرد و تسویه معاش کارگر با موفقیت ثبت شد!' : 'Labor wages and advance settled successfully!'}</span>
+              <span>{tx('Labor wages and advance settled successfully!', 'کارکرد و تسویه معاش کارگر با موفقیت ثبت شد!', 'د کارګر مزد او پیشکي په بریالیتوب تصفیه شول!')}</span>
             </div>
           )}
 
@@ -173,20 +162,20 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
             {/* Work Type */}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'نوع فعالیت کارگری' : 'Trade Scope'}
+                {tx('Trade Scope', 'نوع فعالیت کارگری', 'د کار ډول')}
               </label>
               <select
                 value={workType}
                 onChange={e => setWorkType(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               >
-                <option value="خشت‌کاری و دیوارچینی">{language === 'fa' ? 'خشت‌کاری و دیوارچینی' : 'Masonry'}</option>
-                <option value="قالب‌بندی و نجاری کارگاه">{language === 'fa' ? 'قالب‌بندی و نجاری کارگاه' : 'Shuttering'}</option>
-                <option value="سیخ‌بندی و آرماتوربندی">{language === 'fa' ? 'سیخ‌بندی و آرماتوربندی' : 'Steel Fixing'}</option>
-                <option value="کانکریت‌ریزی و ویبراتور">{language === 'fa' ? 'کانکریت‌ریزی و ویبراتور' : 'Concrete Casting'}</option>
-                <option value="پلسترکاری و سیمان‌کاری">{language === 'fa' ? 'پلسترکاری و سیمان‌کاری' : 'Plastering'}</option>
-                <option value="رنگ‌مالی و نقاشی ساختمان">{language === 'fa' ? 'رنگ‌مالی و نقاشی ساختمان' : 'Painting'}</option>
-                <option value="کارگری روزمزد و پاک‌کاری ساحه">{language === 'fa' ? 'کارگری روزمزد و پاک‌کاری ساحه' : 'Site Helpers / Cleaning'}</option>
+                <option value="خشت‌کاری و دیوارچینی">{tx('Masonry', 'خشت‌کاری و دیوارچینی', 'خښتو ایښودل او دېوال جوړول')}</option>
+                <option value="قالب‌بندی و نجاری کارگاه">{tx('Shuttering', 'قالب‌بندی و نجاری کارگاه', 'قالب‌بندي او ترکاڼي')}</option>
+                <option value="سیخ‌بندی و آرماتوربندی">{tx('Steel Fixing', 'سیخ‌بندی و آرماتوربندی', 'د سیخونو تړل او آرماتوربندي')}</option>
+                <option value="کانکریت‌ریزی و ویبراتور">{tx('Concrete Casting', 'کانکریت‌ریزی و ویبراتور', 'د کانکریټو اچول او ویبرېټر کارول')}</option>
+                <option value="پلسترکاری و سیمان‌کاری">{tx('Plastering', 'پلسترکاری و سیمان‌کاری', 'پلستر او سمنټ‌کاري')}</option>
+                <option value="رنگ‌مالی و نقاشی ساختمان">{tx('Painting', 'رنگ‌مالی و نقاشی ساختمان', 'رنګ‌مالي او نقاشي')}</option>
+                <option value="کارگری روزمزد و پاک‌کاری ساحه">{tx('Site Helpers / Cleaning', 'کارگری روزمزد و پاک‌کاری ساحه', 'د ساحې مرسته او پاک‌کاري')}</option>
               </select>
             </div>
           </div>
@@ -194,7 +183,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           {/* Worker Name */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {language === 'fa' ? 'نام استادکار یا سرتیم کارگری' : 'Worker or Team Name'}
+              {tx('Worker or Team Name', 'نام استادکار یا سرتیم کارگری', 'د کارګر یا ډلې نوم')}
             </label>
             <div className="relative">
               <UserCheck className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
@@ -203,7 +192,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
                 required
                 value={workerName}
                 onChange={e => setWorkerName(e.target.value)}
-                placeholder={language === 'fa' ? 'مثلاً: استاد رحیم و گروه ۴ نفره خشت‌کار' : 'e.g. Master Rahim team'}
+                placeholder={tx('e.g. Master Rahim team', 'مثلاً: استاد رحیم و گروه ۴ نفره خشت‌کار', 'لکه: د رحیم استاد ډله')}
                 className="w-full ps-9 pe-3.5 py-2.5 bg-surface-2 border border-line rounded-xl text-ink font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               />
             </div>
@@ -213,7 +202,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'کارکرد (روز / واحد)' : 'Days / Units'}
+                {tx('Days / Units', 'کارکرد (روز / واحد)', 'ورځې / واحدونه')}
               </label>
               <input
                 type="number"
@@ -227,7 +216,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'نرخ روزانه (AFN)' : 'Daily Rate (AFN)'}
+                {tx('Daily Rate (AFN)', 'نرخ روزانه (AFN)', 'ورځنی نرخ (AFN)')}
               </label>
               <input
                 type="number"
@@ -241,7 +230,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'کسر مساعده‌ها (AFN)' : 'Advance Deduction'}
+                {tx('Advance Deduction', 'کسر مساعده‌ها (AFN)', 'د پیشکي کسر')}
               </label>
               <input
                 type="number"
@@ -257,7 +246,11 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-bold">
-                {language === 'fa' ? 'مجموع دستمزد ناخالص:' : 'Gross Amount:'} {numDays} روز × {numRate.toLocaleString()} AFN
+                {tx(
+                  `Gross wages: ${numDays} days × ${numRate.toLocaleString()} AFN`,
+                  `مجموع دستمزد ناخالص: ${numDays} روز × ${numRate.toLocaleString()} AFN`,
+                  `ناخالص مزد: ${numDays} ورځې × ${numRate.toLocaleString()} AFN`,
+                )}
               </span>
               <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                 {grossAmount.toLocaleString()} AFN
@@ -267,7 +260,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
             <div className="flex items-center justify-between text-xs text-rose-600">
               <span className="font-bold flex items-center gap-1">
                 <MinusCircle className="w-3.5 h-3.5" />
-                <span>{language === 'fa' ? 'کسر مساعده دریافت شده قبلی:' : 'Advance Deducted:'}</span>
+                <span>{tx('Advance Deducted:', 'کسر مساعده دریافت شده قبلی:', 'کسر شوی پیشکي:')}</span>
               </span>
               <span className="font-mono font-bold">
                 - {numAdvance.toLocaleString()} AFN
@@ -276,7 +269,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
 
             <div className="border-t border-purple-500/30 pt-1.5 flex items-center justify-between">
               <span className="font-black text-xs text-purple-700 dark:text-purple-300">
-                {language === 'fa' ? 'خالص پرداختی نقدی نهایی:' : 'Net Paid to Worker:'}
+                {tx('Net Paid to Worker:', 'خالص پرداختی نقدی نهایی:', 'کارګر ته خالصه ورکړه:')}
               </span>
               <span className="text-base font-black text-purple-600 dark:text-purple-400 font-mono">
                 {netPaid.toLocaleString()} AFN
@@ -287,12 +280,13 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {language === 'fa' ? 'تأییدکننده کارکرد' : 'Approved By'}
+                {tx('Approved By', 'تأییدکننده کارکرد', 'تأییدوونکی')}
               </label>
               <input
                 type="text"
                 value={approvedBy}
                 onChange={e => setApprovedBy(e.target.value)}
+                placeholder={tx('Name of supervisor', 'نام انجینر ناظر یا مسئول', 'د څارونکي نوم')}
                 className="w-full px-3 py-2 bg-surface-2 border border-line rounded-xl text-ink font-semibold"
               />
             </div>
@@ -313,13 +307,13 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
           {/* Notes */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {t('notes') || 'Notes'}
+              {t('notes') || t("notes")}
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="توضیحات تکمیلی، کیفیت کار، اضافه‌کاری یا محل دقیق فعالیت در کارگاه..."
+              placeholder={tx('Additional notes, work quality, overtime, or exact site location...', 'توضیحات تکمیلی، کیفیت کار، اضافه‌کاری یا محل دقیق فعالیت در کارگاه...', 'نور یادښتونه، د کار کیفیت، اضافي کار یا د ساحې کره ځای...')}
               className="w-full px-3.5 py-2 bg-surface-2 border border-line rounded-xl text-ink"
             />
           </div>
@@ -331,7 +325,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-surface-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel') || t("cancel")}
             </button>
             <button
               type="submit"
@@ -339,7 +333,7 @@ export const AddLaborModal: React.FC<AddLaborModalProps> = ({
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black shadow-lg shadow-purple-500/25 transition active:scale-95 disabled:opacity-50"
             >
               <HardHat className="w-4 h-4" />
-              <span>{isSubmitting ? 'در حال ثبت...' : 'تسویه و پرداخت معاشات'}</span>
+              <span>{isSubmitting ? tx('Saving...', 'در حال ثبت...', 'ثبتېږي...') : tx('Settle and pay wages', 'تسویه و پرداخت معاشات', 'مزد تصفیه او ورکړئ')}</span>
             </button>
           </div>
         </form>

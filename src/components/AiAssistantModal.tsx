@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { intlLocaleFor, localizeText } from '../i18n/localize';
 import { Bot, Send, Sparkles, Building, Layers, CircleDot, Home, RefreshCw, X, MessageSquare } from 'lucide-react';
 import { answerProjectQuestionLocally, ProjectContextSummary } from '../services/aiAssistantService';
 
 export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { currentProject, steelRecords, concreteRecords, expenses, apartments, projects, t } = useApp();
+  const { currentProject, steelRecords, concreteRecords, expenses, apartments, projects, language } = useApp();
+  const tx = (en: string, fa: string, ps: string) => localizeText(language, { en, fa, ps });
+  const formatTime = () => new Date().toLocaleTimeString(intlLocaleFor(language), { hour: '2-digit', minute: '2-digit' });
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
-    {
-      sender: 'ai',
-      text: `سلام! من دستیار هوش مصنوعی پروژه شما هستم. می‌توانید درباره میزان مصرف سیخ، حجم کانکریت، وضعیت مصارف، طلبکاری‌ها یا فروش آپارتمان‌ها از من بپرسید.`,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }
-  ]);
+  const [messages, setMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>(() => [{
+    sender: 'ai',
+    text: tx(
+      'I can answer questions about project materials, expenses, balances, and apartment sales.',
+      'دربارهٔ مصالح پروژه، مصارف، بیلانس‌ها و فروش آپارتمان‌ها پرسش کنید.',
+      'د پروژې د توکو، لګښتونو، بیلانسونو او اپارتمانونو د پلور په اړه پوښتنه وکړئ.',
+    ),
+    time: formatTime(),
+  }]);
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -39,7 +44,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
   const salesDueUSD = projectApartments.filter(a => a.status === 'sold').reduce((acc, a) => acc + (a.remainingBalance || 0), 0);
 
   const summary: ProjectContextSummary = {
-    projectName: currentProject?.name || 'پروژه ساختمانی',
+    projectName: currentProject?.name || tx('Construction project', 'پروژه ساختمانی', 'ودانیزه پروژه'),
     totalSteelTons,
     steelCostUSD,
     totalConcreteM3,
@@ -62,7 +67,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
     const userMsg = {
       sender: 'user' as const,
       text: query,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: formatTime(),
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -70,13 +75,13 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
     setLoading(true);
 
     setTimeout(() => {
-      const aiReply = answerProjectQuestionLocally(query, summary, projects);
+      const aiReply = answerProjectQuestionLocally(query, summary, projects, language);
       setMessages(prev => [
         ...prev,
         {
           sender: 'ai',
           text: aiReply,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: formatTime(),
         }
       ]);
       setLoading(false);
@@ -84,10 +89,10 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
   };
 
   const quickPrompts = [
-    'چقدر سیخ تا حالا خریدیم؟',
-    'وضعیت کانکریت‌ریزی چطور است؟',
-    'چند واحد آپارتمان فروخته شده؟',
-    'طلبکاری‌ها و بدهی‌های فعلی چقدر است؟'
+    { en: 'How much rebar have we bought?', fa: 'تا حالا چه مقدار سیخ‌گول خریده‌ایم؟', ps: 'تر اوسه مو څومره سیخ‌ګول پېرلي؟' },
+    { en: 'How is the concrete work progressing?', fa: 'وضعیت کانکریت‌ریزی چگونه است؟', ps: 'د کانکریټو کار څنګه روان دی؟' },
+    { en: 'How many apartments have been sold?', fa: 'چند واحد آپارتمان فروخته شده است؟', ps: 'څو اپارتمانونه پلورل شوي دي؟' },
+    { en: 'What are the current receivables and debts?', fa: 'طلب‌ها و بدهی‌های فعلی چقدر است؟', ps: 'اوسني طلبونه او پورونه څومره دي؟' }
   ];
 
   return (
@@ -102,13 +107,13 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm text-white">{t.aiAssistantTitle}</h3>
+                <h3 className="font-extrabold text-sm text-white">{tx('Project assistant', 'دستیار پروژه', 'د پروژې مرستیال')}</h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Online
+                  {tx('Ready', 'آماده', 'چمتو')}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 truncate">
-                پروژه فعال: <strong className="text-amber-400">{currentProject?.name}</strong>
+                {tx('Active project:', 'پروژهٔ فعال:', 'اوسنۍ پروژه:')} <strong className="text-amber-400">{currentProject?.name}</strong>
               </p>
             </div>
           </div>
@@ -127,10 +132,10 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
             <button
               key={i}
               type="button"
-              onClick={() => handleSend(prompt)}
+              onClick={() => handleSend(localizeText(language, prompt))}
               className="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition-colors shrink-0 text-[11px] font-medium"
             >
-              💬 {prompt}
+              💬 {localizeText(language, prompt)}
             </button>
           ))}
         </div>
@@ -162,7 +167,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
           {loading && (
             <div className="flex items-center gap-2 text-slate-400 text-xs py-2 px-3 bg-slate-800/50 rounded-2xl w-fit">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-              <span>{t.aiThinking}</span>
+              <span>{tx('Preparing an answer...', 'در حال آماده‌سازی پاسخ...', 'ځواب چمتو کېږي...')}</span>
             </div>
           )}
         </div>
@@ -173,7 +178,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder={t.askAiPlaceholder}
+            placeholder={tx('Ask about this project...', 'دربارهٔ این پروژه بپرسید...', 'د دې پروژې په اړه پوښتنه وکړئ...')}
             className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-2xl text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
           />
           <button
@@ -181,7 +186,7 @@ export const AiAssistantModal: React.FC<{ isOpen: boolean; onClose: () => void }
             disabled={!question.trim() || loading}
             className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold rounded-2xl text-xs flex items-center gap-1.5 transition-colors shadow-xs shrink-0"
           >
-            <span>ارسال</span>
+            <span>{tx('Send', 'ارسال', 'لېږل')}</span>
             <Send className="w-3.5 h-3.5 rtl:rotate-180" />
           </button>
         </form>

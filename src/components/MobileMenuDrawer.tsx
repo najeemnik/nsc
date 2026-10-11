@@ -14,7 +14,8 @@
 
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Language } from '../types';
+import { localizeText } from '../i18n/localize';
+import type { Language } from '../types';
 import {
   LayoutDashboard,
   Building,
@@ -41,6 +42,8 @@ import {
   Sun,
   X,
 } from 'lucide-react';
+
+const NATIVE_LANGUAGE_NAMES: Record<Language, string> = { en: 'English', fa: 'دری', ps: 'پښتو' };
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -116,7 +119,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
       ? [{
           title: t.companySettings,
           items: [
-            ...(currentUser?.isMasterSuperAdmin ? [{ id: 'super_admin', label: language === 'en' ? 'Office 7 (Master)' : language === 'ps' ? 'دفتر اووه' : 'دفتر هفت', icon: ShieldCheck, iconColor: 'text-rose-600', iconBg: 'bg-rose-500/15', gradient: 'from-rose-600 to-red-600' } as DrawerItem] : []),
+            ...(currentUser?.isMasterSuperAdmin ? [{ id: 'super_admin', label: localizeText(language, { en: 'Office 7 (Master)', fa: 'دفتر هفت', ps: 'دفتر اووه' }), icon: ShieldCheck, iconColor: 'text-rose-600', iconBg: 'bg-rose-500/15', gradient: 'from-rose-600 to-red-600' } as DrawerItem] : []),
             { id: 'settings', label: t.companySettings, icon: Sliders, iconColor: 'text-amber-600', iconBg: 'bg-amber-500/15', gradient: 'from-amber-600 to-yellow-600' } as DrawerItem,
             { id: 'users', label: t.navUsers, icon: Users, iconColor: 'text-blue-600', iconBg: 'bg-blue-500/15', gradient: 'from-blue-500 to-indigo-600' } as DrawerItem,
             { id: 'audit_logs', label: t.navAuditLogs, icon: History, iconColor: 'text-slate-600', iconBg: 'bg-slate-500/15', gradient: 'from-slate-500 to-slate-700' } as DrawerItem,
@@ -172,7 +175,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
             <span className={`text-[10px] px-1.5 py-0.5 rounded-lg font-bold uppercase shrink-0 ${roleBadge}`}>
               {roleLabel}
             </span>
-            <button onClick={onClose} className="p-2 text-ink-muted hover:text-ink rounded-xl transition shrink-0" aria-label="Close">
+            <button onClick={onClose} className="p-2 text-ink-muted hover:text-ink rounded-xl transition shrink-0" aria-label={t("close")}>
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -180,7 +183,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
           {/* Language + Day/Night */}
           <div className="flex items-center gap-2">
             <div className="flex-1 grid grid-cols-3 gap-1 p-1 bg-surface-2/80 border border-line rounded-2xl">
-              {([['fa', 'دری'], ['ps', 'پښتو'], ['en', 'EN']] as Array<[Language, string]>).map(([code, label]) => (
+              {(['fa', 'ps', 'en'] as Language[]).map((code) => (
                 <button
                   key={code}
                   onClick={() => setLanguage(code)}
@@ -188,7 +191,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({ isOpen, onCl
                     language === code ? 'mobile-nav-item-active shadow-xs' : 'text-ink-muted'
                   }`}
                 >
-                  {label}
+                  {NATIVE_LANGUAGE_NAMES[code]}
                 </button>
               ))}
             </div>
