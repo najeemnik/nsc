@@ -1,4 +1,4 @@
-# Employee project access controls (Wave 2 — in progress)
+# Employee project access controls (Wave 2 — disposable CI complete; staging pending)
 
 ## Current enforcement boundary
 
